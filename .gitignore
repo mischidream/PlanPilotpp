@@ -1,0 +1,28 @@
+# General
+.DS_Store
+.env
+.venv
+.vscode/
+.idea/
+
+# Python (Flask)
+backend/__pycache__/
+backend/.venv/
+backend/instance/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.env
+backend/.flaskenv
+
+# Vue.js (Frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.cache/
+
+# Logs & Temp Files
+*.log
+*.sqlite3
+*.db
+

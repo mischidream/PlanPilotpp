@@ -1,0 +1,3 @@
+[submodule "backend/planpilot"]
+	path = backend/planpilot
+	url = https://github.com/abcorrea/planpilot.git
