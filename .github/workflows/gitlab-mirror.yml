@@ -1,0 +1,15 @@
+name: Mirror to GitLab
+on: [push]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Push to GitLab
+        run: |
+          git remote add gitlab https://oauth2:${{ secrets.GITLAB_ACCESS_TOKEN }}@gitlab.com/hicko047/TDDD27_2025_PlanPilotpp.git
+          git push --mirror gitlab
+
