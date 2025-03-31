@@ -10,6 +10,6 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git remote add gitlab https://oauth2:${{ secrets.GITLAB_ACCESS_TOKEN }}@gitlab.com/hicko047/TDDD27_2025_PlanPilotpp.git
+          git remote add gitlab https://oauth2:${{ secrets.GITLAB_ACCESS_TOKEN }}@gitlab.liu.se/hicko047/TDDD27_2025_PlanPilotpp.git
           git push --mirror gitlab
 
