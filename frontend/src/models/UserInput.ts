@@ -5,5 +5,6 @@ export interface UserInput {
     problemFile: string;
     horizon: number;
     encoding: EncodingType;
+    numberOfSets?: number;
   }
   
