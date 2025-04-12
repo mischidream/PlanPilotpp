@@ -7,22 +7,63 @@
             label="Encoding:"
             :options="Object.values(EncodingType)"
             v-model="encoding"
+            :isMultiple="false"
         />
         <InputField label="Number of sets:" v-model="numberOfSets" type="number" />
+    </div>
+    <Divider/>
+    <div class="search-fields">
+        <DropdownField
+            label="Facet:"
+            :options="Object.values(SelectionState)"
+            v-model="selectedFacetState"
+            :isMultiple="true"
+        />
+        <DropdownField
+            label="Action:"
+            :options="Object.values(ActionType)"
+            v-model="selectedActionType"
+            :isMultiple="true"
+        />
+        <DropdownField
+            label="Constants:"
+            :options="allConstants"
+            v-model="selectedConstants"
+            :isMultiple="true"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { EncodingType } from '@/models/EncodingType';
-import { ref } from 'vue';
+import { SelectionState } from '@/models/SelectionState';
+import { ActionType } from '@/models/ActionType';
+import { computed, ref } from 'vue';
 import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
+import Divider from '@/components/Divider.vue';
+import type { Facet } from '@/models/Facet';
 
-const instanceFile = ref(''); // Renamed to match UserInput
+const instanceFile = ref('');
 const domainFile = ref('');
-const horizon = ref<number>(0); // Horizon is a number
-const encoding = ref<EncodingType>(EncodingType.Exact);
+const horizon = ref<number>(0);
+const encoding = ref<EncodingType[]>([EncodingType.Exact])
 const numberOfSets = ref<number | undefined>(undefined);
+const facets = ref<Facet[]>([]);
+
+const selectedFacetState = ref<SelectionState[]>([])
+const selectedActionType = ref<ActionType[]>([])
+const selectedConstants = ref<string[]>([])
+
+
+const allConstants = computed(() => {
+    const constantsSet = new Set<string>();
+    for (const facet of facets.value) {
+        if (facet.constant1) constantsSet.add(facet.constant1);
+        if (facet.constant2) constantsSet.add(facet.constant2);
+    }
+    return Array.from(constantsSet).sort();
+});
 </script>
 
 <style scoped>
@@ -30,6 +71,10 @@ const numberOfSets = ref<number | undefined>(undefined);
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    justify-content: space-between;
+}
+.search-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 </style>
