@@ -1,7 +1,7 @@
 export enum ActionType {
-    Unstack = "unstack",
-    Stack = "stack",
-    PickUp = "pick-up",
-    PutDown = "put-down",
+    Unstack = "Unstack",
+    Stack = "Stack",
+    PickUp = "Pick-up",
+    PutDown = "Put-down",
   }
   

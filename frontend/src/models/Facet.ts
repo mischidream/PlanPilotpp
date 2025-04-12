@@ -1,4 +1,5 @@
 import type { ActionType } from "./ActionType";
+import type { SelectionState } from "./SelectionState";
 
 export interface Facet {
     id: number;
@@ -8,4 +9,5 @@ export interface Facet {
     timestep: number;
     reduction?: number | null;
     remaining?: number | null;
-  }
+    selectionState?: SelectionState;
+}
