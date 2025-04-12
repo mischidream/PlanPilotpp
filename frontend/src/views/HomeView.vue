@@ -31,6 +31,12 @@
             v-model="selectedConstants"
             :isMultiple="true"
         />
+        <DropdownField
+            label="Timesteps:"
+            :options="allTimesteps"
+            v-model="selectedTimesteps"
+            :isMultiple="true"
+        />
     </div>
 </template>
 
@@ -54,7 +60,7 @@ const facets = ref<Facet[]>([]);
 const selectedFacetState = ref<SelectionState[]>([])
 const selectedActionType = ref<ActionType[]>([])
 const selectedConstants = ref<string[]>([])
-
+const selectedTimesteps = ref<number[]>([]);
 
 const allConstants = computed(() => {
     const constantsSet = new Set<string>();
@@ -63,6 +69,14 @@ const allConstants = computed(() => {
         if (facet.constant2) constantsSet.add(facet.constant2);
     }
     return Array.from(constantsSet).sort();
+});
+
+const allTimesteps = computed(() => {
+    const timestepSet = new Set<number>();
+    for (const facet of facets.value) {
+        timestepSet.add(facet.timestep);
+    }
+    return Array.from(timestepSet).sort((a, b) => a - b);
 });
 </script>
 

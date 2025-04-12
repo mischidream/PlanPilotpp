@@ -45,11 +45,11 @@ const props = defineProps({
     required: true,
   },
   modelValue: {
-    type: Array as PropType<string[]>,
+    type: Array as PropType<(string | number)[]>,
     default: () => [],
   },
   options: {
-    type: Array as PropType<string[]>,
+    type: Array as PropType<(string | number)[]>,
     required: true,
     default: () => [],
   },
@@ -73,8 +73,9 @@ watch(selectedValues, (newVal) => {
   emit('update:modelValue', newVal)
 })
 
-const formatOption = (option: string) => {
-  return option.charAt(0).toUpperCase() + option.slice(1)
+const formatOption = (option: string | number) => {
+  const str = option.toString()
+  return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 const isOpen = ref(false)
@@ -83,7 +84,7 @@ const toggleDropdown = () => {
   isOpen.value = !isOpen.value
 }
 
-const toggleSelection = (option: string) => {
+const toggleSelection = (option: string | number) => {
   const index = selectedValues.value.indexOf(option)
   if (props.isMultiple) {
     if (index === -1) {
