@@ -33,7 +33,7 @@ import Header from './components/Header.vue';
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background-color: var(--background-soft); /* Soft background */
+  background-color: var(--background-soft);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
@@ -50,27 +50,27 @@ import Header from './components/Header.vue';
 }
 
 .nav-link {
-  color: var(--text); /* Text color */
+  color: var(--text);
   font-weight: 500;
   text-decoration: none;
   transition: color 0.3s ease, font-weight 0.3s ease;
 }
 
 .nav-link:hover {
-  color: var(--deep-blue); /* Hover color from your palette */
-  font-weight: bold; /* Make text bold on hover */
+  color: var(--deep-blue);
+  font-weight: bold;
 }
 
 .divider {
   height: 1.5rem;
   width: 1px;
-  background-color: var(--border); /* Divider color */
+  background-color: var(--border);
 }
 
 .main-content {
   padding: 1rem;
   flex: 1;
-  background-color: var(--background); /* Ensure main content background */
+  background-color: var(--background);
   color: var(--text);
 }
 </style>

@@ -38,24 +38,34 @@
             :isMultiple="true"
         />
     </div>
+    <Divider/>
+    <FacetTable
+        :headers="columns"
+        :facets="filteredFacets"
+        @selectFacet="updateSelectionState"
+    />
 </template>
 
 <script setup lang="ts">
 import { EncodingType } from '@/models/EncodingType';
 import { SelectionState } from '@/models/SelectionState';
 import { ActionType } from '@/models/ActionType';
-import { computed, ref } from 'vue';
+import type { Facet } from '@/models/Facet';
+import { computed, onMounted, ref, watch } from 'vue';
 import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
 import Divider from '@/components/Divider.vue';
-import type { Facet } from '@/models/Facet';
+import FacetTable from '@/components/FacetTable.vue';
+import testData from '@/testdata/example.json'
+import { transformToFacets } from '@/utils/transformFacets';
 
-const instanceFile = ref('');
-const domainFile = ref('');
+const instanceFile = ref<File | null>(null);
+const domainFile = ref<File | null>(null);
 const horizon = ref<number>(0);
 const encoding = ref<EncodingType[]>([EncodingType.Exact])
 const numberOfSets = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
+const showReductionColumns = ref(false);
 
 const selectedFacetState = ref<SelectionState[]>([])
 const selectedActionType = ref<ActionType[]>([])
@@ -77,6 +87,42 @@ const allTimesteps = computed(() => {
         timestepSet.add(facet.timestep);
     }
     return Array.from(timestepSet).sort((a, b) => a - b);
+});
+
+const columns = computed(() => {
+  const base = ['Choose facet', 'Action', 'Constants', 'Timestep'];
+  return showReductionColumns.value ? [...base, 'Reduction', 'Remaining'] : base;
+});
+
+// Computed filtered facets based on search
+const filteredFacets = computed(() => {
+  return facets.value.filter(facet => {
+    const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState ?? SelectionState.NotSelected);
+    const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
+    const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
+    const matchConstants = !selectedConstants.value.length || constants.some(c => selectedConstants.value.includes(c));
+    const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
+    return matchState && matchAction && matchConstants && matchTimestep;
+  });
+});
+
+// Update selectionState when a facet is selected
+function updateSelectionState(facet: Facet, newState: SelectionState) {
+  facet.selectionState = newState;
+}
+
+watch([selectedFacetState, selectedActionType, selectedConstants, selectedTimesteps], () => {
+    console.log("Filtering facets with:", {
+        selectedFacetState: selectedFacetState.value,
+        selectedActionType: selectedActionType.value,
+        selectedConstants: selectedConstants.value,
+        selectedTimesteps: selectedTimesteps.value
+    });
+});
+
+// Load test data and transform it to facets
+onMounted(() => {
+    facets.value = transformToFacets(testData);
 });
 </script>
 

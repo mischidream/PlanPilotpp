@@ -35,6 +35,7 @@
 
   --border: var(--divider-light-2);
   --border-hover: var(--divider-light-1);
+  --border-radius: 4px;
 
   --heading: var(--text-light-1);
   --text: var(--text-dark-1);  /* Dark text for normal content */
