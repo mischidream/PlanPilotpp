@@ -3,7 +3,9 @@
     <div class="top-bar">
       <Header class="header"></Header>
       <nav class="nav">
-        <RouterLink to="/home" class="nav-link">Home</RouterLink>
+        <RouterLink to="/start" class="nav-link">Start</RouterLink>
+        <div class="divider"></div>
+        <RouterLink to="/planpilot" class="nav-link">PlanPilot</RouterLink>
         <div class="divider"></div>
         <RouterLink to="/visualization" class="nav-link">Visualization</RouterLink>
       </nav>
