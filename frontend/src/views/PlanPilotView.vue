@@ -102,6 +102,8 @@ const filteredFacets = computed(() => {
     const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
     const matchConstants = !selectedConstants.value.length || constants.some(c => selectedConstants.value.includes(c));
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
+    console.log("Selected actions:", selectedActionType.value)
+    console.log("Facet action:", facet.action)
     return matchState && matchAction && matchConstants && matchTimestep;
   });
 });

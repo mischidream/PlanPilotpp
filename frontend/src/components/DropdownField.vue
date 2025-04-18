@@ -20,14 +20,14 @@
             :checked="selectedValues.includes(option)"
             @change="toggleSelection(option)"
           />
-          {{ formatOption(option) }}
+          {{ option }}
         </label>
         <label v-else>
           <div @click="toggleSelection(option)" class="radio-option">
             <span class="material-icons">
               {{ selectedValues.includes(option) ? 'radio_button_checked' : 'radio_button_unchecked' }}
             </span>
-            {{ formatOption(option) }}
+            {{ option }}
           </div>
         </label>
       </div>
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, type PropType } from 'vue'
+import { ref, computed, type PropType } from 'vue'
 import { nanoid } from 'nanoid'
 
 const props = defineProps({
@@ -63,20 +63,10 @@ const emit = defineEmits(['update:modelValue'])
 
 const inputId = computed(() => `select-${nanoid(6)}`)
 
-const selectedValues = ref([...props.modelValue])
-
-watch(() => props.modelValue, (newVal) => {
-  selectedValues.value = [...newVal]
+const selectedValues = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val),
 })
-
-watch(selectedValues, (newVal) => {
-  emit('update:modelValue', newVal)
-})
-
-const formatOption = (option: string | number) => {
-  const str = option.toString()
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
 
 const isOpen = ref(false)
 
