@@ -41,8 +41,13 @@
     <Divider/>
     <FacetTable
         :headers="columns"
-        :facets="filteredFacets"
+        :facets="paginatedFacets"
         @selectFacet="updateSelectionState"
+    />
+    <Paginator
+        v-model:currentPage="currentPage"
+        :totalItems="filteredFacets.length"
+        :itemsPerPage="itemsPerPage"
     />
 </template>
 
@@ -56,6 +61,7 @@ import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
 import Divider from '@/components/Divider.vue';
 import FacetTable from '@/components/FacetTable.vue';
+import Paginator from '@/components/Paginator.vue'
 import testData from '@/testdata/example.json'
 import { transformToFacets } from '@/utils/transformFacets';
 
@@ -67,10 +73,15 @@ const numberOfSets = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const showReductionColumns = ref(false);
 
+// Search filters
 const selectedFacetState = ref<SelectionState[]>([])
 const selectedActionType = ref<ActionType[]>([])
 const selectedConstants = ref<string[]>([])
 const selectedTimesteps = ref<number[]>([]);
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 2;
 
 const allConstants = computed(() => {
     const constantsSet = new Set<string>();
@@ -102,25 +113,28 @@ const filteredFacets = computed(() => {
     const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
     const matchConstants = !selectedConstants.value.length || constants.some(c => selectedConstants.value.includes(c));
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
-    console.log("Selected actions:", selectedActionType.value)
-    console.log("Facet action:", facet.action)
     return matchState && matchAction && matchConstants && matchTimestep;
   });
 });
+
+// Paginate filtered facets
+const paginatedFacets = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredFacets.value.slice(start, start + itemsPerPage);
+});
+
+// Reset to page 1 on filter change
+watch(
+  [selectedFacetState, selectedActionType, selectedConstants, selectedTimesteps],
+  () => {
+    currentPage.value = 1;
+  }
+);
 
 // Update selectionState when a facet is selected
 function updateSelectionState(facet: Facet, newState: SelectionState) {
   facet.selectionState = newState;
 }
-
-watch([selectedFacetState, selectedActionType, selectedConstants, selectedTimesteps], () => {
-    console.log("Filtering facets with:", {
-        selectedFacetState: selectedFacetState.value,
-        selectedActionType: selectedActionType.value,
-        selectedConstants: selectedConstants.value,
-        selectedTimesteps: selectedTimesteps.value
-    });
-});
 
 // Load test data and transform it to facets
 onMounted(() => {
