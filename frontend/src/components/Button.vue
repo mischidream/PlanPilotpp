@@ -34,6 +34,7 @@ import type { PropType } from 'vue';
     border-radius: var(--border-radius);
     cursor: pointer;
     min-width: 100px;
+    min-height: 40px;
   }
   .button:hover {
     background-color: var(--deep-blue);

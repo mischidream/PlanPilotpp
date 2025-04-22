@@ -11,6 +11,11 @@
         />
         <InputField label="Number of sets:" v-model="numberOfSets" type="number" />
     </div>
+    <div class="buttons">
+        <Button label="Output Solution" type="submit"></Button>
+        <Button label="Number of Answer sets" type="button"></Button>
+        <Button label="Number of Facets" type="button"></Button>
+    </div>
     <Divider/>
     <div class="search-fields">
         <DropdownField
@@ -61,27 +66,28 @@ import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
 import Divider from '@/components/Divider.vue';
 import FacetTable from '@/components/FacetTable.vue';
-import Paginator from '@/components/Paginator.vue'
-import testData from '@/testdata/example.json'
+import Paginator from '@/components/Paginator.vue';
+import Button from '@/components/Button.vue';
+import testData from '@/testdata/example.json';
 import { transformToFacets } from '@/utils/transformFacets';
 
 const instanceFile = ref<File | null>(null);
 const domainFile = ref<File | null>(null);
 const horizon = ref<number>(0);
-const encoding = ref<EncodingType[]>([EncodingType.Exact])
+const encoding = ref<EncodingType[]>([EncodingType.Exact]);
 const numberOfSets = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const showReductionColumns = ref(false);
 
 // Search filters
-const selectedFacetState = ref<SelectionState[]>([])
-const selectedActionType = ref<ActionType[]>([])
-const selectedConstants = ref<string[]>([])
+const selectedFacetState = ref<SelectionState[]>([]);
+const selectedActionType = ref<ActionType[]>([]);
+const selectedConstants = ref<string[]>([]);
 const selectedTimesteps = ref<number[]>([]);
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = 2;
+const itemsPerPage = 4;
 
 const allConstants = computed(() => {
     const constantsSet = new Set<string>();
@@ -144,6 +150,12 @@ onMounted(() => {
 
 <style scoped>
 .input-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;

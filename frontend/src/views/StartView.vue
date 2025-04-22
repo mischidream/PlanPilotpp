@@ -23,6 +23,5 @@ const domainFile = ref<File | null>(null);
 }
 .input-fields .button{
     align-self: flex-end;
-    min-height: 40px;
 }
 </style>
