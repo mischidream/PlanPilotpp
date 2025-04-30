@@ -15,6 +15,7 @@ backend/*.pyd
 backend/.env
 backend/.flaskenv
 backend/temp/
+__pycache__/
 
 # Vue.js (Frontend)
 frontend/node_modules/
