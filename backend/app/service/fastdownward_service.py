@@ -1,8 +1,8 @@
 import os
 import subprocess
 import hashlib
-from persistence.db import db
-from persistence.models import FastDownwardRequest
+from ..persistence.db import db
+from ..persistence.models import FastDownwardRequest
 
 def run_fastdownward_service(domain_file, problem_file):
     # Read file content
@@ -14,7 +14,7 @@ def run_fastdownward_service(domain_file, problem_file):
 
     # Define a base directory for storing this run
     current_directory = os.getcwd()
-    base_dir = os.path.join(current_directory, "backend", "temp", hash_value)
+    base_dir = os.path.join(current_directory, "temp", hash_value)
     os.makedirs(base_dir, exist_ok=True)
 
     # File paths
@@ -43,7 +43,7 @@ def run_fastdownward_service(domain_file, problem_file):
         }
 
     # Paths to necessary files and directories
-    fast_downward_script = os.path.join(current_directory, "backend", "lib", "downward", "fast-downward.py")
+    fast_downward_script = os.path.join(current_directory, "lib", "downward", "fast-downward.py")
 
     # Command to execute fast-downward
     command = [
@@ -66,15 +66,20 @@ def run_fastdownward_service(domain_file, problem_file):
     horizon = calculate_horizon(plan_file_path)
 
     # Save result to DB
-    new_request = FastDownwardRequest(
-        hash_value=hash_value,
-        domain_file_path=domain_file_path,
-        problem_file_path=problem_file_path,
-        sas_file_path=sas_file_path,
-        plan_file_path=plan_file_path
-    )
-    db.session.add(new_request)
-    db.session.commit()
+    try:
+        new_request = FastDownwardRequest(
+            hash_value=hash_value,
+            domain_file_path=domain_file_path,
+            problem_file_path=problem_file_path,
+            sas_file_path=sas_file_path,
+            plan_file_path=plan_file_path
+        )
+        db.session.add(new_request)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()  # Rollback any changes if an error occurs
+        print(f"Error saving to DB: {e}")
+        raise  # Re-raise the exception to see it in the logs
 
     # For simplicity, returning a placeholder horizon (this could be parsed from the output)
     return {

@@ -1,9 +1,12 @@
 from flask import Flask
-from persistence.db import db
-from persistence import models
+from flask_cors import CORS
+from .persistence.db import db
+from .persistence import models
 
 def create_app():
     app = Flask(__name__)
+
+    CORS(app)
 
     # Register Blueprints for API endpoints
     from .rest.fastdownward import fastdownward_bp
@@ -17,5 +20,9 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+
+        # Delete all entries
+        #db.session.query(models.FastDownwardRequest).delete()
+        #db.session.commit()
 
     return app
