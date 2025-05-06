@@ -89,6 +89,7 @@
   border-radius: 0.5rem;
   flex: 1;
   min-width: 200px;
+  min-height: 40px;
 }
 </style>
   

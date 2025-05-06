@@ -4,6 +4,9 @@
         <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
         <Button label="Start" type="submit" @click="submitFiles"></Button>
     </div>
+    <div v-if="response" class="horizon-output">
+      <p><strong>Horizon:</strong> {{ response.horizon }}</p>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -42,5 +45,8 @@ async function submitFiles() {
 }
 .input-fields .button{
     align-self: flex-end;
+}
+.horizon-output {
+  margin-top: 10px;
 }
 </style>

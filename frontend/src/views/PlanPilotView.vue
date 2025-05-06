@@ -9,10 +9,11 @@
             v-model="encoding"
             :isMultiple="false"
         />
-        <InputField label="Number of sets:" v-model="numberOfSets" type="number" />
+        <Button label="List Facets" type="submit"></Button>
     </div>
-    <div class="buttons">
-        <Button label="Output Solution" type="submit"></Button>
+    <div class="button-input">
+        <Button label="List Solutions" type="submit"></Button>
+        <InputField label="Restricted to:" v-model="numberOfSolutions" type="number" />
         <Button label="Number of Answer sets" type="button"></Button>
         <Button label="Number of Facets" type="button"></Button>
     </div>
@@ -75,7 +76,7 @@ const instanceFile = ref<File | null>(null);
 const domainFile = ref<File | null>(null);
 const horizon = ref<number>(0);
 const encoding = ref<EncodingType[]>([EncodingType.Exact]);
-const numberOfSets = ref<number | undefined>(undefined);
+const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const showReductionColumns = ref(false);
 
@@ -155,10 +156,16 @@ onMounted(() => {
     gap: 20px;
     margin-bottom: 20px;
 }
-.buttons {
+.input-fields .button {
+    align-self: flex-end;
+}
+.button-input {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+}
+.button-input .button{
+    align-self: flex-end;
 }
 .search-fields {
     display: flex;
