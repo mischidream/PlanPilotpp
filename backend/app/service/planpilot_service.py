@@ -1,0 +1,107 @@
+import os
+import re
+from ..persistence.models import FastDownwardRequest
+import subprocess
+import threading
+from typing import List, Dict
+
+class PlanpilotService:
+    def __init__(self):
+        self.process = None
+        self.lock = threading.Lock()
+    
+    def run_planpilot_service(self, sas_file: str, horizon: int, encoding: str) -> List[Dict]:
+        # Fetch SAS file from the database (assumed saved in your DB)
+        request_data = FastDownwardRequest.query.filter_by(sas_file_path=sas_file).first()
+        if not request_data:
+            raise ValueError("SAS file not found in the database.")
+        
+        # Retrieve the necessary file path from the database
+        hash_value = request_data.hash_value
+        sas_file_path = request_data.sas_file_path
+
+        # Now, we will create the LP file path, which should be stored in the database later
+        current_directory = os.getcwd()
+        lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
+
+        # Path to the PlanPilot script (no domain/problem file)
+        planpilot_script = os.path.join(current_directory, "lib", "planpilot", "planpilot.py")
+
+        # Prepare the command to execute the PlanPilot script
+        command = [
+            "python3", planpilot_script, 
+            "--instance", sas_file_path,
+            "--horizon", str(horizon),
+            "--encoding", encoding,
+            "--lp-name", lp_file_path,
+            "--is-pddl-instance", "False"
+        ]
+
+        with self.lock:
+            self.process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+        
+        # Send '?' to list facets immediately
+        self.process.stdin.write("?\n")
+        self.process.stdin.flush()
+        output = self.process.stdout.readline()
+        
+        # Parse the output
+        facets = self.parse_facet_output(output)
+
+        return facets
+    
+    def parse_facet_output(self, output: str) -> List[Dict]:
+        pattern = r'occurs\(action\(\(([^)]+)\)\),(\d+)\)'
+        matches = re.findall(pattern, output)
+
+        facets = []
+        for idx, (action_part, timestep_str) in enumerate(matches):
+            parts = [p.strip().strip('"') for p in action_part.split(",")]
+
+            action_type = parts[0]
+            constant1 = parts[1] if len(parts) > 1 else None
+            constant2 = parts[2] if len(parts) > 2 else None
+
+            facet = {
+                "id": idx + 1,
+                "action": action_type,
+                "constant1": constant1,
+                "constant2": constant2,
+                "timestep": int(timestep_str),
+                "reduction": None,
+                "remaining": None,
+                "selectionState": "NotSelected"
+            }
+
+            facets.append(facet)
+
+        return facets
+    
+    def send_command(self, command: str) -> str:
+        if not self.process:
+            raise RuntimeError("FASB process not running")
+
+        with self.lock:
+            self.process.stdin.write(command + '\n')
+            self.process.stdin.flush()
+
+            output_lines = []
+            while True:
+                line = self.process.stdout.readline()
+                if not line or line.strip() == "":
+                    break
+                output_lines.append(line.strip())
+
+            return "\n".join(output_lines)
+
+    def stop_fasb(self):
+        if self.process:
+            self.process.terminate()
+            self.process = None

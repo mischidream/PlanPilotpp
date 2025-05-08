@@ -2,6 +2,8 @@ from flask import Flask
 from flask_cors import CORS
 from .persistence.db import db
 from .persistence import models
+from .rest.fastdownward import fastdownward_bp
+from .rest.planpilot import planpilot_bp
 
 def create_app():
     app = Flask(__name__)
@@ -9,8 +11,8 @@ def create_app():
     CORS(app)
 
     # Register Blueprints for API endpoints
-    from .rest.fastdownward import fastdownward_bp
     app.register_blueprint(fastdownward_bp, url_prefix='/api')
+    app.register_blueprint(planpilot_bp, url_prefix='/api')
 
     # Initialize database
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mydatabase.db'

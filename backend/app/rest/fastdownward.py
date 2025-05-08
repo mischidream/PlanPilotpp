@@ -1,4 +1,3 @@
-import os
 from flask import Blueprint, request, jsonify
 from ..service.fastdownward_service import run_fastdownward_service
 
@@ -8,7 +7,7 @@ fastdownward_bp = Blueprint('fastdownward', __name__)
 def sanity_endpoint():
     return jsonify({"message": "success"}), 200 """
 
-@fastdownward_bp.route('/run', methods=['POST'])
+@fastdownward_bp.route('/run-fastdownward', methods=['POST'])
 def run_fastdownward():
     data = request.files
     domain_file = data.get('domainFile')
