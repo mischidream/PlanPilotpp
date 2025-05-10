@@ -173,7 +173,6 @@ const listSolutions = async () => {
       ? `! ${numberOfSolutions.value}`
       : '!';
     const output = await sendPlanPilotCommand(command);
-    console.log('Command Output:', output);
   } catch (error) {
     console.error('Error sending command:', error);
   }

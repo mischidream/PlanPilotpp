@@ -16,11 +16,9 @@ export const usePlanStore = defineStore('plan', {
     },
     setInstanceFile(instanceFile: File | null){
       this.instanceFile = instanceFile;
-      console.log(this.instanceFile);
     },
     setDomainFile(domainFile: File | null){
       this.domainFile = domainFile;
-      console.log(this.domainFile);
     },
     setFastDownwardResponse(horizon: number, sasFile: string, planFile: string) {
       this.horizon = horizon;

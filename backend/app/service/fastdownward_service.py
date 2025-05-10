@@ -77,11 +77,9 @@ def run_fastdownward_service(domain_file, problem_file):
         db.session.add(new_request)
         db.session.commit()
     except Exception as e:
-        db.session.rollback()  # Rollback any changes if an error occurs
+        db.session.rollback()
         print(f"Error saving to DB: {e}")
-        raise  # Re-raise the exception to see it in the logs
 
-    # For simplicity, returning a placeholder horizon (this could be parsed from the output)
     return {
         "horizon": horizon,
         "sasFile": sas_file_path,

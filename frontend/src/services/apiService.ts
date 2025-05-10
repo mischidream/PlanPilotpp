@@ -39,7 +39,6 @@ export const runPlanPilot = async (
           encoding,
         }
       );
-      console.log(response);
       return response.data.facets;
     } catch (error) {
       handleError(error);

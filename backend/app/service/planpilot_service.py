@@ -29,15 +29,13 @@ class PlanpilotService:
         lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
-        print("run plasp")
         self.generate_lp_with_plasp(
             sas_or_pddl_path=sas_file_path,
             lp_output_path=lp_file_path,
             encoding_type=encoding,
             is_pddl_instance=False
         )
-        
-        print("run fasb")
+
         fasb_binary = os.path.join(current_directory, "lib", "planpilot", "bin", "fasb-x86_64-unknown-linux-gnu", "fasb")
         fasb_command = [
             "stdbuf", "-oL",  # Line-buffer stdout
@@ -47,7 +45,6 @@ class PlanpilotService:
             "0"
         ]
 
-        print("start process")
         with self.lock:
             self.process = subprocess.Popen(
                 fasb_command,
@@ -66,8 +63,6 @@ class PlanpilotService:
         # Send initial command to list facets
         output = self.send_command("?")
 
-        print(output)
-
         # Parse the output
         facets = self.parse_facet_output(output)
 
@@ -79,7 +74,6 @@ class PlanpilotService:
             if not line:
                 break
             cleaned = line.strip()
-            print(f"[fasb] {cleaned}")
             self.output_buffer.append(cleaned)
     
     def parse_facet_output(self, output: str) -> List[Dict]:
@@ -144,7 +138,6 @@ class PlanpilotService:
 
     
     def wait_for_fasb_ready(self, timeout: float = 5.0) -> None:
-        print("wait for fasb to be ready")
         start_time = time.time()
         while time.time() - start_time < timeout:
             with self.lock:
@@ -155,13 +148,11 @@ class PlanpilotService:
         raise TimeoutError("FASB did not become ready in time.")
     
     def send_command(self, command: str) -> str:
-        print("send command to fasb")
         if not self.process:
             raise RuntimeError("FASB process not running")
 
         with self.lock:
             try:
-                print("send command: " + command)
                 self.process.stdin.write(command + '\n')
                 self.process.stdin.flush()
 
