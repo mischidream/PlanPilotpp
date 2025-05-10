@@ -1,22 +1,25 @@
 <template>
     <div class="input-fields">
-        <InputField label="Problem file:" v-model="instanceFile" type="file" accept=".pddl" />
-        <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
-        <InputField label="Horizon:" v-model="horizon" type="number" placeholder="Enter horizon" />
+        <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="false" />
+        <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="false" />
+        <InputField label="Horizon:" v-model="horizon" type="number" placeholder="${minHorizon}" />
         <DropdownField
             label="Encoding:"
             :options="Object.values(EncodingType)"
             v-model="encoding"
             :isMultiple="false"
         />
-        <Button label="List Facets" type="submit"></Button>
+        <Button label="List Facets" type="submit" @click="listFacets"></Button>
     </div>
     <div class="button-input">
-        <Button label="List Solutions" type="submit"></Button>
+        <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
         <InputField label="Restricted to:" v-model="numberOfSolutions" type="number" />
-        <Button label="Number of Answer sets" type="button"></Button>
-        <Button label="Number of Facets" type="button"></Button>
+        <Button label="Number of Answer sets" type="button" @click="countAnswerSets"></Button>
+        <Button label="Number of Facets" type="button" @click="countFacets"></Button>
     </div>
+    <Divider v-if="answerSetCount || facetCount"></Divider>
+        <p v-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
+        <p v-if="facetCount">Facets: {{ facetCount }}</p>
     <Divider/>
     <div class="search-fields">
         <DropdownField
@@ -71,14 +74,24 @@ import Paginator from '@/components/Paginator.vue';
 import Button from '@/components/Button.vue';
 import testData from '@/testdata/example.json';
 import { transformToFacets } from '@/utils/transformFacets';
+import { usePlanStore } from '@/stores/planStore';
+import { runPlanPilot, sendPlanPilotCommand } from '@/services/apiService';
 
-const instanceFile = ref<File | null>(null);
-const domainFile = ref<File | null>(null);
-const horizon = ref<number>(0);
-const encoding = ref<EncodingType[]>([EncodingType.Exact]);
+// Store
+const planStore = usePlanStore();
+const instanceFile = computed(() => planStore.instanceFile);
+const domainFile = computed(() => planStore.domainFile);
+const sasFile = planStore.sasFile;
+const minHorizon = computed(() => planStore.horizon);
+const horizon = ref<number>(planStore.horizon);
+
+// Other values
+const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const showReductionColumns = ref(false);
+const answerSetCount = ref<string | null>(null);
+const facetCount = ref<string | null>(null);
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -143,10 +156,51 @@ function updateSelectionState(facet: Facet, newState: SelectionState) {
   facet.selectionState = newState;
 }
 
+const listFacets = async () => {
+  try {
+    const result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
+    if (result) {
+      facets.value = transformToFacets(result);
+    }
+  } catch (error) {
+    console.error('Error running PlanPilot:', error);
+  }
+};
+
+const listSolutions = async () => {
+  try {
+    const command = numberOfSolutions.value
+      ? `! ${numberOfSolutions.value}`
+      : '!';
+    const output = await sendPlanPilotCommand(command);
+    console.log('Command Output:', output);
+  } catch (error) {
+    console.error('Error sending command:', error);
+  }
+};
+
+const countAnswerSets = async () => {
+  try {
+    const output = await sendPlanPilotCommand('#!');
+    answerSetCount.value = output ?? null;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+const countFacets = async () => {
+  try {
+    const output = await sendPlanPilotCommand('#?');
+    facetCount.value = output ?? null;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
 // Load test data and transform it to facets
-onMounted(() => {
+/* onMounted(() => {
     facets.value = transformToFacets(testData);
-});
+}); */
 </script>
 
 <style scoped>

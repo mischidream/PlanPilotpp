@@ -12,11 +12,23 @@
 <script setup lang="ts">
 import InputField from '@/components/InputField.vue';
 import Button from '@/components/Button.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { getSasPlan } from '@/services/apiService';
+import { usePlanStore } from '@/stores/planStore';
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
-const instanceFile = ref<File | null>(null);
-const domainFile = ref<File | null>(null);
+
+const planStore = usePlanStore();
+
+const instanceFile = computed({
+  get: () => planStore.instanceFile,
+  set: (val: File | null) => planStore.setInstanceFile(val),
+});
+const domainFile = computed({
+  get: () => planStore.domainFile,
+  set: (val: File | null) => planStore.setDomainFile(val),
+});
+
+// Local response state to display
 const response = ref<FastDownwardResponse | null>(null);
 
 async function submitFiles() {
@@ -27,9 +39,11 @@ async function submitFiles() {
 
   try {
     const result = await getSasPlan(instanceFile.value, domainFile.value);
-    response.value = result ?? null;
-    console.log(response.value?.horizon);
-    console.log(response.value?.sasFile);
+    if (!result) {
+      throw new Error('No response received from planner.');
+    }
+    response.value = result;
+    planStore.setFastDownwardResponse(result.horizon, result.sasFile, result.planFile);
   } catch (error) {
     alert((error as Error).message);
   }

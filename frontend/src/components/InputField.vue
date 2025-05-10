@@ -8,17 +8,23 @@
       :type="type"
       :placeholder="placeholder"
       v-model="inputValue"
+      :disabled="disabled"
       class="input"
     />
 
-    <input
-      v-else-if="type === 'file'"
-      :id="inputId"
-      type="file"
-      @change="handleFileChange"
-      :accept="accept"
-      class="input"
-    />
+    <div v-else-if="type == 'file'">
+      <div v-if="filePath" class="file-info">
+        <p><strong>Selected file:</strong> {{ filePath }}</p>
+      </div>
+      <input
+        :id="inputId"
+        type="file"
+        @change="handleFileChange"
+        :accept="accept"
+        :disabled="disabled"
+        class="input"
+      />
+    </div>
   </div>
 </template>
   
@@ -47,6 +53,10 @@
     accept: {
       type: String,
       default: '',
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   })
   
@@ -66,8 +76,6 @@
       emit('update:modelValue', isNaN(parsed as number) ? null : parsed)
     } else if (props.type === 'text' && typeof val === 'string') {
       emit('update:modelValue', val)
-    } else if (props.type === 'file' && val instanceof File) {
-      emit('update:modelValue', val)
     }
   })
   
@@ -76,6 +84,13 @@
     const file = target.files ? target.files[0] : null
     emit('update:modelValue', file)
   }
+
+  const filePath = computed(() => {
+    if (props.type === 'file' && typeof props.modelValue === 'string') {
+      return props.modelValue
+    }
+    return ''
+  })
 </script>
   
 <style scoped>

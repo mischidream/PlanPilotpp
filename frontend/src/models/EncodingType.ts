@@ -1,4 +1,4 @@
 export enum EncodingType {
-    Exact = "Exact",
-    Bounded = "Bounded"
+    exact = "exact",
+    bounded = "bounded"
   }
