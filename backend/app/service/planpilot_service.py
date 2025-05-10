@@ -5,7 +5,6 @@ from ..persistence.models import FastDownwardRequest
 import subprocess
 import threading
 from typing import List, Dict
-from ...lib.planpilot.planpilot import run_plasp
 
 class PlanpilotService:
     def __init__(self):
@@ -24,39 +23,20 @@ class PlanpilotService:
 
         # Now, we will create the LP file path, which should be stored in the database later
         current_directory = os.getcwd()
+        current_directory = os.path.join(current_directory, "backend")
         lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
-        # Path to the PlanPilot script (no domain/problem file)
-        planpilot_directory = os.path.join(current_directory, "lib", "planpilot")
-        planpilot_script = os.path.join(planpilot_directory, "planpilot.py")
-
-        # Prepare the command to execute the PlanPilot script
-        command = [
-            "python3", planpilot_script, 
-            "--instance", sas_file_path,
-            "--horizon", str(horizon),
-            "--encoding", encoding,
-            "--lp-name", lp_file_path
-        ]
-
-        try:
-            result = subprocess.run(
-                command,
-                cwd=planpilot_directory,
-                check=True,
-                capture_output=True,
-                text=True
-            )
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                f"PlanPilot failed with exit code {e.returncode}\n"
-                f"Command: {' '.join(command)}\n"
-                f"Stdout:\n{e.stdout}\n"
-                f"Stderr:\n{e.stderr}"
-            )
+        print("run plasp")
+        self.generate_lp_with_plasp(
+            sas_or_pddl_path=sas_file_path,
+            lp_output_path=lp_file_path,
+            encoding_type=encoding,
+            is_pddl_instance=False
+        )
         
-        fasb_binary = os.path.join(planpilot_directory, "bin", "fasb-x86_64-unknown-linux-gnu", "fasb")
+        print("run fasb")
+        fasb_binary = os.path.join(current_directory, "lib", "planpilot", "bin", "fasb-x86_64-unknown-linux-gnu", "fasb")
         fasb_command = [
             fasb_binary,
             lp_file_path,
@@ -75,10 +55,12 @@ class PlanpilotService:
             )
 
         # Wait for fasb to be ready before sending commands
-        self._wait_for_fasb_ready()
+        self.wait_for_fasb_ready()
 
         # Send initial command to list facets
         output = self.send_command("?")
+
+        print(output)
 
         # Parse the output
         facets = self.parse_facet_output(output)
@@ -112,7 +94,41 @@ class PlanpilotService:
 
         return facets
     
-    def _wait_for_fasb_ready(self, timeout: float = 5.0) -> None:
+    def generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
+        current_dir = os.getcwd()
+        current_dir = os.path.join(current_dir, "backend")
+        plasp_binary = os.path.join(current_dir, "lib", "planpilot", "bin", "plasp")
+
+        encoding_dir = os.path.join(current_dir, "lib", "planpilot", "encodings")
+        encoding_file = os.path.join(encoding_dir, "exact-sequential-horizon.lp" if encoding_type == "exact" else "bounded-sequential-horizon.lp")
+        time_file = os.path.join(encoding_dir, "abstract-time-steps.lp" if abstract_time_steps else "action-per-time-step.lp")
+
+        command = [plasp_binary, "translate"]
+        if is_pddl_instance:
+            if not domain_file:
+                raise ValueError("Domain file is required for PDDL input.")
+            command.extend([domain_file, sas_or_pddl_path])
+        else:
+            command.append(sas_or_pddl_path)
+
+        with open(lp_output_path, "w") as lp_file:
+            with open(encoding_file, "r") as ef:
+                lp_file.write(ef.read())
+            with open(time_file, "r") as tf:
+                lp_file.write(tf.read())
+
+            result = subprocess.run(
+                command,
+                stdout=lp_file,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+        if result.returncode != 0:
+            raise RuntimeError(f"plasp failed:\n{result.stderr}")
+
+    
+    def wait_for_fasb_ready(self, timeout: float = 5.0) -> None:
         """Waits until fasb prints its ready prompt."""
         start_time = time.time()
         buffer = []
@@ -131,17 +147,22 @@ class PlanpilotService:
         if not self.process:
             raise RuntimeError("FASB process not running")
 
+        idle_timeout = 1.0
         with self.lock:
             try:
                 self.process.stdin.write(command + '\n')
                 self.process.stdin.flush()
 
                 output_lines = []
+                last_output_time = time.time()
                 while True:
                     line = self.process.stdout.readline()
-                    if not line or line.strip() == "":
+                    if not line:
                         break
                     output_lines.append(line.strip())
+                    last_output_time = time.time()
+                    if time.time() - last_output_time > idle_timeout:
+                        break
 
                 return "\n".join(output_lines)
 

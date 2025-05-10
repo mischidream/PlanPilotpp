@@ -19,6 +19,7 @@ def run_planpilot():
         facets = planpilot_service.run_planpilot_service(sas_file, horizon, encoding)
         return jsonify({"facets": facets}), 200
     except Exception as e:
+        print(e.__traceback__)
         return jsonify({"error": str(e)}), 500
 
 @planpilot_bp.route('/send-planpilot-command', methods=['POST'])
