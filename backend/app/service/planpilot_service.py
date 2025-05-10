@@ -29,7 +29,7 @@ class PlanpilotService:
         lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
-        self.generate_lp_with_plasp(
+        self._generate_lp_with_plasp(
             sas_or_pddl_path=sas_file_path,
             lp_output_path=lp_file_path,
             encoding_type=encoding,
@@ -58,13 +58,13 @@ class PlanpilotService:
             self.reader_thread.start()
 
         # Wait for fasb to be ready before sending commands
-        self.wait_for_fasb_ready()
+        self._wait_for_fasb_ready()
 
         # Send initial command to list facets
         output = self.send_command("?")
 
         # Parse the output
-        facets = self.parse_facet_output(output)
+        facets = self._parse_facet_output(output)
 
         return facets
     
@@ -76,7 +76,7 @@ class PlanpilotService:
             cleaned = line.strip()
             self.output_buffer.append(cleaned)
     
-    def parse_facet_output(self, output: str) -> List[Dict]:
+    def _parse_facet_output(self, output: str) -> List[Dict]:
         pattern = r'occurs\(action\(\(([^)]+)\)\),(\d+)\)'
         matches = re.findall(pattern, output)
 
@@ -103,7 +103,7 @@ class PlanpilotService:
 
         return facets
     
-    def generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
+    def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()
         #current_dir = os.path.join(current_dir, "backend")
         plasp_binary = os.path.join(current_dir, "lib", "planpilot", "bin", "plasp")
@@ -137,7 +137,7 @@ class PlanpilotService:
             raise RuntimeError(f"plasp failed:\n{result.stderr}")
 
     
-    def wait_for_fasb_ready(self, timeout: float = 5.0) -> None:
+    def _wait_for_fasb_ready(self, timeout: float = 5.0) -> None:
         start_time = time.time()
         while time.time() - start_time < timeout:
             with self.lock:
