@@ -64,7 +64,7 @@ class PlanpilotService:
         output = self.send_command("?")
 
         # Parse the output
-        facets = self._parse_facet_output(output)
+        facets = self._parse_facet_output(output, "?")
 
         return facets
     
@@ -75,33 +75,56 @@ class PlanpilotService:
                 break
             cleaned = line.strip()
             self.output_buffer.append(cleaned)
-    
-    def _parse_facet_output(self, output: str) -> List[Dict]:
-        pattern = r'occurs\(action\(\(([^)]+)\)\),(\d+)\)'
-        matches = re.findall(pattern, output)
 
-        facets = []
-        for idx, (action_part, timestep_str) in enumerate(matches):
-            parts = [p.strip().strip('"') for p in action_part.split(",")]
-
-            action_type = parts[0]
-            constant1 = parts[1] if len(parts) > 1 else None
-            constant2 = parts[2] if len(parts) > 2 else None
-
-            facet = {
+    def _parse_facet_output(self, output: str, command: str) -> List[Dict]:
+        def make_facet(action_str, timestep, idx):
+            parts = [p.strip().strip('"') for p in action_str.split(",")]
+            return {
                 "id": idx + 1,
-                "action": action_type,
-                "constant1": constant1,
-                "constant2": constant2,
-                "timestep": int(timestep_str),
-                "reduction": None,
-                "remaining": None,
+                "action": parts[0],
+                "constant1": parts[1] if len(parts) > 1 else None,
+                "constant2": parts[2] if len(parts) > 2 else None,
+                "timestep": int(timestep),
+                "reduction": {"answer_set": None, "facets": None},
+                "remaining": {"answer_set": None, "facets": None},
                 "selectionState": "NotSelected"
             }
 
-            facets.append(facet)
+        if command == "?":
+            matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', output)
+            return [make_facet(action, timestep, i) for i, (action, timestep) in enumerate(matches)]
 
-        return facets
+        elif command in ("#??", "#!!"):
+            lines = [line for line in output.strip().splitlines() if '~' not in line]
+            facets = {}
+            idx = 0
+
+            for line in lines:
+                parts = line.strip().split(' ', 2)
+                if len(parts) < 3:
+                    continue
+                val1, val2, action_part = parts
+                match = re.search(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', action_part)
+                if not match:
+                    continue
+                action_str, timestep = match.groups()
+                key = (action_str, timestep)
+
+                if key not in facets:
+                    facets[key] = make_facet(action_str, timestep, idx)
+                    idx += 1
+
+                if command == "#??":
+                    facets[key]["reduction"]["facets"] = float(val1)
+                    facets[key]["remaining"]["facets"] = float(val2)
+                elif command == "#!!":
+                    facets[key]["reduction"]["answer_set"] = float(val1)
+                    facets[key]["remaining"]["answer_set"] = float(val2)
+
+            return list(facets.values())
+
+        return []
+
     
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()
@@ -164,8 +187,16 @@ class PlanpilotService:
                     if len(self.output_buffer) > prev_len:
                         break
                     time.sleep(0.1)
-
+            
+                 # Get the new output after the previous length
                 new_output = self.output_buffer[prev_len:]
+
+                # If the command is one of "?", "#??", or "#!!", parse the output
+                if command in ("?", "#??", "#!!"):
+                    parsed_output = self._parse_facet_output(new_output, command)
+                    return parsed_output
+
+                # If it's not one of these commands, just return the raw output
                 return "\n".join(new_output)
 
             except BrokenPipeError:
