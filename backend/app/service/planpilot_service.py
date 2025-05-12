@@ -124,6 +124,49 @@ class PlanpilotService:
             return list(facets.values())
 
         return []
+    
+    def _parse_solution_output(self, output: str) -> List[Dict]:
+        solutions = []
+        current_solution = None
+        current_actions = []
+        action_id = 0
+
+        for line in output.strip().splitlines():
+            # Start of a new solution block
+            sol_match = re.match(r'solution (\d+):', line.strip())
+            if sol_match:
+                if current_solution and current_actions:
+                    solutions.append({f"solution {current_solution}": current_actions})
+                    current_actions = []
+                current_solution = sol_match.group(1)
+                continue
+
+            # Match action expressions
+            action_matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', line)
+            for action_str, timestep in action_matches:
+                parts = [p.strip().strip('"') for p in action_str.split(",")]
+                action_type = parts[0]
+                const1 = parts[1] if len(parts) > 1 else None
+                const2 = parts[2] if len(parts) > 2 else None
+
+                action_dict = {
+                    "id": action_id,
+                    "action": action_type,
+                    "constant1": const1,
+                    "constant2": const2,
+                    "timestep": int(timestep),
+                    "reduction": None,
+                    "remaining": None
+                }
+                current_actions.append(action_dict)
+                action_id += 1
+
+        # Add last solution
+        if current_solution and current_actions:
+            solutions.append({f"solution {current_solution}": current_actions})
+
+        return solutions
+
 
     
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
@@ -195,6 +238,9 @@ class PlanpilotService:
                 if command in ("?", "#??", "#!!"):
                     parsed_output = self._parse_facet_output(new_output, command)
                     return parsed_output
+                
+                if re.match(r"!\s*\d*$", command.strip()):
+                    return self._parse_solution_output("\n".join(new_output))
 
                 # If it's not one of these commands, just return the raw output
                 return "\n".join(new_output)
