@@ -25,7 +25,7 @@ class PlanpilotService:
 
         # Now, we will create the LP file path, which should be stored in the database later
         current_directory = os.getcwd()
-        #current_directory = os.path.join(current_directory, "backend")
+        current_directory = os.path.join(current_directory, "backend")
         lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
@@ -63,10 +63,7 @@ class PlanpilotService:
         # Send initial command to list facets
         output = self.send_command("?")
 
-        # Parse the output
-        facets = self._parse_facet_output(output, "?")
-
-        return facets
+        return output
     
     def _read_stdout(self):
         while self.process and self.process.stdout:
@@ -126,7 +123,7 @@ class PlanpilotService:
         return []
     
     def _parse_solution_output(self, output: str) -> List[Dict]:
-        solutions = []
+        answer_sets = []
         current_solution = None
         current_actions = []
         action_id = 0
@@ -136,7 +133,10 @@ class PlanpilotService:
             sol_match = re.match(r'solution (\d+):', line.strip())
             if sol_match:
                 if current_solution and current_actions:
-                    solutions.append({f"solution {current_solution}": current_actions})
+                    answer_sets.append({
+                        "label": f"solution {current_solution}",
+                        "facets": current_actions
+                    })
                     current_actions = []
                 current_solution = sol_match.group(1)
                 continue
@@ -163,13 +163,16 @@ class PlanpilotService:
 
         # Add last solution
         if current_solution and current_actions:
-            solutions.append({f"solution {current_solution}": current_actions})
+            answer_sets.append({
+                "label": f"solution {current_solution}",
+                "facets": current_actions
+            })
 
-        return solutions
+        return answer_sets
 
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()
-        #current_dir = os.path.join(current_dir, "backend")
+        current_dir = os.path.join(current_dir, "backend")
         plasp_binary = os.path.join(current_dir, "lib", "planpilot", "bin", "plasp")
 
         encoding_dir = os.path.join(current_dir, "lib", "planpilot", "encodings")
@@ -228,17 +231,21 @@ class PlanpilotService:
                     if len(self.output_buffer) > prev_len:
                         break
                     time.sleep(0.1)
-            
-                 # Get the new output after the previous length
+
+                # Get the new output after the previous length
                 new_output = self.output_buffer[prev_len:]
+
+                # Normalize new_output to a string
+                output_str = " ".join(new_output)
 
                 # If the command is one of "?", "#??", or "#!!", parse the output
                 if command in ("?", "#??", "#!!"):
-                    parsed_output = self._parse_facet_output(new_output, command)
+                    parsed_output = self._parse_facet_output(output_str, command)
                     return parsed_output
                 
                 if re.match(r"!\s*\d*$", command.strip()):
-                    return self._parse_solution_output("\n".join(new_output))
+                    print(output_str)
+                    return self._parse_solution_output(output_str)
 
                 # If it's not one of these commands, just return the raw output
                 return "\n".join(new_output)
@@ -246,7 +253,7 @@ class PlanpilotService:
             except BrokenPipeError:
                 raise RuntimeError("FASB process closed the pipe unexpectedly.")
             except Exception as e:
-                raise RuntimeError(f"Unexpected error communicating with FASB: {e}")
+                raise RuntimeError(f"Unexpected error communicating with FASB or parsing output: {e}")
 
     def stop_fasb(self):
         if self.process:

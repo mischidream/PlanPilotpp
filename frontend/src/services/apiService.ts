@@ -2,7 +2,6 @@ import axios, { AxiosError } from 'axios'
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
-import { ActionType } from '@/models/ActionType';
 import type { AnswerSet } from '@/models/AnswerSet';
 
 let hostUrl = 'http://localhost:5000/api'
@@ -62,6 +61,7 @@ export const sendPlanPilotCommand = async (
       }
 
       if(command.startsWith('!')) {
+        console.log(output);
         return parseSolutionOutput(output);
       }
 
@@ -167,25 +167,27 @@ function parseFacetOutput(output: string): Facet[] {
 function parseSolutionOutput(output: string): AnswerSet[] {
   try {
     const data = JSON.parse(output);
+    console.log(data);
 
-    if (data && typeof data === 'object') {
-      // Map each solution to a Facet array
-      return Object.entries(data).map(([solutionLabel, facets]) => {
-        if (Array.isArray(facets)) {
-          return {
-            [solutionLabel]: facets.map((facetData: Facet) => ({
-              ...facetData,
-              reduction: facetData.reduction ?? { answer_set: null, facets: null },
-              remaining: facetData.remaining ?? { answer_set: null, facets: null },
-              selectionState: facetData.selectionState ?? SelectionState.NotSelected,
-            })),
-          };
+    if (Array.isArray(data)) {
+      return data.map((answerSetData: any) => {
+        if (answerSetData && answerSetData.label && Array.isArray(answerSetData.facets)) {
+          const { label, facets } = answerSetData;
+
+          const processedFacets = facets.map((facetData: Facet) => ({
+            ...facetData,
+            reduction: facetData.reduction ?? { answer_set: null, facets: null },
+            remaining: facetData.remaining ?? { answer_set: null, facets: null },
+            selectionState: facetData.selectionState ?? SelectionState.NotSelected,
+          }));
+
+          return { label, facets: processedFacets };
         } else {
-          throw new Error('Invalid facets structure within solution');
+          throw new Error('Invalid answer set structure in the response');
         }
       });
     } else {
-      throw new Error('Invalid solution structure in the response');
+      throw new Error('Expected array structure for solution output');
     }
   } catch (error) {
     console.error('Error parsing solution output:', error);

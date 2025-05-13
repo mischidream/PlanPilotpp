@@ -1,5 +1,6 @@
 import type { Facet } from "./Facet";
 
 export interface AnswerSet {
-  [solutionLabel: string]: Facet[];
+  label: string,
+  facets: Facet[]
 }

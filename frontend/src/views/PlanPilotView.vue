@@ -50,7 +50,9 @@
     <Divider/>
     <FacetTable
         :headers="columns"
-        :facets="paginatedFacets"
+        :facets="viewMode === 'facets' ? paginatedFacets : undefined"
+        :solutions="viewMode === 'solutions' ? answerSets : undefined"
+        :viewMode="viewMode"
         @selectFacet="updateSelectionState"
     />
     <Paginator
@@ -72,10 +74,11 @@ import Divider from '@/components/Divider.vue';
 import FacetTable from '@/components/FacetTable.vue';
 import Paginator from '@/components/Paginator.vue';
 import Button from '@/components/Button.vue';
-import testData from '@/testdata/example.json';
+import testData from '@/testdata/example_facets.json';
 import { transformToFacets } from '@/utils/transformFacets';
 import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand } from '@/services/apiService';
+import type { AnswerSet } from '@/models/AnswerSet';
 
 // Store
 const planStore = usePlanStore();
@@ -89,9 +92,12 @@ const horizon = ref<number>(planStore.horizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
+const answerSets = ref<AnswerSet[]>([]);
 const showReductionColumns = ref(false);
 const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
+const viewMode = ref<'facets' | 'solutions'>('facets');
+let isFirstRun = true;
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -154,13 +160,21 @@ watch(
 // Update selectionState when a facet is selected
 function updateSelectionState(facet: Facet, newState: SelectionState) {
   facet.selectionState = newState;
+  console.log(facet.selectionState);
 }
 
 const listFacets = async () => {
   try {
-    const result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
+    let result;
+    if (isFirstRun) {
+      result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
+      isFirstRun = false;
+    } else {
+      result = await sendPlanPilotCommand('?');
+    }
     if (result) {
-      facets.value = transformToFacets(result);
+      facets.value = result as Facet[];
+      viewMode.value = 'facets';
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
@@ -173,6 +187,12 @@ const listSolutions = async () => {
       ? `! ${numberOfSolutions.value}`
       : '!';
     const output = await sendPlanPilotCommand(command);
+    if (Array.isArray(output)) {
+      answerSets.value = output as AnswerSet[];
+      viewMode.value = 'solutions';
+    } else {
+      console.warn('Unexpected output format for solutions:', output);
+    }
   } catch (error) {
     console.error('Error sending command:', error);
   }
@@ -181,7 +201,7 @@ const listSolutions = async () => {
 const countAnswerSets = async () => {
   try {
     const output = await sendPlanPilotCommand('#!');
-    answerSetCount.value = output ?? null;
+    answerSetCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
   }
@@ -190,7 +210,7 @@ const countAnswerSets = async () => {
 const countFacets = async () => {
   try {
     const output = await sendPlanPilotCommand('#?');
-    facetCount.value = output ?? null;
+    facetCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
   }

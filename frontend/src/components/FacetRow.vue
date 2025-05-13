@@ -2,18 +2,20 @@
     <div class="facet-row">
       <!-- Choose Facet -->
       <div class="facet-cell choose-facet">
-        <button
-          :class="{ active: facet.selectionState === SelectionState.Positive }"
-          @click="toggleState(SelectionState.Positive)"
-        >
-          <span class="material-icons">add</span>
-        </button>
-        <button
-          :class="{ active: facet.selectionState === SelectionState.Negative }"
-          @click="toggleState(SelectionState.Negative)"
-        >
-          <span class="material-icons">remove</span>
-        </button>
+        <template v-if="!readonly">
+          <button
+            :class="{ active: facet.selectionState === SelectionState.Positive }"
+            @click="toggleState(SelectionState.Positive)"
+          >
+            <span class="material-icons">add</span>
+          </button>
+          <button
+            :class="{ active: facet.selectionState === SelectionState.Negative }"
+            @click="toggleState(SelectionState.Negative)"
+          >
+            <span class="material-icons">remove</span>
+          </button>
+        </template>
       </div>
   
       <!-- Action -->
@@ -40,10 +42,12 @@ import { SelectionState } from '@/models/SelectionState';
 
 const props = defineProps<{
     facet: Facet;
-    onSelectFacet: (facet: Facet, newState: SelectionState) => void;
+    readonly?: boolean;
+    onSelectFacet?: (facet: Facet, newState: SelectionState) => void;
 }>();
 
 function toggleState(state: SelectionState) {
+  if (!props.onSelectFacet) return;
   const current = props.facet.selectionState;
   const newState =
     current === state ? SelectionState.NotSelected : state;
