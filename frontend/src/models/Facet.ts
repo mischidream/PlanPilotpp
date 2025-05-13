@@ -7,7 +7,7 @@ export interface Facet {
     constant1: string;
     constant2?: string | null;
     timestep: number;
-    reduction?: number | null;
-    remaining?: number | null;
+    reduction?: { answer_set: null, facets: null } | null;
+    remaining?: { answer_set: null, facets: null } | null;
     selectionState?: SelectionState;
 }

@@ -87,7 +87,7 @@ class PlanpilotService:
                 "timestep": int(timestep),
                 "reduction": {"answer_set": None, "facets": None},
                 "remaining": {"answer_set": None, "facets": None},
-                "selectionState": "NotSelected"
+                "selectionState": "Not selected"
             }
 
         if command == "?":
@@ -167,8 +167,6 @@ class PlanpilotService:
 
         return solutions
 
-
-    
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()
         #current_dir = os.path.join(current_dir, "backend")
