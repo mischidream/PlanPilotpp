@@ -1,0 +1,162 @@
+[
+    {
+    	"id": 0,
+        "action": "unstack",
+        "constant1": "d",
+        "constant2": "b",
+        "timestep": 5,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 1,
+        "action": "unstack",
+        "constant1": "c",
+        "constant2": "d",
+        "timestep": 9,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 2,
+        "action": "stack",
+        "constant1": "c",
+        "constant2": "d",
+        "timestep": 6,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 3,
+        "action": "unstack",
+        "constant1": "c",
+        "constant2": "d",
+        "timestep": 6,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 4,
+        "action": "unstack",
+        "constant1": "d",
+        "constant2": "b",
+        "timestep": 7,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 5,
+        "action": "put-down",
+        "constant1": "a",
+        "constant2": null,
+        "timestep": 2,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 6,
+        "action": "stack",
+        "constant1": "a",
+        "constant2": "b",
+        "timestep": 4,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 7,
+        "action": "unstack",
+        "constant1": "b",
+        "constant2": "d",
+        "timestep": 5,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 8,
+        "action": "unstack",
+        "constant1": "d",
+        "constant2": "c",
+        "timestep": 11,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    },
+    {
+    	"id": 9,
+        "action": "put-down",
+        "constant1": "b",
+        "constant2": null,
+        "timestep": 4,
+        "reduction": {
+            "answer_set": null,
+            "facets": null
+        },
+        "remaining": {
+            "answer_set": null,
+            "facets": null
+        },
+        "selectionState": "Not selected"
+    }
+]
