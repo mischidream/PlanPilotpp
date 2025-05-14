@@ -124,25 +124,20 @@ class PlanpilotService:
     
     def _parse_solution_output(self, output: str) -> List[Dict]:
         answer_sets = []
-        current_solution = None
-        current_actions = []
         action_id = 0
 
-        for line in output.strip().splitlines():
-            # Start of a new solution block
-            sol_match = re.match(r'solution (\d+):', line.strip())
-            if sol_match:
-                if current_solution and current_actions:
-                    answer_sets.append({
-                        "label": f"solution {current_solution}",
-                        "facets": current_actions
-                    })
-                    current_actions = []
-                current_solution = sol_match.group(1)
-                continue
+        # Split by each solution block
+        solutions = re.split(r'solution (\d+):', output.strip())
 
-            # Match action expressions
-            action_matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', line)
+        for i in range(1, len(solutions), 2):
+            solution_number = solutions[i]
+            actions_block = solutions[i + 1]
+
+            current_actions = []
+
+            # Find all occurs(...) within this block
+            action_matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', actions_block)
+
             for action_str, timestep in action_matches:
                 parts = [p.strip().strip('"') for p in action_str.split(",")]
                 action_type = parts[0]
@@ -161,13 +156,11 @@ class PlanpilotService:
                 current_actions.append(action_dict)
                 action_id += 1
 
-        # Add last solution
-        if current_solution and current_actions:
             answer_sets.append({
-                "label": f"solution {current_solution}",
+                "label": f"solution {solution_number}",
                 "facets": current_actions
             })
-
+        
         return answer_sets
 
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
@@ -244,7 +237,6 @@ class PlanpilotService:
                     return parsed_output
                 
                 if re.match(r"!\s*\d*$", command.strip()):
-                    print(output_str)
                     return self._parse_solution_output(output_str)
 
                 # If it's not one of these commands, just return the raw output

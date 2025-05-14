@@ -17,7 +17,7 @@ def run_planpilot():
     try:
         # Run PlanPilot service and get the facets
         facets = planpilot_service.run_planpilot_service(sas_file, horizon, encoding)
-        return jsonify({"facets": facets}), 200
+        return jsonify({"output": facets}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

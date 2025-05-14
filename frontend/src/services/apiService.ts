@@ -51,18 +51,27 @@ export const sendPlanPilotCommand = async (
     command: string
   ): Promise<Facet[] | AnswerSet[] | string | undefined> => {
     try {
-      const response = await axios.post<{ output: string }>(`${hostUrl}/send-planpilot-command`, {
+      const response = await axios.post<{ output: Facet[] | AnswerSet[] | string }>(`${hostUrl}/send-planpilot-command`, {
         command,
       })
       const output = response.data.output;
 
-      if(command === '?' || command === '#??' || command === '#!!') {
-        return parseFacetOutput(output);
+      if (command === '?' || command === '#??' || command === '#!!') {
+        if (Array.isArray(output) && output.length > 0 && 'reduction' in output[0]) {
+          return parseFacetOutput(output as Facet[]);
+        } else {
+          console.error('Unexpected facet output format:', output);
+          return [];
+        }
       }
 
-      if(command.startsWith('!')) {
-        console.log(output);
-        return parseSolutionOutput(output);
+      if (command.startsWith('!')) {
+        if (Array.isArray(output)) {
+          return parseSolutionOutput(output as AnswerSet[]);
+        } else {
+          console.error('Unexpected solution output format:', output);
+          return [];
+        }
       }
 
       return output;
@@ -89,12 +98,6 @@ export const updateSelectionState = async (
     try {
       await sendPlanPilotCommand(command);
       const output = await sendPlanPilotCommand('?');
-      // Handle the output to parse it into Facet[]
-      if (typeof output === 'string') {
-        const facets = parseFacetOutput(output);
-        return facets;
-      }
-      // If the output is already of type Facet[]
       if (Array.isArray(output)) {
         return output as Facet[];
       }
@@ -143,13 +146,10 @@ function buildFacetString(facet: Facet): string {
   return `occurs(action(("${action}",${const1}${const2})),${facet.timestep})`;
 }
 
-function parseFacetOutput(output: string): Facet[] {
+function parseFacetOutput(output: Facet[]): Facet[] {
   try {
-    const data = JSON.parse(output);
-
-    // Check if facets are present and are in an array
-    if (data.facets && Array.isArray(data.facets)) {
-      return data.facets.map((facetData: Facet) => ({
+    if (Array.isArray(output)) {
+      return output.map((facetData: Facet) => ({
         ...facetData,
         reduction: facetData.reduction ?? { answer_set: null, facets: null },
         remaining: facetData.remaining ?? { answer_set: null, facets: null },
@@ -164,13 +164,10 @@ function parseFacetOutput(output: string): Facet[] {
 }
 
 // Function to parse the solution output
-function parseSolutionOutput(output: string): AnswerSet[] {
+function parseSolutionOutput(output: AnswerSet[]): AnswerSet[] {
   try {
-    const data = JSON.parse(output);
-    console.log(data);
-
-    if (Array.isArray(data)) {
-      return data.map((answerSetData: any) => {
+    if (Array.isArray(output)) {
+      return output.map((answerSetData: any) => {
         if (answerSetData && answerSetData.label && Array.isArray(answerSetData.facets)) {
           const { label, facets } = answerSetData;
 

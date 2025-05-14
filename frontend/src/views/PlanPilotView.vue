@@ -100,7 +100,7 @@ const showReductionColumns = ref(false);
 const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
 const viewMode = ref<'facets' | 'solutions'>('facets');
-let isFirstRun = true;
+const isFirstRun = ref(true);
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -169,9 +169,10 @@ function updateSelectionState(facet: Facet, newState: SelectionState) {
 const listFacets = async () => {
   try {
     let result;
-    if (isFirstRun) {
+    if (isFirstRun.value) {
       result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
-      isFirstRun = false;
+      isFirstRun.value = false;
+      console.log(isFirstRun.value);
     } else {
       result = await sendPlanPilotCommand('?');
     }
