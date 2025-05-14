@@ -21,7 +21,8 @@
         <p v-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
         <p v-if="facetCount">Facets: {{ facetCount }}</p>
     <Divider/>
-    <div class="search-fields">
+    <div v-if="!isFirstRun">
+      <div class="search-fields">
         <DropdownField
             label="Facet:"
             :options="Object.values(SelectionState)"
@@ -46,20 +47,21 @@
             v-model="selectedTimesteps"
             :isMultiple="true"
         />
+      </div>
+      <Divider/>
+      <FacetTable
+          :headers="columns"
+          :facets="viewMode === 'facets' ? paginatedFacets : undefined"
+          :solutions="viewMode === 'solutions' ? answerSets : undefined"
+          :viewMode="viewMode"
+          @selectFacet="updateSelectionState"
+      />
+      <Paginator
+          v-model:currentPage="currentPage"
+          :totalItems="filteredFacets.length"
+          :itemsPerPage="itemsPerPage"
+      />
     </div>
-    <Divider/>
-    <FacetTable
-        :headers="columns"
-        :facets="viewMode === 'facets' ? paginatedFacets : undefined"
-        :solutions="viewMode === 'solutions' ? answerSets : undefined"
-        :viewMode="viewMode"
-        @selectFacet="updateSelectionState"
-    />
-    <Paginator
-        v-model:currentPage="currentPage"
-        :totalItems="filteredFacets.length"
-        :itemsPerPage="itemsPerPage"
-    />
 </template>
 
 <script setup lang="ts">
@@ -75,6 +77,7 @@ import FacetTable from '@/components/FacetTable.vue';
 import Paginator from '@/components/Paginator.vue';
 import Button from '@/components/Button.vue';
 import testData from '@/testdata/example_facets.json';
+import testDataAnswerSet from '@/testdata/example_answer_sets.json';
 import { transformToFacets } from '@/utils/transformFacets';
 import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand } from '@/services/apiService';
@@ -217,9 +220,11 @@ const countFacets = async () => {
 };
 
 // Load test data and transform it to facets
-/* onMounted(() => {
-    facets.value = transformToFacets(testData);
-}); */
+onMounted(() => {
+    //facets.value = transformToFacets(testData);
+    //answerSets.value = testDataAnswerSet as AnswerSet[];
+    //viewMode.value = 'solutions';
+});
 </script>
 
 <style scoped>
