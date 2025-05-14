@@ -2,7 +2,7 @@
     <div class="input-fields">
         <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="false" />
         <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="false" />
-        <InputField label="Horizon:" v-model="horizon" type="number" placeholder="${minHorizon}" />
+        <InputField label="Horizon:" v-model="horizon" type="number" placeholder="minHorizon" />
         <DropdownField
             label="Encoding:"
             :options="Object.values(EncodingType)"
@@ -17,48 +17,55 @@
         <Button label="Number of Answer sets" type="button" @click="countAnswerSets"></Button>
         <Button label="Number of Facets" type="button" @click="countFacets"></Button>
     </div>
-    <Divider v-if="answerSetCount || facetCount"></Divider>
-        <p v-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
-        <p v-if="facetCount">Facets: {{ facetCount }}</p>
+    <div v-if="answerSetCount || facetCount">
+      <Divider/>
+      <div class="count">
+        <p>Answer Sets: {{ answerSetCount }}</p>
+        <p>Facets: {{ facetCount }}</p>
+      </div>
+     </div>
     <Divider/>
     <div v-if="!isFirstRun">
-      <div class="search-fields">
-        <DropdownField
-            label="Facet:"
-            :options="Object.values(SelectionState)"
-            v-model="selectedFacetState"
-            :isMultiple="true"
-        />
-        <DropdownField
-            label="Action:"
-            :options="Object.values(ActionType)"
-            v-model="selectedActionType"
-            :isMultiple="true"
-        />
-        <DropdownField
-            label="Constants:"
-            :options="allConstants"
-            v-model="selectedConstants"
-            :isMultiple="true"
-        />
-        <DropdownField
-            label="Timesteps:"
-            :options="allTimesteps"
-            v-model="selectedTimesteps"
-            :isMultiple="true"
-        />
+      <div v-if="viewMode === 'facets'">
+        <div class="search-fields">
+          <DropdownField
+              label="Facet:"
+              :options="Object.values(SelectionState)"
+              v-model="selectedFacetState"
+              :isMultiple="true"
+          />
+          <DropdownField
+              label="Action:"
+              :options="Object.values(ActionType)"
+              v-model="selectedActionType"
+              :isMultiple="true"
+          />
+          <DropdownField
+              label="Constants:"
+              :options="allConstants"
+              v-model="selectedConstants"
+              :isMultiple="true"
+          />
+          <DropdownField
+              label="Timesteps:"
+              :options="allTimesteps"
+              v-model="selectedTimesteps"
+              :isMultiple="true"
+          />
+        </div>
+        <Divider/>
       </div>
-      <Divider/>
       <FacetTable
+          :key="viewMode"
           :headers="columns"
           :facets="viewMode === 'facets' ? paginatedFacets : undefined"
-          :solutions="viewMode === 'solutions' ? answerSets : undefined"
+          :solutions="viewMode === 'solutions' ? paginatedAnswerSets : undefined"
           :viewMode="viewMode"
           @selectFacet="updateSelectionState"
       />
       <Paginator
           v-model:currentPage="currentPage"
-          :totalItems="filteredFacets.length"
+          :totalItems="viewMode === 'facets' ? filteredFacets.length : answerSets.length"
           :itemsPerPage="itemsPerPage"
       />
     </div>
@@ -130,8 +137,15 @@ const allTimesteps = computed(() => {
 });
 
 const columns = computed(() => {
-  const base = ['Choose facet', 'Action', 'Constants', 'Timestep'];
-  return showReductionColumns.value ? [...base, 'Reduction', 'Remaining'] : base;
+  let base: string[];
+  if (viewMode.value === "solutions") {
+    base = ['Solutions', 'Action', 'Constants', 'Timestep'];
+  } else if (showReductionColumns.value) {
+    base = ['Choose facet', 'Action', 'Constants', 'Timestep', 'Reduction', 'Remaining'];
+  } else {
+    return ['Choose facet', 'Action', 'Constants', 'Timestep'];
+  }
+  return base;
 });
 
 // Computed filtered facets based on search
@@ -152,12 +166,18 @@ const paginatedFacets = computed(() => {
   return filteredFacets.value.slice(start, start + itemsPerPage);
 });
 
+const paginatedAnswerSets = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return answerSets.value.slice(start, start + itemsPerPage);
+});
+
 // Reset to page 1 on filter change
 watch(
   [selectedFacetState, selectedActionType, selectedConstants, selectedTimesteps],
   () => {
     currentPage.value = 1;
-  }
+  },
+  { deep: true }
 );
 
 // Update selectionState when a facet is selected
@@ -178,6 +198,7 @@ const listFacets = async () => {
     }
     if (result) {
       facets.value = result as Facet[];
+      currentPage.value = 1;
       viewMode.value = 'facets';
     }
   } catch (error) {
@@ -193,6 +214,7 @@ const listSolutions = async () => {
     const output = await sendPlanPilotCommand(command);
     if (Array.isArray(output)) {
       answerSets.value = output as AnswerSet[];
+      currentPage.value = 1;
       viewMode.value = 'solutions';
     } else {
       console.warn('Unexpected output format for solutions:', output);
@@ -250,5 +272,11 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+}
+
+.count {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 </style>

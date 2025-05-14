@@ -33,7 +33,7 @@ export const runPlanPilot = async (
     encoding: string
   ): Promise<Facet[] | undefined> => {
     try {
-      const response = await axios.post<{ facets: Facet[] }>(
+      const response = await axios.post<{ output: Facet[] }>(
         `${hostUrl}/run-planpilot`,
         {
           sasFile,
@@ -41,7 +41,7 @@ export const runPlanPilot = async (
           encoding,
         }
       );
-      return response.data.facets;
+      return parseFacetOutput(response.data.output as Facet[]);
     } catch (error) {
       handleError(error);
     }

@@ -21,12 +21,14 @@
           :key="solution.label"
           class="solution-block"
         >
-          <button @click="toggleSolution(index)" class="solution-toggle">
+          <div @click="toggleSolution(index)" class="solution-toggle">
             <span class="material-icons">
               {{ isSolutionOpen(index) ? 'expand_less' : 'expand_more' }}
             </span>
-            {{ solution.label }}
-          </button>
+            <span class="solution-label">
+              {{ solution.label.charAt(0).toUpperCase() + solution.label.slice(1) }}
+            </span>
+          </div>
           <div v-if="isSolutionOpen(index)" class="solution-facets">
             <FacetRow
               v-for="facet in solution.facets"
@@ -91,15 +93,14 @@ function isSolutionOpen(index: number): boolean {
 }
 
 .solution-block {
-  margin-top: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ccc;
 }
 
 .solution-toggle {
-  background: none;
-  border: none;
-  font-weight: bold;
   cursor: pointer;
-  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .solution-facets {
