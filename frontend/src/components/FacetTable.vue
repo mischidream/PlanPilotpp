@@ -6,7 +6,7 @@
         </div>
       </div>
       <Divider/>
-      <template v-if="viewMode === 'facets'">
+      <template v-if="viewMode === 'facets' || viewMode === 'query'">
         <FacetRow
           v-for="facet in facets"
           :key="facet.id"
@@ -54,7 +54,7 @@ const props = defineProps<{
   headers: string[];
   facets?: Facet[];
   solutions?: AnswerSet[];
-  viewMode: 'facets' | 'solutions';
+  viewMode: 'facets' | 'solutions' | 'query';
 }>();
 
 const emit = defineEmits<{

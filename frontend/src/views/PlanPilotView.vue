@@ -13,20 +13,22 @@
     </div>
     <div class="button-input">
         <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
-        <InputField label="Restricted to:" v-model="numberOfSolutions" type="number" />
-        <Button label="Number of Answer sets" type="button" @click="countAnswerSets"></Button>
+        <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
+        <Button label="Number of Answer Sets" type="button" @click="countAnswerSets"></Button>
         <Button label="Number of Facets" type="button" @click="countFacets"></Button>
+        <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
+        <Button label="Query Remaining Answer Sets" type="button" @click="queryRemainingAnswerSets"></Button>
     </div>
     <div v-if="answerSetCount || facetCount">
       <Divider/>
       <div class="count">
-        <p>Answer Sets: {{ answerSetCount }}</p>
-        <p>Facets: {{ facetCount }}</p>
+        <p v-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
+        <p v-if="facetCount">Facets: {{ facetCount }}</p>
       </div>
      </div>
     <Divider/>
     <div v-if="!isFirstRun">
-      <div v-if="viewMode === 'facets'">
+      <div v-if="viewMode === 'facets' || viewMode === 'query'">
         <div class="search-fields">
           <DropdownField
               label="Facet:"
@@ -58,14 +60,14 @@
       <FacetTable
           :key="viewMode"
           :headers="columns"
-          :facets="viewMode === 'facets' ? paginatedFacets : undefined"
+          :facets="viewMode === 'facets' || 'query' ? paginatedFacets : undefined"
           :solutions="viewMode === 'solutions' ? paginatedAnswerSets : undefined"
           :viewMode="viewMode"
           @selectFacet="updateSelectionState"
       />
       <Paginator
           v-model:currentPage="currentPage"
-          :totalItems="viewMode === 'facets' ? filteredFacets.length : answerSets.length"
+          :totalItems="viewMode === 'facets' || 'query' ? filteredFacets.length : answerSets.length"
           :itemsPerPage="itemsPerPage"
       />
     </div>
@@ -103,10 +105,9 @@ const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const answerSets = ref<AnswerSet[]>([]);
-const showReductionColumns = ref(false);
 const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
-const viewMode = ref<'facets' | 'solutions'>('facets');
+const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
 
 // Search filters
@@ -140,7 +141,7 @@ const columns = computed(() => {
   let base: string[];
   if (viewMode.value === "solutions") {
     base = ['Solutions', 'Action', 'Constants', 'Timestep'];
-  } else if (showReductionColumns.value) {
+  } else if (viewMode.value === "query") {
     base = ['Choose facet', 'Action', 'Constants', 'Timestep', 'Reduction', 'Remaining'];
   } else {
     return ['Choose facet', 'Action', 'Constants', 'Timestep'];
@@ -241,6 +242,39 @@ const countFacets = async () => {
     console.error('Error:', error);
   }
 };
+
+const queryRemainingFacets = async () => {
+  try {
+    const updatedFacets = await sendPlanPilotCommand('#??');
+
+    if (Array.isArray(updatedFacets)) {
+      facets.value = updatedFacets as Facet[];
+      currentPage.value = 1;
+      viewMode.value = 'query';
+    } else {
+      console.warn('Unexpected output format for remaining facets:', updatedFacets);
+    }
+  } catch (error) {
+    console.error('Error querying remaining facets:', error);
+  }
+};
+
+const queryRemainingAnswerSets = async () => {
+  try {
+    const updatedAnswerSets = await sendPlanPilotCommand('#!!');
+
+    if (Array.isArray(updatedAnswerSets)) {
+      answerSets.value = updatedAnswerSets as AnswerSet[];
+      currentPage.value = 1;
+      viewMode.value = 'query';
+    } else {
+      console.warn('Unexpected output format for remaining answer sets:', updatedAnswerSets);
+    }
+  } catch (error) {
+    console.error('Error querying remaining answer sets:', error);
+  }
+};
+
 
 // Load test data and transform it to facets
 onMounted(() => {
