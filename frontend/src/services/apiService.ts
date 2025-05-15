@@ -87,13 +87,16 @@ export const updateSelectionState = async (
   facet.selectionState = newState;
 
   const facetStr = buildFacetString(facet);
-  const command =
-    newState === SelectionState.Positive
-      ? `+ ${facetStr}`
-      : newState === SelectionState.Negative
-      ? `- ${facetStr}`
-      : null; //TODO: is there a way to make a facet neutral again?
-
+  let command;
+  if (newState === SelectionState.Positive) {
+    command = `+ ${facetStr}`;
+  } else if (newState === SelectionState.Negative) {
+    command = `+ ~${facetStr}`;
+  } else if (newState === SelectionState.NotSelected && facet.selectionState === SelectionState.Negative) {
+    command = `- ~${facetStr}`;
+  } else {
+    command = `- ${facetStr}`;
+  }
   if (command) {
     try {
       await sendPlanPilotCommand(command);
@@ -173,8 +176,8 @@ function parseSolutionOutput(output: AnswerSet[]): AnswerSet[] {
 
           const processedFacets = facets.map((facetData: Facet) => ({
             ...facetData,
-            reduction: facetData.reduction ?? { answer_set: null, facets: null },
-            remaining: facetData.remaining ?? { answer_set: null, facets: null },
+            reduction: facetData.reduction ?? { answer_set: { positive: null, negative: null }, facets: { positive: null, negative: null } },
+            remaining: facetData.remaining ?? { answer_set: { positive: null, negative: null }, facets: { positive: null, negative: null } },
             selectionState: facetData.selectionState ?? SelectionState.NotSelected,
           }));
 

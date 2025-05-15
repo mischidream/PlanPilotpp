@@ -2,7 +2,7 @@
     <div class="input-fields">
         <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="false" />
         <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="false" />
-        <InputField label="Horizon:" v-model="horizon" type="number" placeholder="minHorizon" />
+        <InputField label="Horizon:" v-model="horizon" type="number" :placeholder="minHorizon?.toString()" />
         <DropdownField
             label="Encoding:"
             :options="Object.values(EncodingType)"
@@ -60,14 +60,14 @@
       <FacetTable
           :key="viewMode"
           :headers="columns"
-          :facets="viewMode === 'facets' || 'query' ? paginatedFacets : undefined"
+          :facets="viewMode === 'facets' || viewMode === 'query' ? paginatedFacets : undefined"
           :solutions="viewMode === 'solutions' ? paginatedAnswerSets : undefined"
           :viewMode="viewMode"
-          @selectFacet="updateSelectionState"
+          @selectFacet="updateFacetSelectionState"
       />
       <Paginator
           v-model:currentPage="currentPage"
-          :totalItems="viewMode === 'facets' || 'query' ? filteredFacets.length : answerSets.length"
+          :totalItems="viewMode === 'facets' || viewMode === 'query' ? filteredFacets.length : answerSets.length"
           :itemsPerPage="itemsPerPage"
       />
     </div>
@@ -89,7 +89,7 @@ import testData from '@/testdata/example_facets.json';
 import testDataAnswerSet from '@/testdata/example_answer_sets.json';
 import { transformToFacets } from '@/utils/transformFacets';
 import { usePlanStore } from '@/stores/planStore';
-import { runPlanPilot, sendPlanPilotCommand } from '@/services/apiService';
+import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
 import type { AnswerSet } from '@/models/AnswerSet';
 
 // Store
@@ -109,6 +109,8 @@ const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
 const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
+const lastUsedHorizon = ref<number | null>(null);
+const lastUsedEncoding = ref<EncodingType | null>(null);
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -142,7 +144,7 @@ const columns = computed(() => {
   if (viewMode.value === "solutions") {
     base = ['Solutions', 'Action', 'Constants', 'Timestep'];
   } else if (viewMode.value === "query") {
-    base = ['Choose facet', 'Action', 'Constants', 'Timestep', 'Reduction', 'Remaining'];
+    base = ['Choose facet', 'Action', 'Constants', 'Timestep', 'Significance + | -', 'Remaining + | -'];
   } else {
     return ['Choose facet', 'Action', 'Constants', 'Timestep'];
   }
@@ -182,17 +184,29 @@ watch(
 );
 
 // Update selectionState when a facet is selected
-function updateSelectionState(facet: Facet, newState: SelectionState) {
-  facet.selectionState = newState;
-  console.log(facet.selectionState);
+async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
+  try {
+    const output = await updateSelectionState(facet, newState);
+    facet.selectionState = newState;
+    console.log(facet.selectionState);
+    if (output) {
+      facets.value = output as Facet[];
+    }
+  } catch (error) {
+    console.error('Error updating selection state:', error);
+  }
 }
 
 const listFacets = async () => {
   try {
+    const horizonChanged = lastUsedHorizon.value !== horizon.value;
+    const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
     let result;
-    if (isFirstRun.value) {
+    if (isFirstRun.value || horizonChanged || encodingChanged) {
       result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
       isFirstRun.value = false;
+      lastUsedHorizon.value = horizon.value;
+      lastUsedEncoding.value = encoding.value[0];
       console.log(isFirstRun.value);
     } else {
       result = await sendPlanPilotCommand('?');
