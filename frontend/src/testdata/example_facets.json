@@ -6,12 +6,24 @@
         "constant2": "b",
         "timestep": 5,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -22,12 +34,24 @@
         "constant2": "d",
         "timestep": 9,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -38,12 +62,24 @@
         "constant2": "d",
         "timestep": 6,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -54,12 +90,24 @@
         "constant2": "d",
         "timestep": 6,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -70,12 +118,24 @@
         "constant2": "b",
         "timestep": 7,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -86,12 +146,24 @@
         "constant2": null,
         "timestep": 2,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -102,12 +174,24 @@
         "constant2": "b",
         "timestep": 4,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -118,12 +202,24 @@
         "constant2": "d",
         "timestep": 5,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -134,12 +230,24 @@
         "constant2": "c",
         "timestep": 11,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     },
@@ -150,12 +258,24 @@
         "constant2": null,
         "timestep": 4,
         "reduction": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "remaining": {
-            "answer_set": null,
-            "facets": null
+            "answer_set": {
+                "positive": null,
+                "negative": null
+            },
+            "facets": {
+                "positive": null,
+                "negative": null
+            }
         },
         "selectionState": "Not selected"
     }
