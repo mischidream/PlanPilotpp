@@ -82,8 +82,14 @@ class PlanpilotService:
                 "constant1": parts[1] if len(parts) > 1 else None,
                 "constant2": parts[2] if len(parts) > 2 else None,
                 "timestep": int(timestep),
-                "reduction": {"answer_set": None, "facets": None},
-                "remaining": {"answer_set": None, "facets": None},
+                "reduction": {
+                    "answer_set": {"positive": None, "negative": None},
+                    "facets": {"positive": None, "negative": None}
+                },
+                "remaining": {
+                    "answer_set": {"positive": None, "negative": None},
+                    "facets": {"positive": None, "negative": None}
+                },
                 "selectionState": "Not selected"
             }
 
@@ -92,31 +98,34 @@ class PlanpilotService:
             return [make_facet(action, timestep, i) for i, (action, timestep) in enumerate(matches)]
 
         elif command in ("#??", "#!!"):
-            lines = [line for line in output.strip().splitlines() if '~' not in line]
+            tokens = output.strip().split()
             facets = {}
+            key_to_idx = {}
             idx = 0
 
-            for line in lines:
-                parts = line.strip().split(' ', 2)
-                if len(parts) < 3:
-                    continue
-                val1, val2, action_part = parts
+            # Iterate in chunks of 3 (val1, val2, occurs...)
+            for i in range(0, len(tokens) - 2, 3):
+                val1_str = tokens[i]
+                val2_str = tokens[i + 1]
+                action_part = tokens[i + 2]
                 match = re.search(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', action_part)
                 if not match:
                     continue
+
                 action_str, timestep = match.groups()
                 key = (action_str, timestep)
 
                 if key not in facets:
+                    key_to_idx[key] = idx
                     facets[key] = make_facet(action_str, timestep, idx)
                     idx += 1
 
-                if command == "#??":
-                    facets[key]["reduction"]["facets"] = float(val1)
-                    facets[key]["remaining"]["facets"] = float(val2)
-                elif command == "#!!":
-                    facets[key]["reduction"]["answer_set"] = float(val1)
-                    facets[key]["remaining"]["answer_set"] = float(val2)
+                facet = facets[key]
+                target = "answer_set" if command == "#!!" else "facets"
+                sign = "negative" if '~' in action_part else "positive"
+
+                facet["reduction"][target][sign] = float(val1_str)
+                facet["remaining"][target][sign] = float(val2_str)
 
             return list(facets.values())
 

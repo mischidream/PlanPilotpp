@@ -33,6 +33,14 @@
   
       <!-- Timestep -->
       <div class="facet-cell">{{ facet.timestep }}</div>
+      
+      <!-- Reduction -->
+      <div class="facet-cell" v-if="facet.reduction?.facets && viewMode === 'query'"> {{ facet.reduction.facets.positive }} | {{ facet.reduction.facets.negative }}</div>
+      <div class="facet-cell" v-else-if="facet.reduction?.answer_set && viewMode === 'query'"> {{ facet.reduction.answer_set.positive }} | {{ facet.reduction.answer_set.negative }}</div>
+      
+      <!-- Remaining -->
+      <div class="facet-cell" v-if="facet.remaining?.facets && viewMode === 'query'"> {{ facet.remaining.facets.positive }} | {{ facet.remaining.facets.negative }}</div>
+      <div class="facet-cell" v-else-if="facet.remaining?.answer_set && viewMode === 'query'"> {{ facet.remaining.answer_set.positive }} | {{ facet.remaining.answer_set.negative }}</div>
     </div>
 </template>
 
@@ -43,6 +51,7 @@ import { SelectionState } from '@/models/SelectionState';
 const props = defineProps<{
     facet: Facet;
     readonly?: boolean;
+    viewMode?: 'facets' | 'solutions' | 'query';
     onSelectFacet?: (facet: Facet, newState: SelectionState) => void;
 }>();
 
@@ -68,6 +77,7 @@ function toggleState(state: SelectionState) {
     flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 .choose-facet button {
     margin-right: 5px;

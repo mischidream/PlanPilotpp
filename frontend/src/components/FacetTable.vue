@@ -12,6 +12,7 @@
           :key="facet.id"
           :facet="facet"
           :readonly="false"
+          :viewMode="viewMode"
           :onSelectFacet="handleSelectFacet"
         />
       </template>
@@ -35,6 +36,7 @@
               :key="facet.id"
               :facet="facet"
               :readonly="true"
+              :viewMode="viewMode"
             />
           </div>
         </div>
@@ -90,6 +92,9 @@ function isSolutionOpen(index: number): boolean {
 }
 .facet-header-cell {
     flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .solution-block {
