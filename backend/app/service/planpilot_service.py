@@ -70,8 +70,8 @@ class PlanpilotService:
             line = self.process.stdout.readline()
             if not line:
                 break
-            cleaned = line.strip()
-            self.output_buffer.append(cleaned)
+            #cleaned = line.strip()
+            self.output_buffer.append(line)
 
     def _parse_facet_output(self, output: str, command: str) -> List[Dict]:
         def make_facet(action_str, timestep, idx):

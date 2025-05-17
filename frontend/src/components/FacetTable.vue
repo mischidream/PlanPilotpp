@@ -93,7 +93,6 @@ function isSolutionOpen(index: number): boolean {
 .facet-header-cell {
     flex: 1;
     display: flex;
-    justify-content: center;
     align-items: center;
 }
 

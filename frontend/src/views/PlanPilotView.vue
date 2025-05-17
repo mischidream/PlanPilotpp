@@ -275,14 +275,14 @@ const queryRemainingFacets = async () => {
 
 const queryRemainingAnswerSets = async () => {
   try {
-    const updatedAnswerSets = await sendPlanPilotCommand('#!!');
+    const updatedFacets = await sendPlanPilotCommand('#!!');
 
-    if (Array.isArray(updatedAnswerSets)) {
-      answerSets.value = updatedAnswerSets as AnswerSet[];
+    if (Array.isArray(updatedFacets)) {
+      facets.value = updatedFacets as Facet[];
       currentPage.value = 1;
       viewMode.value = 'query';
     } else {
-      console.warn('Unexpected output format for remaining answer sets:', updatedAnswerSets);
+      console.warn('Unexpected output format for remaining answer sets:', updatedFacets);
     }
   } catch (error) {
     console.error('Error querying remaining answer sets:', error);
