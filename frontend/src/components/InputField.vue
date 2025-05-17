@@ -12,18 +12,22 @@
       class="input"
     />
 
-    <div v-else-if="type == 'file'">
-      <div v-if="filePath" class="file-info">
-        <p><strong>Selected file:</strong> {{ filePath }}</p>
-      </div>
+    <div v-else-if="type == 'file'" class="file-input-container">
       <input
+        ref="fileInput"
         :id="inputId"
         type="file"
         @change="handleFileChange"
         :accept="accept"
         :disabled="disabled"
-        class="input"
+        class="hidden-input"
       />
+      <label :for="inputId" class="file-button">
+        Choose File:
+      </label>
+      <div class="file-name">
+        {{ fileName }}
+      </div>
     </div>
   </div>
 </template>
@@ -65,11 +69,12 @@
   const inputId = computed(() => `input-${nanoid(6)}`)
   
   const inputValue = ref(props.modelValue)
+
+  const fileInput = ref<HTMLInputElement | null>(null)
+  const selectedFileName = ref('')
   
-  watch(() => props.modelValue, (newVal) => {
-    inputValue.value = newVal
-  })
-  
+  watch(() => props.modelValue, val => (inputValue.value = val))
+
   watch(inputValue, (val) => {
     if (props.type === 'number') {
       const parsed = typeof val === 'string' ? parseFloat(val) : val
@@ -78,25 +83,24 @@
       emit('update:modelValue', val)
     }
   })
-  
+
+  const fileName = computed(() => {
+    const val = props.modelValue
+    return val && typeof val === 'object' && 'name' in val ? val.name : 'No file selected.'
+  })
+
   function handleFileChange(e: Event) {
     const target = e.target as HTMLInputElement
     const file = target.files ? target.files[0] : null
     emit('update:modelValue', file)
   }
-
-  const filePath = computed(() => {
-    if (props.type === 'file' && typeof props.modelValue === 'string') {
-      return props.modelValue
-    }
-    return ''
-  })
 </script>
   
 <style scoped>
 .input-wrapper {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 .input {
   padding: 0.5rem;
@@ -105,6 +109,45 @@
   flex: 1;
   min-width: 200px;
   min-height: 40px;
+}
+
+.file-input-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.file-button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  font-size: 0.9rem;
+  user-select: none;
+  transition: background-color 0.2s, transform 0.1s ease;
+}
+
+.file-button:hover {
+  background-color: #e0e0e0;
+}
+
+.file-button:active {
+  background-color: #d6d6d6;
+  transform: scale(0.98);
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #555;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
   
