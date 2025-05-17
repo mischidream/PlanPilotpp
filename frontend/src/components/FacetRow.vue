@@ -35,18 +35,17 @@
       <div class="facet-cell">{{ facet.timestep }}</div>
       
       <!-- Reduction -->
-      <div class="facet-cell" v-if="facet.reduction?.facets?.positive && viewMode === 'query'"> {{ facet.reduction.facets.positive }} | {{ facet.reduction.facets.negative }}</div>
-      <div class="facet-cell" v-else-if="facet.reduction?.answer_set?.positive && viewMode === 'query'"> {{ facet.reduction.answer_set.positive }} | {{ facet.reduction.answer_set.negative }}</div>
-      
+      <div class="facet-cell" v-if="showReduction">{{ showReduction }}</div>
+
       <!-- Remaining -->
-      <div class="facet-cell" v-if="facet.remaining?.facets?.positive && viewMode === 'query'"> {{ facet.remaining.facets.positive }} | {{ facet.remaining.facets.negative }}</div>
-      <div class="facet-cell" v-else-if="facet.remaining?.answer_set?.positive && viewMode === 'query'"> {{ facet.remaining.answer_set.positive }} | {{ facet.remaining.answer_set.negative }}</div>
+      <div class="facet-cell" v-if="showRemaining">{{ showRemaining }}</div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
+import { computed } from 'vue';
 
 const props = defineProps<{
     facet: Facet;
@@ -62,6 +61,33 @@ function toggleState(state: SelectionState) {
     current === state ? SelectionState.NotSelected : state;
   props.onSelectFacet(props.facet, newState);
 }
+
+const showReduction = computed(() => {
+  if (props.viewMode !== 'query') return null;
+
+  const red = props.facet.reduction;
+  if (red?.facets?.positive != null && red?.facets?.negative != null) {
+    return `${red.facets.positive} | ${red.facets.negative}`;
+  }
+  if (red?.answer_set?.positive != null && red?.answer_set?.negative != null) {
+    return `${red.answer_set.positive} | ${red.answer_set.negative}`;
+  }
+  return null;
+});
+
+const showRemaining = computed(() => {
+  if (props.viewMode !== 'query') return null;
+
+  const rem = props.facet.remaining;
+  if (rem?.facets?.positive != null && rem?.facets?.negative != null) {
+    return `${rem.facets.positive} | ${rem.facets.negative}`;
+  }
+  if (rem?.answer_set?.positive != null && rem?.answer_set?.negative != null) {
+    return `${rem.answer_set.positive} | ${rem.answer_set.negative}`;
+  }
+  return null;
+});
+
 </script>
 
 <style scoped>
