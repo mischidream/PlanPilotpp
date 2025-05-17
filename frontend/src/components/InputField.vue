@@ -22,8 +22,8 @@
         :disabled="disabled"
         class="hidden-input"
       />
-      <label :for="inputId" class="file-button">
-        Choose File:
+      <label :for="inputId" class="file-button" :class="{ disabled: disabled }">
+        Choose File
       </label>
       <div class="file-name">
         {{ fileName }}
@@ -138,6 +138,13 @@
 .file-button:active {
   background-color: #d6d6d6;
   transform: scale(0.98);
+}
+
+.file-button.disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .file-name {
