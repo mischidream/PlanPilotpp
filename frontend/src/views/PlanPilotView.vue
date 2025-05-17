@@ -1,7 +1,7 @@
 <template>
     <div class="input-fields">
-        <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="false" />
-        <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="false" />
+        <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
+        <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
         <InputField label="Horizon:" v-model="horizon" type="number" :placeholder="minHorizon?.toString()" />
         <DropdownField
             label="Encoding:"
@@ -104,6 +104,7 @@ const horizon = ref<number>(planStore.horizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
+const selectedFacets = ref<Facet[]>([]);
 const answerSets = ref<AnswerSet[]>([]);
 const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
@@ -166,7 +167,7 @@ const columns = computed(() => {
 
 // Computed filtered facets based on search
 const filteredFacets = computed(() => {
-  return facets.value.filter(facet => {
+  const leftovers = facets.value.filter(facet => {
     const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState ?? SelectionState.NotSelected);
     const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
     const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
@@ -174,6 +175,7 @@ const filteredFacets = computed(() => {
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
     return matchState && matchAction && matchConstants && matchTimestep;
   });
+  return [...selectedFacets.value, ...leftovers];
 });
 
 // Paginate filtered facets
@@ -199,10 +201,24 @@ watch(
 // Update selectionState when a facet is selected
 async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
   try {
+    answerSetCount.value = null;
+    facetCount.value = null;
+
     const output = await updateSelectionState(facet, newState);
-    facet.selectionState = newState;
-    console.log(facet.selectionState);
-    if (output) {
+    
+    if (newState !== SelectionState.NotSelected) {
+      const alreadySelected = selectedFacets.value.find(f => f.id === facet.id);
+      if (!alreadySelected) {
+        facet.selectionState = newState;
+        selectedFacets.value.push({...facet});
+      } else {
+        alreadySelected.selectionState = newState;
+      }
+    } else {
+      selectedFacets.value = selectedFacets.value.filter(f => f.id !== facet.id);
+    }
+
+    if (Array.isArray(output)) {
       facets.value = output as Facet[];
     }
   } catch (error) {
@@ -212,6 +228,8 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
 
 const listFacets = async () => {
   try {
+    answerSetCount.value = null;
+    facetCount.value = null;
     const horizonChanged = lastUsedHorizon.value !== horizon.value;
     const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
     let result;
@@ -236,6 +254,8 @@ const listFacets = async () => {
 
 const listSolutions = async () => {
   try {
+    answerSetCount.value = null;
+    facetCount.value = null;
     const command = numberOfSolutions.value
       ? `! ${numberOfSolutions.value}`
       : '!';
