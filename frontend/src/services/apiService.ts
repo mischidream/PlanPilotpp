@@ -56,6 +56,8 @@ export const sendPlanPilotCommand = async (
       })
       const output = response.data.output;
 
+      console.log("send plan pilot command output: ", command, output);
+
       if (command === '?' || command === '#??' || command === '#!!') {
         if (Array.isArray(output) && output.length > 0 && 'reduction' in output[0]) {
           return parseFacetOutput(output as Facet[]);

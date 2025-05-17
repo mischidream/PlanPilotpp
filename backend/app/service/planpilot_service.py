@@ -14,6 +14,7 @@ class PlanpilotService:
         self.reader_thread = None
     
     def run_planpilot_service(self, sas_file: str, horizon: int, encoding: str) -> List[Dict]:
+        print("Run planpilot")
         # Fetch SAS file from the database (assumed saved in your DB)
         request_data = FastDownwardRequest.query.filter_by(sas_file_path=sas_file).first()
         if not request_data:
@@ -226,19 +227,27 @@ class PlanpilotService:
                 self.process.stdin.flush()
 
                 prev_len = len(self.output_buffer)
-                timeout = 2.0
-                start_time = time.time()
+                timeout = 60.0
+                last_change_time = time.time()
+                current_len = prev_len
 
-                while time.time() - start_time < timeout:
-                    if len(self.output_buffer) > prev_len:
+                while time.time() - last_change_time < timeout:
+                    new_len = len(self.output_buffer)
+                    if new_len > current_len:
+                        current_len = new_len
+                        last_change_time = time.time() # reset timer on new data
                         break
                     time.sleep(0.1)
 
                 # Get the new output after the previous length
                 new_output = self.output_buffer[prev_len:]
 
+                print(new_output)
+
                 # Normalize new_output to a string
-                output_str = " ".join(new_output)
+                output_str = "".join(new_output)
+
+                #print(output_str)
 
                 # If the command is one of "?", "#??", or "#!!", parse the output
                 if command in ("?", "#??", "#!!"):
