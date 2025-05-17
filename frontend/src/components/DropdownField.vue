@@ -116,7 +116,6 @@ const selectedItemsPreview = computed(() => {
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 
 .input {

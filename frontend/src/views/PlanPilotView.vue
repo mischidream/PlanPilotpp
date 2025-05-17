@@ -96,7 +96,7 @@ import type { AnswerSet } from '@/models/AnswerSet';
 const planStore = usePlanStore();
 const instanceFile = computed(() => planStore.instanceFile);
 const domainFile = computed(() => planStore.domainFile);
-const sasFile = planStore.sasFile;
+const sasFile = computed(() => planStore.sasFile);
 const minHorizon = computed(() => planStore.horizon);
 const horizon = ref<number>(planStore.horizon);
 
@@ -121,6 +121,19 @@ const selectedTimesteps = ref<number[]>([]);
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = 4;
+
+// === Sync with store ===
+watch(horizon, (val) => planStore.setHorizon(val));
+watch(minHorizon, (val) => planStore.setMinHorizon);
+watch(encoding, ([val]) => val && planStore.setEncoding(val));
+watch(facets, (val) => planStore.setFacets(val));
+watch(answerSets, (val) => planStore.setAnswerSets(val));
+watch(viewMode, (val) => planStore.setViewMode(val));
+
+watch(selectedFacetState, (val) => planStore.setSelectedFacetState(val), { deep: true });
+watch(selectedActionType, (val) => planStore.setSelectedActionType(val), { deep: true });
+watch(selectedConstants, (val) => planStore.setSelectedConstants(val), { deep: true });
+watch(selectedTimesteps, (val) => planStore.setSelectedTimesteps(val), { deep: true });
 
 const allConstants = computed(() => {
     const constantsSet = new Set<string>();
@@ -203,7 +216,7 @@ const listFacets = async () => {
     const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged) {
-      result = await runPlanPilot(sasFile, horizon.value, encoding.value[0]);
+      result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0]);
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];
