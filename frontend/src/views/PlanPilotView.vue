@@ -175,6 +175,7 @@ const filteredFacets = computed(() => {
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
     return matchState && matchAction && matchConstants && matchTimestep;
   });
+  console.log("filteredFacets", [...selectedFacets.value, ...leftovers])
   return [...selectedFacets.value, ...leftovers];
 });
 

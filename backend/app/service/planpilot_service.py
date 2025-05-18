@@ -227,7 +227,7 @@ class PlanpilotService:
                 self.process.stdin.flush()
 
                 prev_len = len(self.output_buffer)
-                timeout = 60.0
+                timeout = 2.0
                 last_change_time = time.time()
                 current_len = prev_len
 
@@ -236,7 +236,6 @@ class PlanpilotService:
                     if new_len > current_len:
                         current_len = new_len
                         last_change_time = time.time() # reset timer on new data
-                        break
                     time.sleep(0.1)
 
                 # Get the new output after the previous length
