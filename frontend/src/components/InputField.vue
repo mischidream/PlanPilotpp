@@ -42,7 +42,7 @@
       required: true,
     },
     modelValue: {
-      type: [String, Number, File, null],
+      type: [String, Number, File, Object, null],
       default: '',
     },
     type: {
