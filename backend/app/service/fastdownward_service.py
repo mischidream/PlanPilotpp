@@ -14,8 +14,8 @@ def run_fastdownward_service(domain_file, problem_file):
 
     # Define a base directory for storing this run
     current_directory = os.getcwd()
-    base_dir = os.path.join(current_directory, "backend", "temp", hash_value)
-    #base_dir = os.path.join(current_directory, "temp", hash_value)
+    #base_dir = os.path.join(current_directory, "backend", "temp", hash_value)
+    base_dir = os.path.join(current_directory, "temp", hash_value)
     os.makedirs(base_dir, exist_ok=True)
 
     # File paths

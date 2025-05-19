@@ -26,7 +26,7 @@ class PlanpilotService:
 
         # Now, we will create the LP file path, which should be stored in the database later
         current_directory = os.getcwd()
-        current_directory = os.path.join(current_directory, "backend")
+        #current_directory = os.path.join(current_directory, "backend")
         lp_file_path = os.path.join(current_directory, "temp", hash_value, "output.lp")
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
@@ -175,7 +175,7 @@ class PlanpilotService:
 
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()
-        current_dir = os.path.join(current_dir, "backend")
+        #current_dir = os.path.join(current_dir, "backend")
         plasp_binary = os.path.join(current_dir, "lib", "planpilot", "bin", "plasp")
 
         encoding_dir = os.path.join(current_dir, "lib", "planpilot", "encodings")
