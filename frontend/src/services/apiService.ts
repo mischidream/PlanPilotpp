@@ -101,8 +101,7 @@ export const updateSelectionState = async (
   }
   if (command) {
     try {
-      await sendPlanPilotCommand(command);
-      const output = await sendPlanPilotCommand('?');
+      const output = await sendPlanPilotCommand(command);
       if (Array.isArray(output)) {
         return output as Facet[];
       }
@@ -145,10 +144,8 @@ function handleError(error: unknown): never {
 }
 
 function buildFacetString(facet: Facet): string {
-  const action = facet.action;
-  const const1 = `constant("${facet.constant1}")`;
-  const const2 = facet.constant2 ? `,constant("${facet.constant2}")` : '';
-  return `occurs(action(("${action}",${const1}${const2})),${facet.timestep})`;
+  const const2 = facet.constant2 ? `,"${facet.constant2}"` : '';
+  return `occurs(action(("${facet.action}","${facet.constant1}"${const2})),${facet.timestep})`;
 }
 
 function parseFacetOutput(output: Facet[]): Facet[] {

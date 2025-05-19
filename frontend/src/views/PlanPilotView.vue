@@ -221,6 +221,8 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
 
     if (Array.isArray(output)) {
       facets.value = output as Facet[];
+      currentPage.value = 1;
+      viewMode.value = 'facets';
     }
   } catch (error) {
     console.error('Error updating selection state:', error);

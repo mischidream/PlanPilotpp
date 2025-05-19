@@ -9,7 +9,7 @@ from typing import List, Dict
 class PlanpilotService:
     def __init__(self):
         self.process = None
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.output_buffer = []
         self.reader_thread = None
     
@@ -241,7 +241,8 @@ class PlanpilotService:
                 # Get the new output after the previous length
                 new_output = self.output_buffer[prev_len:]
 
-                print(new_output)
+                #print("command: ", command)
+                #print("output: ", new_output)
 
                 # Normalize new_output to a string
                 output_str = "".join(new_output)
@@ -255,7 +256,11 @@ class PlanpilotService:
                 
                 if re.match(r"!\s*\d*$", command.strip()):
                     return self._parse_solution_output(output_str)
-
+                
+                if command.strip().startswith(('+', '-')):
+                    print("+ command")
+                    return self.send_command('?')
+                
                 # If it's not one of these commands, just return the raw output
                 return "\n".join(new_output)
 
