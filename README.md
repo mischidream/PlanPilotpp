@@ -32,21 +32,29 @@ This project aims to provide an interactive web-based interface for visualizing 
 ## Setup Guide
 
 ### Clone the repository
+```bash
 git clone git@github.com:mischidream/PlanPilotpp.git
 cd PlanPilotpp
 git submodule update --init --recursive
+```
 
 ### Backend Setup
+```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python3 ./lib/downward/build.py
+```
 
 ### Frontend Setup
+```bash
 cd frontend
 npm install
+```
 
 ### Running the Application
-flask run (in backend)
-npm run dev (in frontend)
+```bash
+flask run # (in backend)
+npm run dev # (in frontend)
+```
