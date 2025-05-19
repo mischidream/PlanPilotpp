@@ -28,3 +28,25 @@ This project aims to provide an interactive web-based interface for visualizing 
 - The backend will run a Flask server that interacts with the PlanPilot repository.
 - It will handle API requests from the frontend to execute planning operations.
 - Data will be processed and returned in a format suitable for visualization.
+
+## Setup Guide
+
+### Clone the repository
+git clone git@github.com:mischidream/PlanPilotpp.git
+cd PlanPilotpp
+git submodule update --init --recursive
+
+### Backend Setup
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 ./lib/downward/build.py
+
+### Frontend Setup
+cd frontend
+npm install
+
+### Running the Application
+flask run (in backend)
+npm run dev (in frontend)
