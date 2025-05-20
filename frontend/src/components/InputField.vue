@@ -35,6 +35,7 @@
 <script setup lang="ts">
   import { ref, watch, computed } from 'vue'
   import { nanoid } from 'nanoid'
+  import { debounce } from 'lodash-es'
   
   const props = defineProps({
     label: {
@@ -65,6 +66,10 @@
   })
   
   const emit = defineEmits(['update:modelValue'])
+
+  const debouncedEmit = debounce((val: any) => {
+    emit('update:modelValue', val)
+  }, 300)
   
   const inputId = computed(() => `input-${nanoid(6)}`)
   
@@ -78,9 +83,9 @@
   watch(inputValue, (val) => {
     if (props.type === 'number') {
       const parsed = typeof val === 'string' ? parseFloat(val) : val
-      emit('update:modelValue', isNaN(parsed as number) ? null : parsed)
+      debouncedEmit(isNaN(parsed as number) ? null : parsed)
     } else if (props.type === 'text' && typeof val === 'string') {
-      emit('update:modelValue', val)
+      debouncedEmit(val)
     }
   })
 
