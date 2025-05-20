@@ -167,16 +167,25 @@ const columns = computed(() => {
 
 // Computed filtered facets based on search
 const filteredFacets = computed(() => {
-  const leftovers = facets.value.filter(facet => {
-    const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState ?? SelectionState.NotSelected);
+  const matchesFilters = (facet: Facet) => {
+    const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState as SelectionState);
     const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
     const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
     const matchConstants = !selectedConstants.value.length || constants.some(c => selectedConstants.value.includes(c));
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
     return matchState && matchAction && matchConstants && matchTimestep;
-  });
-  console.log("filteredFacets", [...selectedFacets.value, ...leftovers])
-  return [...selectedFacets.value, ...leftovers];
+  };
+
+  const filteredSelected = selectedFacets.value.filter(matchesFilters);
+  const selectedIds = new Set(filteredSelected.map(f => f.id));
+
+  const filteredOthers = facets.value
+    .filter(f => !selectedIds.has(f.id))
+    .filter(matchesFilters);
+
+  const result = [...filteredSelected, ...filteredOthers];
+  console.log("filteredFacets", result);
+  return result;
 });
 
 // Paginate filtered facets
@@ -237,11 +246,11 @@ const listFacets = async () => {
     const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged) {
+      selectedFacets.value = [];
       result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0]);
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];
-      console.log(isFirstRun.value);
     } else {
       result = await sendPlanPilotCommand('?');
     }

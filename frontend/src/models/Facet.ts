@@ -2,7 +2,7 @@ import type { ActionType } from "./ActionType";
 import type { SelectionState } from "./SelectionState";
 
 export interface Facet {
-    id: number;
+    id: string;
     action: ActionType;
     constant1: string;
     constant2?: string | null;

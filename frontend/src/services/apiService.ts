@@ -61,6 +61,8 @@ export const sendPlanPilotCommand = async (
       if (command === '?' || command === '#??' || command === '#!!') {
         if (Array.isArray(output) && output.length > 0 && 'reduction' in output[0]) {
           return parseFacetOutput(output as Facet[]);
+        } else if (output.length === 0) {
+          return [];
         } else {
           console.error('Unexpected facet output format:', output);
           return [];
@@ -88,7 +90,8 @@ export const updateSelectionState = async (
 ): Promise<Facet[] | undefined> => {
   facet.selectionState = newState;
 
-  const facetStr = buildFacetString(facet);
+  //const facetStr = buildFacetString(facet);
+  const facetStr = facet.id;
   let command;
   if (newState === SelectionState.Positive) {
     command = `+ ${facetStr}`;

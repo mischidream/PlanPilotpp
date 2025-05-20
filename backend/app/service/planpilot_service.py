@@ -75,10 +75,10 @@ class PlanpilotService:
             self.output_buffer.append(line)
 
     def _parse_facet_output(self, output: str, command: str) -> List[Dict]:
-        def make_facet(action_str, timestep, idx):
+        def make_facet(action_str, timestep, raw_id):
             parts = [p.strip().strip('"') for p in action_str.split(",")]
             return {
-                "id": idx + 1,
+                "id": raw_id,
                 "action": parts[0],
                 "constant1": parts[1] if len(parts) > 1 else None,
                 "constant2": parts[2] if len(parts) > 2 else None,
@@ -96,13 +96,15 @@ class PlanpilotService:
 
         if command == "?":
             matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', output)
-            return [make_facet(action, timestep, i) for i, (action, timestep) in enumerate(matches)]
+            return [
+                make_facet(action, timestep, f"occurs(action(({action})),{timestep})")
+                for action, timestep in matches
+            ]
 
         elif command in ("#??", "#!!"):
             tokens = output.strip().split()
             facets = {}
-            key_to_idx = {}
-            idx = 0
+            key_to_id = {}
 
             # Iterate in chunks of 3 (val1, val2, occurs...)
             for i in range(0, len(tokens) - 2, 3):
@@ -114,12 +116,12 @@ class PlanpilotService:
                     continue
 
                 action_str, timestep = match.groups()
+                raw_id = match.group(0)
                 key = (action_str, timestep)
 
                 if key not in facets:
-                    key_to_idx[key] = idx
-                    facets[key] = make_facet(action_str, timestep, idx)
-                    idx += 1
+                    key_to_id[key] = raw_id
+                    facets[key] = make_facet(action_str, timestep, raw_id)
 
                 facet = facets[key]
                 target = "answer_set" if command == "#!!" else "facets"
@@ -154,8 +156,10 @@ class PlanpilotService:
                 const1 = parts[1] if len(parts) > 1 else None
                 const2 = parts[2] if len(parts) > 2 else None
 
+                raw_id = f"occurs(action(({action_str})),{timestep})"
+
                 action_dict = {
-                    "id": action_id,
+                    "id": raw_id,
                     "action": action_type,
                     "constant1": const1,
                     "constant2": const2,
@@ -241,7 +245,7 @@ class PlanpilotService:
                 # Get the new output after the previous length
                 new_output = self.output_buffer[prev_len:]
 
-                #print("command: ", command)
+                print("command: \"" + command + "\"")
                 #print("output: ", new_output)
 
                 # Normalize new_output to a string
