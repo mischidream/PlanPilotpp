@@ -6,7 +6,13 @@
         </div>
       </div>
       <Divider/>
-      <template v-if="viewMode === 'facets' || viewMode === 'query'">
+      <template v-if="loading">
+        <SkeletonFacetRow
+          v-for="n in itemsPerPage || 4"
+          :key="'skeleton-' + n"
+        />
+      </template>
+      <template v-else-if="viewMode === 'facets' || viewMode === 'query'">
         <FacetRow
           v-for="facet in facets"
           :key="facet.id"
@@ -46,6 +52,7 @@
 
 <script lang="ts" setup>
 import FacetRow from './FacetRow.vue';
+import SkeletonFacetRow from './SkeletonFacetRow.vue';
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
 import Divider from './Divider.vue';
@@ -57,6 +64,8 @@ const props = defineProps<{
   facets?: Facet[];
   solutions?: AnswerSet[];
   viewMode: 'facets' | 'solutions' | 'query';
+  loading?: boolean;
+  itemsPerPage?: number;
 }>();
 
 const emit = defineEmits<{

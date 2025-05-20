@@ -19,11 +19,13 @@
         <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
         <Button label="Query Remaining Answer Sets" type="button" @click="queryRemainingAnswerSets"></Button>
     </div>
-    <div v-if="answerSetCount || facetCount">
+    <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
       <Divider/>
       <div class="count">
-        <p v-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
-        <p v-if="facetCount">Facets: {{ facetCount }}</p>
+        <p v-if="!answerSetCount && loadingAnswerSetCount"><SkeletonCount/></p>
+        <p v-else-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
+        <p v-if="!facetCount && loadingFacetCount"><SkeletonCount/></p>
+        <p v-else-if="facetCount">Facets: {{ facetCount }}</p>
       </div>
      </div>
     <Divider/>
@@ -63,6 +65,8 @@
           :facets="viewMode === 'facets' || viewMode === 'query' ? paginatedFacets : undefined"
           :solutions="viewMode === 'solutions' ? paginatedAnswerSets : undefined"
           :viewMode="viewMode"
+          :loading="loading"
+          :itemsPerPage="itemsPerPage"
           @selectFacet="updateFacetSelectionState"
       />
       <Paginator
@@ -85,6 +89,7 @@ import Divider from '@/components/Divider.vue';
 import FacetTable from '@/components/FacetTable.vue';
 import Paginator from '@/components/Paginator.vue';
 import Button from '@/components/Button.vue';
+import SkeletonCount from '@/components/SkeletonCount.vue';
 import testData from '@/testdata/example_facets.json';
 import testDataAnswerSet from '@/testdata/example_answer_sets.json';
 import { transformToFacets } from '@/utils/transformFacets';
@@ -112,6 +117,9 @@ const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
 const lastUsedHorizon = ref<number | null>(null);
 const lastUsedEncoding = ref<EncodingType | null>(null);
+const loading = ref(false);
+const loadingAnswerSetCount = ref(false);
+const loadingFacetCount = ref(false);
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -210,6 +218,7 @@ watch(
 
 // Update selectionState when a facet is selected
 async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
+  loading.value = true;
   try {
     answerSetCount.value = null;
     facetCount.value = null;
@@ -235,10 +244,13 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
     }
   } catch (error) {
     console.error('Error updating selection state:', error);
+  } finally {
+    loading.value = false;
   }
 }
 
 const listFacets = async () => {
+  loading.value = true;
   try {
     answerSetCount.value = null;
     facetCount.value = null;
@@ -261,10 +273,13 @@ const listFacets = async () => {
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
 const listSolutions = async () => {
+  loading.value = true;
   try {
     answerSetCount.value = null;
     facetCount.value = null;
@@ -281,28 +296,37 @@ const listSolutions = async () => {
     }
   } catch (error) {
     console.error('Error sending command:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
 const countAnswerSets = async () => {
+  loadingAnswerSetCount.value = true;
   try {
     const output = await sendPlanPilotCommand('#!');
     answerSetCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
+  } finally {
+    loadingAnswerSetCount.value = false;
   }
 };
 
 const countFacets = async () => {
+  loadingFacetCount.value = true;
   try {
     const output = await sendPlanPilotCommand('#?');
     facetCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
+  } finally {
+    loadingFacetCount.value = false;
   }
 };
 
 const queryRemainingFacets = async () => {
+  loading.value = true;
   try {
     const updatedFacets = await sendPlanPilotCommand('#??');
 
@@ -315,10 +339,13 @@ const queryRemainingFacets = async () => {
     }
   } catch (error) {
     console.error('Error querying remaining facets:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
 const queryRemainingAnswerSets = async () => {
+  loading.value = true;
   try {
     const updatedFacets = await sendPlanPilotCommand('#!!');
 
@@ -331,6 +358,8 @@ const queryRemainingAnswerSets = async () => {
     }
   } catch (error) {
     console.error('Error querying remaining answer sets:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
