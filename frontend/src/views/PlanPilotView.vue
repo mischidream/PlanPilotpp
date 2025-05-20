@@ -29,7 +29,6 @@
       </div>
      </div>
     <Divider/>
-    <div v-if="!isFirstRun">
       <div v-if="viewMode === 'facets' || viewMode === 'query'">
         <div class="search-fields">
           <DropdownField
@@ -74,7 +73,6 @@
           :totalItems="viewMode === 'facets' || viewMode === 'query' ? filteredFacets.length : answerSets.length"
           :itemsPerPage="itemsPerPage"
       />
-    </div>
 </template>
 
 <script setup lang="ts">
@@ -252,6 +250,7 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
 const listFacets = async () => {
   loading.value = true;
   try {
+    viewMode.value = 'facets';
     answerSetCount.value = null;
     facetCount.value = null;
     const horizonChanged = lastUsedHorizon.value !== horizon.value;
@@ -269,7 +268,6 @@ const listFacets = async () => {
     if (result) {
       facets.value = result as Facet[];
       currentPage.value = 1;
-      viewMode.value = 'facets';
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
@@ -281,6 +279,7 @@ const listFacets = async () => {
 const listSolutions = async () => {
   loading.value = true;
   try {
+    viewMode.value = 'solutions';
     answerSetCount.value = null;
     facetCount.value = null;
     const command = numberOfSolutions.value
@@ -290,7 +289,6 @@ const listSolutions = async () => {
     if (Array.isArray(output)) {
       answerSets.value = output as AnswerSet[];
       currentPage.value = 1;
-      viewMode.value = 'solutions';
     } else {
       console.warn('Unexpected output format for solutions:', output);
     }
@@ -328,12 +326,12 @@ const countFacets = async () => {
 const queryRemainingFacets = async () => {
   loading.value = true;
   try {
+    viewMode.value = 'query';
     const updatedFacets = await sendPlanPilotCommand('#??');
 
     if (Array.isArray(updatedFacets)) {
       facets.value = updatedFacets as Facet[];
       currentPage.value = 1;
-      viewMode.value = 'query';
     } else {
       console.warn('Unexpected output format for remaining facets:', updatedFacets);
     }
@@ -347,12 +345,12 @@ const queryRemainingFacets = async () => {
 const queryRemainingAnswerSets = async () => {
   loading.value = true;
   try {
+    viewMode.value = 'query';
     const updatedFacets = await sendPlanPilotCommand('#!!');
 
     if (Array.isArray(updatedFacets)) {
       facets.value = updatedFacets as Facet[];
       currentPage.value = 1;
-      viewMode.value = 'query';
     } else {
       console.warn('Unexpected output format for remaining answer sets:', updatedFacets);
     }

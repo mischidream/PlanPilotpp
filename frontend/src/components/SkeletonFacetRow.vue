@@ -1,10 +1,13 @@
 <template>
   <div class="facet-row">
-    <div class="skeleton-bar"></div>
+    <div class="skeleton-bar" :class="viewMode"></div>
   </div>
 </template>
 
 <script setup lang="ts">
+defineProps<{
+  viewMode: 'facets' | 'solutions' | 'query';
+}>();
 </script>
 
 <style scoped>
@@ -20,6 +23,14 @@
   background-color: #e0e0e0;
   border-radius: 4px;
   animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-bar.facets, .skeleton-bar.query {
+  height: 2.5rem;
+}
+
+.skeleton-bar.solutions {
+  height: 1.8rem;
 }
 
 @keyframes pulse {

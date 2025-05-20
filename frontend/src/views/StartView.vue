@@ -4,7 +4,10 @@
         <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
         <Button label="Start" type="submit" @click="submitFiles"></Button>
     </div>
-    <div v-if="response" class="horizon-output">
+    <div v-if="loading" class="horizon-output">
+      <SkeletonCount></SkeletonCount>
+    </div>
+    <div v-else-if="response" class="horizon-output">
       <p><strong>Horizon:</strong> {{ response.horizon }}</p>
     </div>
 </template>
@@ -16,6 +19,7 @@ import { computed, ref } from 'vue';
 import { getSasPlan } from '@/services/apiService';
 import { usePlanStore } from '@/stores/planStore';
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
+import SkeletonCount from '@/components/SkeletonCount.vue';
 
 const planStore = usePlanStore();
 
@@ -28,6 +32,8 @@ const domainFile = computed({
   set: (val: File | null) => planStore.setDomainFile(val),
 });
 
+const loading = ref(false);
+
 // Local response state to display
 const response = ref<FastDownwardResponse | null>(null);
 
@@ -37,6 +43,7 @@ async function submitFiles() {
     return;
   }
 
+  loading.value = true;
   try {
     const result = await getSasPlan(instanceFile.value, domainFile.value);
     if (!result) {
@@ -46,6 +53,8 @@ async function submitFiles() {
     planStore.setFastDownwardResponse(result.horizon, result.sasFile, result.planFile);
   } catch (error) {
     alert((error as Error).message);
+  } finally {
+    loading.value = false;
   }
 }
 

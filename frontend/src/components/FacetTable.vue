@@ -10,6 +10,7 @@
         <SkeletonFacetRow
           v-for="n in itemsPerPage || 4"
           :key="'skeleton-' + n"
+          :viewMode="viewMode"
         />
       </template>
       <template v-else-if="viewMode === 'facets' || viewMode === 'query'">
