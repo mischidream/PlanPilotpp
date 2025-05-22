@@ -58,21 +58,17 @@
         </div>
         <Divider/>
       </div>
-      <FacetTable
-          :key="viewMode"
-          :headers="columns"
-          :facets="viewMode === 'facets' || viewMode === 'query' ? paginatedFacets : undefined"
-          :solutions="viewMode === 'solutions' ? paginatedAnswerSets : undefined"
-          :viewMode="viewMode"
-          :loading="loading"
-          :itemsPerPage="itemsPerPage"
-          @selectFacet="updateFacetSelectionState"
-      />
-      <Paginator
-          v-model:currentPage="currentPage"
-          :totalItems="viewMode === 'facets' || viewMode === 'query' ? filteredFacets.length : answerSets.length"
-          :itemsPerPage="itemsPerPage"
-      />
+      <FacetTableView
+        :headers="columns"
+        :facets="filteredFacets"
+        :answerSets="answerSets"
+        :viewMode="viewMode"
+        :loading="loading"
+        :itemsPerPage="itemsPerPage"
+        :currentPage="currentPage"
+        @update:currentPage="handlePageUpdate"
+        @selectFacet="updateFacetSelectionState"
+    />
 </template>
 
 <script setup lang="ts">
@@ -94,6 +90,7 @@ import { transformToFacets } from '@/utils/transformFacets';
 import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
 import type { AnswerSet } from '@/models/AnswerSet';
+import FacetTableView from '@/components/FacetTableView.vue';
 
 // Store
 const planStore = usePlanStore();
@@ -141,6 +138,10 @@ watch(selectedFacetState, (val) => planStore.setSelectedFacetState(val), { deep:
 watch(selectedActionType, (val) => planStore.setSelectedActionType(val), { deep: true });
 watch(selectedConstants, (val) => planStore.setSelectedConstants(val), { deep: true });
 watch(selectedTimesteps, (val) => planStore.setSelectedTimesteps(val), { deep: true });
+
+function handlePageUpdate(val: number) {
+  currentPage.value = val;
+}
 
 const allConstants = computed(() => {
     const constantsSet = new Set<string>();
@@ -192,17 +193,6 @@ const filteredFacets = computed(() => {
   const result = [...filteredSelected, ...filteredOthers];
   console.log("filteredFacets", result);
   return result;
-});
-
-// Paginate filtered facets
-const paginatedFacets = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  return filteredFacets.value.slice(start, start + itemsPerPage);
-});
-
-const paginatedAnswerSets = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  return answerSets.value.slice(start, start + itemsPerPage);
 });
 
 // Reset to page 1 on filter change
