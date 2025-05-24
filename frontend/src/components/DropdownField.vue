@@ -1,5 +1,5 @@
 <template>
-  <div class="input-wrapper">
+  <div class="input-wrapper" ref="dropdownRef">
     <label :for="inputId">{{ label }}</label>
 
     <div class="dropdown-input" @click="toggleDropdown">
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type PropType } from 'vue'
+import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue'
 import { nanoid } from 'nanoid'
 
 const props = defineProps({
@@ -59,20 +59,22 @@ const props = defineProps({
   },
 })
 
+const dropdownRef = ref<HTMLElement | null>(null);
+
 const emit = defineEmits(['update:modelValue'])
 
 const inputId = computed(() => `select-${nanoid(6)}`)
-
-const selectedValues = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-})
 
 const isOpen = ref(false)
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value
 }
+
+const selectedValues = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val),
+})
 
 const toggleSelection = (option: string | number) => {
   const index = selectedValues.value.indexOf(option)
@@ -109,6 +111,20 @@ const selectedItemsPreview = computed(() => {
   } else {
     return selectedValues.value.length > 0 ? selectedValues.value[0] : 'Select an option'
   }
+})
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

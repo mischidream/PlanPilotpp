@@ -44,9 +44,9 @@
               :isMultiple="true"
           />
           <DropdownField
-              label="Constants:"
-              :options="allConstants"
-              v-model="selectedConstants"
+              label="Objects:"
+              :options="allObjects"
+              v-model="selectedObjects"
               :isMultiple="true"
           />
           <DropdownField
@@ -55,6 +55,7 @@
               v-model="selectedTimesteps"
               :isMultiple="true"
           />
+          <Button label="Reset filters" type="submit" @click="resetFilters"></Button>
         </div>
         <Divider/>
       </div>
@@ -119,7 +120,7 @@ const loadingFacetCount = ref(false);
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
 const selectedActionType = ref<ActionType[]>([]);
-const selectedConstants = ref<string[]>([]);
+const selectedObjects = ref<string[]>([]);
 const selectedTimesteps = ref<number[]>([]);
 
 // Pagination
@@ -136,20 +137,20 @@ watch(viewMode, (val) => planStore.setViewMode(val));
 
 watch(selectedFacetState, (val) => planStore.setSelectedFacetState(val), { deep: true });
 watch(selectedActionType, (val) => planStore.setSelectedActionType(val), { deep: true });
-watch(selectedConstants, (val) => planStore.setSelectedConstants(val), { deep: true });
+watch(selectedObjects, (val) => planStore.setSelectedObjects(val), { deep: true });
 watch(selectedTimesteps, (val) => planStore.setSelectedTimesteps(val), { deep: true });
 
 function handlePageUpdate(val: number) {
   currentPage.value = val;
 }
 
-const allConstants = computed(() => {
-    const constantsSet = new Set<string>();
+const allObjects = computed(() => {
+    const objectsSet = new Set<string>();
     for (const facet of facets.value) {
-        if (facet.constant1) constantsSet.add(facet.constant1);
-        if (facet.constant2) constantsSet.add(facet.constant2);
+        if (facet.constant1) objectsSet.add(facet.constant1);
+        if (facet.constant2) objectsSet.add(facet.constant2);
     }
-    return Array.from(constantsSet).sort();
+    return Array.from(objectsSet).sort();
 });
 
 const allTimesteps = computed(() => {
@@ -163,11 +164,11 @@ const allTimesteps = computed(() => {
 const columns = computed(() => {
   let base: string[];
   if (viewMode.value === "solutions") {
-    base = ['Solutions', 'Action', 'Constants', 'Timestep'];
+    base = ['Solutions', 'Action', 'Objects', 'Timestep'];
   } else if (viewMode.value === "query") {
-    base = ['Choose facet', 'Action', 'Constants', 'Timestep', 'Significance + | -', 'Remaining + | -'];
+    base = ['Choose facet', 'Action', 'Objects', 'Timestep', 'Significance + | -', 'Remaining + | -'];
   } else {
-    return ['Choose facet', 'Action', 'Constants', 'Timestep'];
+    return ['Choose facet', 'Action', 'Objects', 'Timestep'];
   }
   return base;
 });
@@ -177,10 +178,10 @@ const filteredFacets = computed(() => {
   const matchesFilters = (facet: Facet) => {
     const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState as SelectionState);
     const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
-    const constants = [facet.constant1, facet.constant2].filter(Boolean) as string[];
-    const matchConstants = !selectedConstants.value.length || constants.some(c => selectedConstants.value.includes(c));
+    const objects = [facet.constant1, facet.constant2].filter(Boolean) as string[];
+    const matchObjects = !selectedObjects.value.length || objects.some(c => selectedObjects.value.includes(c));
     const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
-    return matchState && matchAction && matchConstants && matchTimestep;
+    return matchState && matchAction && matchObjects && matchTimestep;
   };
 
   const filteredSelected = selectedFacets.value.filter(matchesFilters);
@@ -197,12 +198,36 @@ const filteredFacets = computed(() => {
 
 // Reset to page 1 on filter change
 watch(
-  [selectedFacetState, selectedActionType, selectedConstants, selectedTimesteps],
+  [selectedFacetState, selectedActionType, selectedObjects, selectedTimesteps],
   () => {
     currentPage.value = 1;
   },
   { deep: true }
 );
+
+watch(facets, () => {
+  const availableTimesteps = new Set(facets.value.map(f => f.timestep));
+  selectedTimesteps.value = selectedTimesteps.value.filter(t => availableTimesteps.has(t));
+
+  const availableObjects = new Set(
+    facets.value.flatMap(f => [f.constant1, f.constant2].filter(Boolean) as string[])
+  );
+  selectedObjects.value = selectedObjects.value.filter(c => availableObjects.has(c));
+
+  const availableStates = new Set(facets.value.map(f => f.selectionState));
+  selectedFacetState.value = selectedFacetState.value.filter(s => availableStates.has(s));
+
+  const availableActions = new Set(facets.value.map(f => f.action));
+  selectedActionType.value = selectedActionType.value.filter(a => availableActions.has(a));
+});
+
+
+function resetFilters() {
+  selectedFacetState.value = [];
+  selectedActionType.value = [];
+  selectedObjects.value = [];
+  selectedTimesteps.value = [];
+}
 
 // Update selectionState when a facet is selected
 async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
@@ -382,6 +407,10 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+}
+
+.search-fields .button{
+  align-self: flex-end;
 }
 
 .count {

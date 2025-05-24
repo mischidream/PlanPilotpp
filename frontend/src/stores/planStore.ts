@@ -19,7 +19,7 @@ export const usePlanStore = defineStore('plan', {
     viewMode: 'facets' as 'facets' | 'solutions' | 'query',
     selectedFacetState: [] as SelectionState[],
     selectedActionType: [] as ActionType[],
-    selectedConstants: [] as string[],
+    selectedObjects: [] as string[],
     selectedTimesteps: [] as number[],
   }),
 
@@ -63,8 +63,8 @@ export const usePlanStore = defineStore('plan', {
     setSelectedActionType(val: ActionType[]) {
       this.selectedActionType = val;
     },
-    setSelectedConstants(val: string[]) {
-      this.selectedConstants = val;
+    setSelectedObjects(val: string[]) {
+      this.selectedObjects = val;
     },
     setSelectedTimesteps(val: number[]) {
       this.selectedTimesteps = val;
