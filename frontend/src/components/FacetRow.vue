@@ -32,7 +32,7 @@
       </div>
   
       <!-- Timestep -->
-      <div class="facet-cell">{{ facet.timestep }}</div>
+      <div class="facet-cell">{{ facet.timestep === 0 ? 'sometime' : facet.timestep }}</div>
       
       <!-- Reduction -->
       <div class="facet-cell" v-if="showReduction">{{ showReduction }}</div>

@@ -3,6 +3,7 @@ import type { AnswerSet } from '@/models/AnswerSet';
 import { EncodingType } from '@/models/EncodingType';
 import type { Facet } from '@/models/Facet';
 import type { SelectionState } from '@/models/SelectionState';
+import { TimeStepType } from '@/models/TimeStepType';
 import { defineStore } from 'pinia';
 
 export const usePlanStore = defineStore('plan', {
@@ -14,13 +15,14 @@ export const usePlanStore = defineStore('plan', {
     horizon: 0,
     minHorizon: 0,
     encoding: EncodingType.exact as EncodingType,
+    timeStep: TimeStepType.concrete as TimeStepType,
     facets: [] as Facet[],
     answerSets: [] as AnswerSet[],
     viewMode: 'facets' as 'facets' | 'solutions' | 'query',
     selectedFacetState: [] as SelectionState[],
     selectedActionType: [] as ActionType[],
     selectedObjects: [] as string[],
-    selectedTimesteps: [] as number[],
+    selectedTimesteps: [] as string[],
   }),
 
   actions: {
@@ -48,6 +50,9 @@ export const usePlanStore = defineStore('plan', {
     setEncoding(encoding: EncodingType) {
       this.encoding = encoding;
     },
+    setTimeStep(timeStep: TimeStepType) {
+      this.timeStep = timeStep;
+    },
     setFacets(facets: Facet[]) {
       this.facets = facets;
     },
@@ -66,7 +71,7 @@ export const usePlanStore = defineStore('plan', {
     setSelectedObjects(val: string[]) {
       this.selectedObjects = val;
     },
-    setSelectedTimesteps(val: number[]) {
+    setSelectedTimesteps(val: string[]) {
       this.selectedTimesteps = val;
     },
   },

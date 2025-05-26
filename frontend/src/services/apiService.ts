@@ -30,7 +30,8 @@ export const getSasPlan = async (
 export const runPlanPilot = async (
     sasFile: string,
     horizon: number,
-    encoding: string
+    encoding: string,
+    abstractTimeStep: boolean,
   ): Promise<Facet[] | undefined> => {
     try {
       const response = await axios.post<{ output: Facet[] }>(
@@ -39,6 +40,7 @@ export const runPlanPilot = async (
           sasFile,
           horizon,
           encoding,
+          abstractTimeStep,
         }
       );
       return parseFacetOutput(response.data.output as Facet[]);

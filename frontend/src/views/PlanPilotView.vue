@@ -9,6 +9,12 @@
             v-model="encoding"
             :isMultiple="false"
         />
+        <DropdownField
+            label="Time Steps:"
+            :options="Object.values(TimeStepType)"
+            v-model="timeStep"
+            :isMultiple="false"
+        />
         <Button label="List Facets" type="submit" @click="listFacets"></Button>
     </div>
     <div class="button-input">
@@ -76,6 +82,7 @@ import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
 import type { AnswerSet } from '@/models/AnswerSet';
 import FacetTableView from '@/components/FacetTableView.vue';
+import { TimeStepType } from '@/models/TimeStepType';
 
 // Store
 const planStore = usePlanStore();
@@ -87,6 +94,7 @@ const horizon = ref<number>(planStore.horizon);
 
 // Other values
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
+const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const selectedFacets = ref<Facet[]>([]);
@@ -97,6 +105,7 @@ const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
 const lastUsedHorizon = ref<number | null>(null);
 const lastUsedEncoding = ref<EncodingType | null>(null);
+const lastUsedTimeStep = ref<TimeStepType | null>(null);
 const loading = ref(false);
 const loadingAnswerSetCount = ref(false);
 const loadingFacetCount = ref(false);
@@ -105,7 +114,7 @@ const loadingFacetCount = ref(false);
 const selectedFacetState = ref<SelectionState[]>([]);
 const selectedActionType = ref<ActionType[]>([]);
 const selectedObjects = ref<string[]>([]);
-const selectedTimesteps = ref<number[]>([]);
+const selectedTimesteps = ref<string[]>([]);
 
 // Pagination
 const currentPage = ref(1);
@@ -118,6 +127,7 @@ watch(encoding, ([val]) => val && planStore.setEncoding(val));
 watch(facets, (val) => planStore.setFacets(val));
 watch(answerSets, (val) => planStore.setAnswerSets(val));
 watch(viewMode, (val) => planStore.setViewMode(val));
+watch(timeStep, ([val]) => planStore.setTimeStep(val))
 
 watch(selectedFacetState, (val) => planStore.setSelectedFacetState(val), { deep: true });
 watch(selectedActionType, (val) => planStore.setSelectedActionType(val), { deep: true });
@@ -139,14 +149,18 @@ const allObjects = computed(() => {
 });
 
 const allTimesteps = computed(() => {
-  const timestepSet = new Set<number>();
+  const timestepSet = new Set<string>();
   const allFacets = [...facets.value, ...selectedFacets.value];
   for (const facet of allFacets) {
-    timestepSet.add(facet.timestep);
+    const label = facet.timestep === 0 ? "sometime" : String(facet.timestep);
+    timestepSet.add(label);
   }
-  return Array.from(timestepSet).sort((a, b) => a - b);
+  return Array.from(timestepSet).sort((a, b) => {
+    if (a === "sometime") return -1;
+    if (b === "sometime") return 1;
+    return Number(a) - Number(b);
+  });
 });
-
 
 const columns = computed(() => {
   let base: string[];
@@ -167,7 +181,8 @@ const filteredFacets = computed(() => {
     const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
     const objects = [facet.constant1, facet.constant2].filter(Boolean) as string[];
     const matchObjects = !selectedObjects.value.length || objects.some(c => selectedObjects.value.includes(c));
-    const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facet.timestep);
+    const facetTimestep = facet.timestep === 0 ? "sometime" : String(facet.timestep);
+    const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facetTimestep);
     return matchState && matchAction && matchObjects && matchTimestep;
   };
 
@@ -233,10 +248,11 @@ const listFacets = async () => {
     facetCount.value = null;
     const horizonChanged = lastUsedHorizon.value !== horizon.value;
     const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
+    const timeStepChanged = lastUsedTimeStep.value !== timeStep.value[0];
     let result;
-    if (isFirstRun.value || horizonChanged || encodingChanged) {
+    if (isFirstRun.value || horizonChanged || encodingChanged || timeStepChanged) {
       selectedFacets.value = [];
-      result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0]);
+      result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0], timeStep.value[0] === TimeStepType.concrete ? false : true);
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];

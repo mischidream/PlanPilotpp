@@ -39,16 +39,16 @@ const props = defineProps<{
   selectedFacetState: SelectionState[];
   selectedActionType: ActionType[];
   selectedObjects: string[];
-  selectedTimesteps: number[];
+  selectedTimesteps: string[];
   allObjects: string[];
-  allTimesteps: number[];
+  allTimesteps: string[];
 }>();
 
 const emit = defineEmits<{
   'update:selectedFacetState': [SelectionState[]];
   'update:selectedActionType': [ActionType[]];
   'update:selectedObjects': [string[]];
-  'update:selectedTimesteps': [number[]];
+  'update:selectedTimesteps': [string[]];
 }>();
 
 const internalFacetState = ref([...props.selectedFacetState]);
