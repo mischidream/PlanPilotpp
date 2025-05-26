@@ -13,7 +13,7 @@ class PlanpilotService:
         self.output_buffer = []
         self.reader_thread = None
     
-    def run_planpilot_service(self, sas_file: str, horizon: int, encoding: str) -> List[Dict]:
+    def run_planpilot_service(self, sas_file: str, horizon: int, encoding: str, abstract_time_steps: bool) -> List[Dict]:
         print("Run planpilot")
         # Fetch SAS file from the database (assumed saved in your DB)
         request_data = FastDownwardRequest.query.filter_by(sas_file_path=sas_file).first()
@@ -34,6 +34,7 @@ class PlanpilotService:
             sas_or_pddl_path=sas_file_path,
             lp_output_path=lp_file_path,
             encoding_type=encoding,
+            abstract_time_steps=abstract_time_steps,
             is_pddl_instance=False
         )
 
@@ -95,11 +96,13 @@ class PlanpilotService:
             }
 
         if command == "?":
-            matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', output)
-            return [
-                make_facet(action, timestep, f"occurs(action(({action})),{timestep})")
-                for action, timestep in matches
-            ]
+            facets = []
+            pattern = r'(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))'
+            matches = re.findall(pattern, output)
+            for full_match, action_str, timestep in matches:
+                ts = int(timestep) if timestep else 0  # default to 0 for occurs_sometime
+                facets.append(make_facet(action_str, ts, full_match))
+            return facets
 
         elif command in ("#??", "#!!"):
             tokens = output.strip().split()
@@ -111,17 +114,17 @@ class PlanpilotService:
                 val1_str = tokens[i]
                 val2_str = tokens[i + 1]
                 action_part = tokens[i + 2]
-                match = re.search(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', action_part)
+                match = re.search(r'(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))', action_part)
                 if not match:
                     continue
 
-                action_str, timestep = match.groups()
-                raw_id = match.group(0)
-                key = (action_str, timestep)
+                full_match, action_str, timestep = match.groups()
+                ts = int(timestep) if timestep else 0  # default to 0 for occurs_sometime
+                key = (action_str, ts)
 
                 if key not in facets:
-                    key_to_id[key] = raw_id
-                    facets[key] = make_facet(action_str, timestep, raw_id)
+                    key_to_id[key] = full_match
+                    facets[key] = make_facet(action_str, ts, full_match)
 
                 facet = facets[key]
                 target = "answer_set" if command == "#!!" else "facets"
@@ -148,22 +151,23 @@ class PlanpilotService:
             current_actions = []
 
             # Find all occurs(...) within this block
-            action_matches = re.findall(r'occurs\(action\(\(([^)]+)\)\),(\d+)\)', actions_block)
+            pattern = r'(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))'
+            action_matches = re.findall(pattern, actions_block)
 
-            for action_str, timestep in action_matches:
+            for full_match, action_str, timestep in action_matches:
                 parts = [p.strip().strip('"') for p in action_str.split(",")]
                 action_type = parts[0]
                 const1 = parts[1] if len(parts) > 1 else None
                 const2 = parts[2] if len(parts) > 2 else None
 
-                raw_id = f"occurs(action(({action_str})),{timestep})"
+                ts = int(timestep) if timestep else 0  # Default timestep for occurs_sometime
 
                 action_dict = {
-                    "id": raw_id,
+                    "id": full_match,
                     "action": action_type,
                     "constant1": const1,
                     "constant2": const2,
-                    "timestep": int(timestep),
+                    "timestep": ts,
                     "reduction": None,
                     "remaining": None
                 }

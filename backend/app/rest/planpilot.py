@@ -10,13 +10,14 @@ def run_planpilot():
     sas_file = data.get('sasFile')
     horizon = data.get('horizon')
     encoding = data.get('encoding')
+    abstract_time_steps = data.get('abstractTimeStep')
 
     if not sas_file or not horizon or not encoding:
         return jsonify({"error": "sasFile, horizon, and encoding are required"}), 400
 
     try:
         # Run PlanPilot service and get the facets
-        facets = planpilot_service.run_planpilot_service(sas_file, horizon, encoding)
+        facets = planpilot_service.run_planpilot_service(sas_file, horizon, encoding, abstract_time_steps)
         return jsonify({"output": facets}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
