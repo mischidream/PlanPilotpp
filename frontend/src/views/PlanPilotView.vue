@@ -30,33 +30,18 @@
      </div>
     <Divider/>
       <div v-if="viewMode === 'facets' || viewMode === 'query'">
-        <div class="search-fields">
-          <DropdownField
-              label="Facet:"
-              :options="Object.values(SelectionState)"
-              v-model="selectedFacetState"
-              :isMultiple="true"
-          />
-          <DropdownField
-              label="Action:"
-              :options="Object.values(ActionType)"
-              v-model="selectedActionType"
-              :isMultiple="true"
-          />
-          <DropdownField
-              label="Objects:"
-              :options="allObjects"
-              v-model="selectedObjects"
-              :isMultiple="true"
-          />
-          <DropdownField
-              label="Timesteps:"
-              :options="allTimesteps"
-              v-model="selectedTimesteps"
-              :isMultiple="true"
-          />
-          <Button label="Reset filters" type="submit" @click="resetFilters"></Button>
-        </div>
+        <FacetFilterPanel
+          :selectedFacetState="selectedFacetState"
+          :selectedActionType="selectedActionType"
+          :selectedObjects="selectedObjects"
+          :selectedTimesteps="selectedTimesteps"
+          :allObjects="allObjects"
+          :allTimesteps="allTimesteps"
+          @update:selectedFacetState="val => selectedFacetState = val"
+          @update:selectedActionType="val => selectedActionType = val"
+          @update:selectedObjects="val => selectedObjects = val"
+          @update:selectedTimesteps="val => selectedTimesteps = val"
+        />
         <Divider/>
       </div>
       <FacetTableView
@@ -81,10 +66,9 @@ import { computed, onMounted, ref, watch } from 'vue';
 import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
 import Divider from '@/components/Divider.vue';
-import FacetTable from '@/components/FacetTable.vue';
-import Paginator from '@/components/Paginator.vue';
 import Button from '@/components/Button.vue';
 import SkeletonCount from '@/components/SkeletonCount.vue';
+import FacetFilterPanel from '@/components/FacetFilterPanel.vue';
 import testData from '@/testdata/example_facets.json';
 import testDataAnswerSet from '@/testdata/example_answer_sets.json';
 import { transformToFacets } from '@/utils/transformFacets';
@@ -145,21 +129,24 @@ function handlePageUpdate(val: number) {
 }
 
 const allObjects = computed(() => {
-    const objectsSet = new Set<string>();
-    for (const facet of facets.value) {
-        if (facet.constant1) objectsSet.add(facet.constant1);
-        if (facet.constant2) objectsSet.add(facet.constant2);
-    }
-    return Array.from(objectsSet).sort();
+  const objectsSet = new Set<string>();
+  const allFacets = [...facets.value, ...selectedFacets.value];
+  for (const facet of allFacets) {
+    if (facet.constant1) objectsSet.add(facet.constant1);
+    if (facet.constant2) objectsSet.add(facet.constant2);
+  }
+  return Array.from(objectsSet).sort();
 });
 
 const allTimesteps = computed(() => {
-    const timestepSet = new Set<number>();
-    for (const facet of facets.value) {
-        timestepSet.add(facet.timestep);
-    }
-    return Array.from(timestepSet).sort((a, b) => a - b);
+  const timestepSet = new Set<number>();
+  const allFacets = [...facets.value, ...selectedFacets.value];
+  for (const facet of allFacets) {
+    timestepSet.add(facet.timestep);
+  }
+  return Array.from(timestepSet).sort((a, b) => a - b);
 });
+
 
 const columns = computed(() => {
   let base: string[];
@@ -204,30 +191,6 @@ watch(
   },
   { deep: true }
 );
-
-watch(facets, () => {
-  const availableTimesteps = new Set(facets.value.map(f => f.timestep));
-  selectedTimesteps.value = selectedTimesteps.value.filter(t => availableTimesteps.has(t));
-
-  const availableObjects = new Set(
-    facets.value.flatMap(f => [f.constant1, f.constant2].filter(Boolean) as string[])
-  );
-  selectedObjects.value = selectedObjects.value.filter(c => availableObjects.has(c));
-
-  const availableStates = new Set(facets.value.map(f => f.selectionState));
-  selectedFacetState.value = selectedFacetState.value.filter(s => availableStates.has(s));
-
-  const availableActions = new Set(facets.value.map(f => f.action));
-  selectedActionType.value = selectedActionType.value.filter(a => availableActions.has(a));
-});
-
-
-function resetFilters() {
-  selectedFacetState.value = [];
-  selectedActionType.value = [];
-  selectedObjects.value = [];
-  selectedTimesteps.value = [];
-}
 
 // Update selectionState when a facet is selected
 async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
@@ -403,16 +366,6 @@ onMounted(() => {
 .button-input .button{
     align-self: flex-end;
 }
-.search-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.search-fields .button{
-  align-self: flex-end;
-}
-
 .count {
   display: flex;
   flex-wrap: wrap;
