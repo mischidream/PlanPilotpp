@@ -1,7 +1,7 @@
 <template>
     <div class="facet-row">
       <!-- Choose Facet -->
-      <div class="facet-cell choose-facet">
+      <div v-if="viewMode !== 'landmarks'" class="facet-cell choose-facet">
         <template v-if="!readonly">
           <button
             :class="{ active: facet.selectionState === SelectionState.Positive }"
@@ -50,7 +50,7 @@ import { computed } from 'vue';
 const props = defineProps<{
     facet: Facet;
     readonly?: boolean;
-    viewMode?: 'facets' | 'solutions' | 'query';
+    viewMode?: 'facets' | 'solutions' | 'query' | 'landmarks';
     onSelectFacet?: (facet: Facet, newState: SelectionState) => void;
 }>();
 

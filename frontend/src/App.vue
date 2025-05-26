@@ -70,7 +70,6 @@ import Header from './components/Header.vue';
 }
 
 .main-content {
-  padding: 1rem;
   flex: 1;
   background-color: var(--background);
   color: var(--text);

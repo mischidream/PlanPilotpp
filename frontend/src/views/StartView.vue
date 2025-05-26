@@ -1,4 +1,5 @@
 <template>
+  <div class="layout">
     <div class="input-fields">
         <InputField label="Problem file:" v-model="instanceFile" type="file" accept=".pddl" />
         <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
@@ -10,6 +11,7 @@
     <div v-else-if="response" class="horizon-output">
       <p><strong>Horizon:</strong> {{ response.horizon }}</p>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -61,6 +63,10 @@ async function submitFiles() {
 </script>
 
 <style scoped>
+.layout {
+  padding: 1rem;
+}
+
 .input-fields {
     display: flex;
     flex-wrap: wrap;

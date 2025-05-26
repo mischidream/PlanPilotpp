@@ -13,12 +13,12 @@
           :viewMode="viewMode"
         />
       </template>
-      <template v-else-if="viewMode === 'facets' || viewMode === 'query'">
+      <template v-else-if="viewMode === 'facets' || viewMode === 'query' || viewMode === 'landmarks'">
         <FacetRow
           v-for="facet in facets"
           :key="facet.id"
           :facet="facet"
-          :readonly="false"
+          :readonly="viewMode === 'landmarks'"
           :viewMode="viewMode"
           :onSelectFacet="handleSelectFacet"
         />
@@ -64,7 +64,7 @@ const props = defineProps<{
   headers: string[];
   facets?: Facet[];
   solutions?: AnswerSet[];
-  viewMode: 'facets' | 'solutions' | 'query';
+  viewMode: 'facets' | 'solutions' | 'query' | 'landmarks';
   loading?: boolean;
   itemsPerPage?: number;
 }>();
