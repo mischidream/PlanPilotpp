@@ -52,6 +52,7 @@ watch(() => props.enabled, (val) => {
   width: 2.5rem;
   transition: width 0.3s ease;
   overflow: hidden;
+  background-color: #f9f9f9;
 }
 
 .sidebar-toggle-button {
