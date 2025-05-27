@@ -95,7 +95,7 @@ class PlanpilotService:
                 "selectionState": "Not selected"
             }
 
-        if command == "?":
+        if command == "?" or command.startswith("|= %"):
             facets = []
             pattern = r'(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))'
             matches = re.findall(pattern, output)
@@ -258,7 +258,7 @@ class PlanpilotService:
                 #print(output_str)
 
                 # If the command is one of "?", "#??", or "#!!", parse the output
-                if command in ("?", "#??", "#!!"):
+                if command in ("?", "#??", "#!!") or command.startswith("|= %"):
                     parsed_output = self._parse_facet_output(output_str, command)
                     return parsed_output
                 

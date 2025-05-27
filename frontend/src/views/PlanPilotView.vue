@@ -30,7 +30,7 @@
         <Button label="Query Remaining Answer Sets" type="button" @click="queryRemainingAnswerSets"></Button>
         <div class="button-input-group">
           <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
-          <InputField label="Restricted To:" v-model="landmarkAction" type="text" />
+          <InputField label="Restricted To:" v-model="landmarkAction" type="text"/>
         </div>
       </div>
       <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
@@ -105,8 +105,8 @@ const planStore = usePlanStore();
 const instanceFile = computed(() => planStore.instanceFile);
 const domainFile = computed(() => planStore.domainFile);
 const sasFile = computed(() => planStore.sasFile);
-const minHorizon = computed(() => planStore.horizon);
 const horizon = ref<number>(planStore.horizon);
+const minHorizon = ref(horizon.value);
 
 // Other values
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
@@ -142,7 +142,7 @@ const itemsPerPage = 4;
 
 // === Sync with store ===
 watch(horizon, (val) => planStore.setHorizon(val));
-watch(minHorizon, (val) => planStore.setMinHorizon);
+watch(minHorizon, (val) => planStore.setMinHorizon(val));
 watch(encoding, ([val]) => val && planStore.setEncoding(val));
 watch(facets, (val) => planStore.setFacets(val));
 watch(landmarks, (val) => planStore.setLandmarks(val));
@@ -383,6 +383,7 @@ const queryRemainingAnswerSets = async () => {
 const listLandmarks = async () => {
   loadingLandmarks.value = true;
   sidebarEnabled.value = true;
+  console.log(landmarkAction.value);
   try {
     const command = landmarkAction.value
       ? `|= % ${landmarkAction.value}`
@@ -390,6 +391,8 @@ const listLandmarks = async () => {
     const output = await sendPlanPilotCommand(command);
     if (Array.isArray(output)) {
       landmarks.value = (output as Facet[]).sort((a, b) => {
+        if (a.timestep === 0 && b.timestep !== 0) return 1;
+        if (a.timestep !== 0 && b.timestep === 0) return -1;
         return a.timestep - b.timestep;
       });
     } else {
