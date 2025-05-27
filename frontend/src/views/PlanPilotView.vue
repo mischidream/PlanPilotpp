@@ -1,5 +1,7 @@
 <template>
-    <div class="input-fields">
+  <div class="layout">
+    <div class="main-content">
+      <div class="input-fields">
         <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
         <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
         <InputField label="Horizon:" v-model="horizon" type="number" :placeholder="minHorizon?.toString()" />
@@ -16,51 +18,64 @@
             :isMultiple="false"
         />
         <Button label="List Facets" type="submit" @click="listFacets"></Button>
-    </div>
-    <div class="button-input">
-        <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
-        <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
+      </div>
+      <div class="button-input">
+        <div class="button-input-group">
+          <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
+          <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
+        </div>
         <Button label="Number of Answer Sets" type="button" @click="countAnswerSets"></Button>
         <Button label="Number of Facets" type="button" @click="countFacets"></Button>
         <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
         <Button label="Query Remaining Answer Sets" type="button" @click="queryRemainingAnswerSets"></Button>
-    </div>
-    <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
-      <Divider/>
-      <div class="count">
-        <p v-if="!answerSetCount && loadingAnswerSetCount"><SkeletonCount/></p>
-        <p v-else-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
-        <p v-if="!facetCount && loadingFacetCount"><SkeletonCount/></p>
-        <p v-else-if="facetCount">Facets: {{ facetCount }}</p>
+        <div class="button-input-group">
+          <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
+          <InputField label="Restricted To:" v-model="landmarkAction" type="text" />
+        </div>
       </div>
-     </div>
-    <Divider/>
-      <div v-if="viewMode === 'facets' || viewMode === 'query'">
-        <FacetFilterPanel
-          :selectedFacetState="selectedFacetState"
-          :selectedActionType="selectedActionType"
-          :selectedObjects="selectedObjects"
-          :selectedTimesteps="selectedTimesteps"
-          :allObjects="allObjects"
-          :allTimesteps="allTimesteps"
-          @update:selectedFacetState="val => selectedFacetState = val"
-          @update:selectedActionType="val => selectedActionType = val"
-          @update:selectedObjects="val => selectedObjects = val"
-          @update:selectedTimesteps="val => selectedTimesteps = val"
-        />
+      <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
         <Divider/>
+        <div class="count">
+          <p v-if="!answerSetCount && loadingAnswerSetCount"><SkeletonCount/></p>
+          <p v-else-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
+          <p v-if="!facetCount && loadingFacetCount"><SkeletonCount/></p>
+          <p v-else-if="facetCount">Facets: {{ facetCount }}</p>
+        </div>
       </div>
-      <FacetTableView
-        :headers="columns"
-        :facets="filteredFacets"
-        :answerSets="answerSets"
-        :viewMode="viewMode"
-        :loading="loading"
-        :itemsPerPage="itemsPerPage"
-        :currentPage="currentPage"
-        @update:currentPage="handlePageUpdate"
-        @selectFacet="updateFacetSelectionState"
+      <Divider/>
+        <div v-if="viewMode === 'facets' || viewMode === 'query'">
+          <FacetFilterPanel
+            :selectedFacetState="selectedFacetState"
+            :selectedActionType="selectedActionType"
+            :selectedObjects="selectedObjects"
+            :selectedTimesteps="selectedTimesteps"
+            :allObjects="allObjects"
+            :allTimesteps="allTimesteps"
+            @update:selectedFacetState="val => selectedFacetState = val"
+            @update:selectedActionType="val => selectedActionType = val"
+            @update:selectedObjects="val => selectedObjects = val"
+            @update:selectedTimesteps="val => selectedTimesteps = val"
+          />
+          <Divider/>
+        </div>
+        <FacetTableView
+          :headers="columns"
+          :facets="filteredFacets"
+          :answerSets="answerSets"
+          :viewMode="viewMode"
+          :loading="loading"
+          :itemsPerPage="itemsPerPage"
+          :currentPage="currentPage"
+          @update:currentPage="handlePageUpdate"
+          @selectFacet="updateFacetSelectionState"
+      />
+    </div>
+    <LandmarkSidebar
+      :landmarks="landmarks"
+      :loadingLandmarks="loadingLandmarks"
+      :enabled="sidebarEnabled"
     />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -82,6 +97,7 @@ import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
 import type { AnswerSet } from '@/models/AnswerSet';
 import FacetTableView from '@/components/FacetTableView.vue';
+import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
 import { TimeStepType } from '@/models/TimeStepType';
 
 // Store
@@ -96,8 +112,10 @@ const horizon = ref<number>(planStore.horizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 const numberOfSolutions = ref<number | undefined>(undefined);
+const landmarkAction = ref<string | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const selectedFacets = ref<Facet[]>([]);
+const landmarks = ref<Facet[]>([]);
 const answerSets = ref<AnswerSet[]>([]);
 const answerSetCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
@@ -109,6 +127,8 @@ const lastUsedTimeStep = ref<TimeStepType | null>(null);
 const loading = ref(false);
 const loadingAnswerSetCount = ref(false);
 const loadingFacetCount = ref(false);
+const loadingLandmarks = ref(false);
+const sidebarEnabled = ref(false);
 
 // Search filters
 const selectedFacetState = ref<SelectionState[]>([]);
@@ -125,6 +145,7 @@ watch(horizon, (val) => planStore.setHorizon(val));
 watch(minHorizon, (val) => planStore.setMinHorizon);
 watch(encoding, ([val]) => val && planStore.setEncoding(val));
 watch(facets, (val) => planStore.setFacets(val));
+watch(landmarks, (val) => planStore.setLandmarks(val));
 watch(answerSets, (val) => planStore.setAnswerSets(val));
 watch(viewMode, (val) => planStore.setViewMode(val));
 watch(timeStep, ([val]) => planStore.setTimeStep(val))
@@ -213,6 +234,8 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
   try {
     answerSetCount.value = null;
     facetCount.value = null;
+    landmarks.value = [];
+    sidebarEnabled.value = false;
 
     const output = await updateSelectionState(facet, newState);
     
@@ -244,13 +267,15 @@ const listFacets = async () => {
   loading.value = true;
   try {
     viewMode.value = 'facets';
-    answerSetCount.value = null;
-    facetCount.value = null;
     const horizonChanged = lastUsedHorizon.value !== horizon.value;
     const encodingChanged = lastUsedEncoding.value !== encoding.value[0];
     const timeStepChanged = lastUsedTimeStep.value !== timeStep.value[0];
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged || timeStepChanged) {
+      answerSetCount.value = null;
+      facetCount.value = null;
+      landmarks.value = [];
+      sidebarEnabled.value = false;
       selectedFacets.value = [];
       result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0], timeStep.value[0] === TimeStepType.concrete ? false : true);
       isFirstRun.value = false;
@@ -355,6 +380,28 @@ const queryRemainingAnswerSets = async () => {
   }
 };
 
+const listLandmarks = async () => {
+  loadingLandmarks.value = true;
+  sidebarEnabled.value = true;
+  try {
+    const command = landmarkAction.value
+      ? `|= % ${landmarkAction.value}`
+      : '|= %';
+    const output = await sendPlanPilotCommand(command);
+    if (Array.isArray(output)) {
+      landmarks.value = (output as Facet[]).sort((a, b) => {
+        return a.timestep - b.timestep;
+      });
+    } else {
+      console.warn('Unexpected output format for landmarks:', output);
+    }
+  } catch (error) {
+    console.error('Error: ', error);
+  } finally {
+    loadingLandmarks.value = false;
+  }
+}
+
 
 // Load test data and transform it to facets
 onMounted(() => {
@@ -365,6 +412,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.layout {
+  display: flex;
+  flex-direction: row;
+}
+
+.main-content {
+  padding: 1rem;
+  flex: 1;
+  transition: margin 0.3s ease;
+}
+
 .input-fields {
     display: flex;
     flex-wrap: wrap;
@@ -386,5 +444,12 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
+}
+
+.button-input-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 </style>

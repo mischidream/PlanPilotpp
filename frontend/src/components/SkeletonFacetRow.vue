@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  viewMode: 'facets' | 'solutions' | 'query';
+  viewMode: 'facets' | 'solutions' | 'query' | 'landmarks';
 }>();
 </script>
 
@@ -25,7 +25,7 @@ defineProps<{
   animation: pulse 1.5s infinite ease-in-out;
 }
 
-.skeleton-bar.facets, .skeleton-bar.query {
+.skeleton-bar.facets, .skeleton-bar.query, .skeleton-bar.landmarks {
   height: 2.5rem;
 }
 

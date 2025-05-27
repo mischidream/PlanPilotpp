@@ -17,6 +17,7 @@ export const usePlanStore = defineStore('plan', {
     encoding: EncodingType.exact as EncodingType,
     timeStep: TimeStepType.concrete as TimeStepType,
     facets: [] as Facet[],
+    landmarks: [] as Facet[],
     answerSets: [] as AnswerSet[],
     viewMode: 'facets' as 'facets' | 'solutions' | 'query',
     selectedFacetState: [] as SelectionState[],
@@ -55,6 +56,9 @@ export const usePlanStore = defineStore('plan', {
     },
     setFacets(facets: Facet[]) {
       this.facets = facets;
+    },
+    setLandmarks(landmarks: Facet[]) {
+      this.landmarks = landmarks;
     },
     setAnswerSets(answerSets: AnswerSet[]) {
       this.answerSets = answerSets;
