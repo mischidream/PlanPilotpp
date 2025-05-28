@@ -3,21 +3,91 @@
     "label": "solution 1",
     "facets": [
       {
-        "id": 0,
-        "action": "unstack",
-        "constant1": "d",
-        "constant2": "b",
+        "id": "0",
+        "action": "pick-up",
+        "constant1": "c",
+        "constant2": null,
+        "timestep": 1,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "1",
+        "action": "stack",
+        "constant1": "c",
+        "constant2": "d",
+        "timestep": 2,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "3",
+        "action": "pick-up",
+        "constant1": "b",
+        "constant2": null,
+        "timestep": 3,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "4",
+        "action": "stack",
+        "constant1": "b",
+        "constant2": "c",
+        "timestep": 4,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "5",
+        "action": "pick-up",
+        "constant1": "a",
+        "constant2": null,
         "timestep": 5,
         "reduction": null,
         "remaining": null,
         "selectionState": "Not selected"
       },
       {
-        "id": 1,
+        "id": "6",
         "action": "stack",
         "constant1": "a",
-        "constant2": "c",
+        "constant2": "b",
         "timestep": 6,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "7",
+        "action": "unstack",
+        "constant1": "a",
+        "constant2": "b",
+        "timestep": 7,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "8",
+        "action": "pick-up",
+        "constant1": "e",
+        "constant2": null,
+        "timestep": 8,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "9",
+        "action": "put-down",
+        "constant1": "e",
+        "constant2": null,
+        "timestep": 9,
         "reduction": null,
         "remaining": null,
         "selectionState": "Not selected"
@@ -28,7 +98,7 @@
     "label": "solution 2",
     "facets": [
       {
-        "id": 2,
+        "id": "2",
         "action": "unstack",
         "constant1": "e",
         "constant2": "f",

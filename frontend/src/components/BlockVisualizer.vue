@@ -1,0 +1,321 @@
+<template>
+  <div v-if="solution">
+        <div class="controls">
+        <Button label="Restart" type="button" @click="restart" :disabled="solution === null"></Button>
+        <Button label="Prev" type="button" @click="prevStep" :disabled="step <= -1"></Button>
+        <Button :label="playing ? 'Pause' : 'Play'" type="button" @click="togglePlay" :disabled="solution === null"></Button>
+        <Button label="Next" type="button" @click="nextStep" :disabled="step >= sortedFacets.length - 1"></Button>
+    </div>
+
+    <p class="description">
+        <span>{{ currentActionDescription }}</span>
+    </p>
+
+    <div class="svg-wrapper">
+        <svg :width="computedSvgWidth" :height="height" class="block-area">
+          <!-- Picked-up block (in hand) -->
+          <g v-if="pickedUpBlock">
+          <rect
+              :x="width / 2 - blockWidth / 2"
+              :y="50"
+              :width="blockWidth"
+              :height="blockHeight"
+              :fill="pickedUpBlock.color"
+              rx="8"
+              stroke="black"
+              stroke-width="3"
+          />
+          <text
+              :x="width / 2"
+              :y="50 + blockHeight / 2 + 5"
+              text-anchor="middle"
+              alignment-baseline="middle"
+              fill="white"
+              font-size="16"
+          >
+              {{ pickedUpBlock.name }}
+          </text>
+          </g>
+
+          <!-- Visual blocks on table -->
+          <g v-for="(block, index) in visualBlocks" :key="block.name">
+          <rect
+              :x="block.x"
+              :y="block.y"
+              :width="blockWidth"
+              :height="blockHeight"
+              :fill="block.color"
+              rx="8"
+              :stroke="block.highlight ? 'black' : 'none'"
+              :stroke-width="block.highlight ? 3 : 0"
+          />
+          <text
+              :x="block.x + blockWidth / 2"
+              :y="block.y + blockHeight / 2 + 5"
+              text-anchor="middle"
+              alignment-baseline="middle"
+              fill="white"
+              font-size="16"
+          >
+              {{ block.name }}
+          </text>
+          </g>
+      </svg>
+    </div>
+  </div>
+  <div v-else>
+    <p>No solution loaded. Please load a solution to begin.</p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import testData from '../testdata/example_answer_sets.json';
+import type { AnswerSet } from '@/models/AnswerSet';
+import Button from '@/components/Button.vue';
+import type { Block } from '@/models/Block';
+
+// Props
+const props = defineProps<{
+  solution: AnswerSet | null;
+}>();
+
+// Extract all unique block names
+const allBlockNames = Array.from(
+  new Set(
+    props.solution?.facets
+      .flatMap(facet => [facet.constant1, facet.constant2])
+      .filter((name): name is string => typeof name === 'string')
+  )
+);
+
+// Generate color palette and mapping
+const colorPalette = [
+  '#e11d48', '#0ea5e9', '#10b981', '#f59e0b', '#6366f1', '#14b8a6',
+  '#f43f5e', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
+  '#ef4444', '#3b82f6', '#16a34a', '#facc15', '#a855f7', '#10b981',
+  '#db2777', '#0284c7', '#84cc16', '#f97316', '#2563eb', '#7c3aed',
+  '#d97706', '#0d9488', '#eab308', '#4ade80', '#38bdf8', '#c084fc'
+];
+
+const blockColors = Object.fromEntries(
+  allBlockNames.map((name, i) => [name, colorPalette[i % colorPalette.length]])
+) as Record<string, string>;
+
+const getBlockColor = (name: string) => blockColors[name] ?? '#9ca3af';
+
+// Constants
+const width = 600;
+const height = 300;
+const blockWidth = 60;
+const blockHeight = 30;
+
+// Reactive state
+const step = ref(-1);
+const playing = ref(false);
+const visualBlocks = ref<Block[]>([]);
+const pickedUpBlock = ref<Block | null>(null);
+let interval: number | null = null;
+
+// Step data
+const sortedFacets = [...(props.solution?.facets ?? [])].sort((a, b) => a.timestep - b.timestep);
+
+const computedSvgWidth = computed(() => {
+  const numStacks = Object.keys(computeStack(step.value)).length;
+  return Math.max(width, numStacks * (blockWidth + 20) + 100);
+});
+
+// Compute stack state for all blocks on table
+function computeStack(stepIndex: number): Record<string, string[]> {
+  const stacks: Record<string, string[]> = {};
+  const tableBlocks = new Set(allBlockNames);
+  pickedUpBlock.value = null;
+
+  // Track blocks currently picked up (not yet put down/stacked/unstacked)
+  const pickedUpBlocksSet = new Set<string>();
+
+  for (let i = 0; i <= stepIndex; i++) {
+    const { action, constant1, constant2 } = sortedFacets[i];
+
+    if (action === 'pick-up') {
+      // Remove from any stack and mark as picked up
+      for (const key in stacks) stacks[key] = stacks[key].filter(b => b !== constant1);
+      tableBlocks.delete(constant1);
+      pickedUpBlocksSet.add(constant1);
+    } else if (action === 'put-down' || action === 'stack' || action === 'unstack') {
+      // If block was picked up, now it's placed down or moved, so remove from pickedUpBlocksSet
+      if (pickedUpBlocksSet.has(constant1)) {
+        pickedUpBlocksSet.delete(constant1);
+      }
+    }
+
+    if (action === 'stack' && constant2) {
+      // Remove from any stacks
+      for (const key in stacks) stacks[key] = stacks[key].filter(b => b !== constant1);
+      stacks[constant2] = stacks[constant2] || [];
+      stacks[constant2].push(constant1);
+      tableBlocks.delete(constant1);
+    } else if (action === 'unstack' && constant2) {
+      stacks[constant2] = stacks[constant2]?.filter(b => b !== constant1) || [];
+      tableBlocks.add(constant1);
+    } else if (action === 'put-down') {
+      tableBlocks.add(constant1);
+    }
+  }
+
+  // If exactly one block is still picked up (no put-down/stack/unstack after pick-up), show it floating
+  if (pickedUpBlocksSet.size === 1) {
+    const blockName = [...pickedUpBlocksSet][0];
+    pickedUpBlock.value = {
+      name: blockName,
+      x: 0,
+      y: 0,
+      color: getBlockColor(blockName),
+      highlight: true,
+    };
+  } else {
+    pickedUpBlock.value = null;
+  }
+
+  const result: Record<string, string[]> = {};
+  for (const base of tableBlocks) {
+    result[base] = [];
+    let current = base;
+    while (stacks[current]?.length) {
+      const top = stacks[current][0];
+      result[base].push(top);
+      current = top;
+    }
+  }
+  return result;
+}
+
+function updateVisualBlocks() {
+  if (step.value < 0) {
+    visualBlocks.value = allBlockNames.map((name, i) => ({
+      name,
+      x: 50 + i * (blockWidth + 20),
+      y: height - blockHeight - 20,
+      color: getBlockColor(name),
+      highlight: false,
+    }));
+    pickedUpBlock.value = null;
+    return;
+  }
+
+  const currentStacks = computeStack(step.value);
+  const currentFacet = sortedFacets[step.value];
+  const shouldHighlight = step.value < sortedFacets.length - 1;
+  const active = shouldHighlight
+    ? new Set([currentFacet?.constant1, currentFacet?.constant2])
+    : new Set();
+
+  const blocks: Block[] = [];
+  let column = 0;
+
+  for (const base of Object.keys(currentStacks)) {
+    const stack = [base, ...currentStacks[base]];
+    stack.forEach((blockName, i) => {
+      blocks.push({
+        name: blockName,
+        x: column * (blockWidth + 20) + 50,
+        y: height - (i + 1) * (blockHeight + 5) - 20,
+        color: getBlockColor(blockName),
+        highlight: active.has(blockName),
+      });
+    });
+    column++;
+  }
+
+  visualBlocks.value = blocks;
+}
+
+const nextStep = () => {
+  if (step.value < sortedFacets.length - 1) {
+    step.value++;
+    updateVisualBlocks();
+  }
+};
+const prevStep = () => {
+  if (step.value > -1) {
+    step.value--;
+    updateVisualBlocks();
+  }
+};
+const restart = () => {
+  step.value = -1;
+  updateVisualBlocks();
+};
+const togglePlay = () => {
+  if (playing.value) {
+    clearInterval(interval!);
+    playing.value = false;
+  } else {
+    if (step.value >= sortedFacets.length - 1) {
+      step.value = -1; // Restart from beginning
+    }
+    playing.value = true;
+    updateVisualBlocks(); // Ensure first visual is updated
+    interval = setInterval(() => {
+      if (step.value < sortedFacets.length - 1) {
+        step.value++;
+        updateVisualBlocks();
+      } else {
+        clearInterval(interval!);
+        playing.value = false;
+      }
+    }, 1000);
+  }
+};
+
+const currentActionDescription = computed(() => {
+  if (step.value < 0) return 'No action yet. Press play or next.';
+  if (step.value >= sortedFacets.length - 1) return 'Last step reached.';
+  const a = sortedFacets[step.value];
+  return `t=${a.timestep}: ${a.action}(${a.constant1}${a.constant2 ? `, ${a.constant2}` : ''})`;
+});
+
+onMounted(updateVisualBlocks);
+onUnmounted(() => {
+  if (interval) clearInterval(interval);
+});
+</script>
+
+<style scoped>
+.controls {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.svg-wrapper {
+  overflow-x: auto;
+  border: 1px solid #ccc;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.block-area {
+  background-color: #f3f4f6;
+}
+.description {
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+button {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #2563eb;
+}
+button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+</style>
