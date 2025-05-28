@@ -278,7 +278,12 @@ const listFacets = async () => {
       landmarks.value = [];
       sidebarEnabled.value = false;
       selectedFacets.value = [];
-      result = await runPlanPilot(sasFile.value, horizon.value, encoding.value[0], timeStep.value[0] === TimeStepType.concrete ? false : true);
+      result = await runPlanPilot({
+        sasFile: sasFile.value,
+        horizon: horizon.value,
+        encoding: encoding.value[0],
+        abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete
+      });
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];
