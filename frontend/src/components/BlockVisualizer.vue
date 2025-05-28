@@ -14,51 +14,51 @@
     <div class="svg-wrapper">
         <svg :width="computedSvgWidth" :height="height" class="block-area">
           <!-- Picked-up block (in hand) -->
-          <g v-if="pickedUpBlock">
-          <rect
-              :x="width / 2 - blockWidth / 2"
+          <g v-for="(block, idx) in pickedUpBlocks" :key="'picked-' + block.name">
+            <rect
+              :x="width / 2 - blockWidth / 2 + idx * (blockWidth + 10)"
               :y="50"
               :width="blockWidth"
               :height="blockHeight"
-              :fill="pickedUpBlock.color"
+              :fill="block.color"
               rx="8"
               stroke="black"
               stroke-width="3"
-          />
-          <text
-              :x="width / 2"
+            />
+            <text
+              :x="width / 2 + idx * (blockWidth + 10)"
               :y="50 + blockHeight / 2 + 5"
               text-anchor="middle"
               alignment-baseline="middle"
               fill="white"
               font-size="16"
-          >
-              {{ pickedUpBlock.name }}
-          </text>
+            >
+              {{ block.name }}
+            </text>
           </g>
 
           <!-- Visual blocks on table -->
           <g v-for="(block, index) in visualBlocks" :key="block.name">
-          <rect
-              :x="block.x"
-              :y="block.y"
-              :width="blockWidth"
-              :height="blockHeight"
-              :fill="block.color"
-              rx="8"
-              :stroke="block.highlight ? 'black' : 'none'"
-              :stroke-width="block.highlight ? 3 : 0"
-          />
-          <text
-              :x="block.x + blockWidth / 2"
-              :y="block.y + blockHeight / 2 + 5"
-              text-anchor="middle"
-              alignment-baseline="middle"
-              fill="white"
-              font-size="16"
-          >
-              {{ block.name }}
-          </text>
+            <rect
+                :x="block.x"
+                :y="block.y"
+                :width="blockWidth"
+                :height="blockHeight"
+                :fill="block.color"
+                rx="8"
+                :stroke="block.highlight ? 'black' : 'none'"
+                :stroke-width="block.highlight ? 3 : 0"
+            />
+            <text
+                :x="block.x + blockWidth / 2"
+                :y="block.y + blockHeight / 2 + 5"
+                text-anchor="middle"
+                alignment-baseline="middle"
+                fill="white"
+                font-size="16"
+            >
+                {{ block.name }}
+            </text>
           </g>
       </svg>
     </div>
@@ -70,7 +70,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import testData from '../testdata/example_answer_sets.json';
 import type { AnswerSet } from '@/models/AnswerSet';
 import Button from '@/components/Button.vue';
 import type { Block } from '@/models/Block';
@@ -114,7 +113,7 @@ const blockHeight = 30;
 const step = ref(-1);
 const playing = ref(false);
 const visualBlocks = ref<Block[]>([]);
-const pickedUpBlock = ref<Block | null>(null);
+const pickedUpBlocks = ref<Block[]>([]);
 let interval: number | null = null;
 
 // Step data
@@ -129,9 +128,6 @@ const computedSvgWidth = computed(() => {
 function computeStack(stepIndex: number): Record<string, string[]> {
   const stacks: Record<string, string[]> = {};
   const tableBlocks = new Set(allBlockNames);
-  pickedUpBlock.value = null;
-
-  // Track blocks currently picked up (not yet put down/stacked/unstacked)
   const pickedUpBlocksSet = new Set<string>();
 
   for (let i = 0; i <= stepIndex; i++) {
@@ -163,19 +159,13 @@ function computeStack(stepIndex: number): Record<string, string[]> {
     }
   }
 
-  // If exactly one block is still picked up (no put-down/stack/unstack after pick-up), show it floating
-  if (pickedUpBlocksSet.size === 1) {
-    const blockName = [...pickedUpBlocksSet][0];
-    pickedUpBlock.value = {
-      name: blockName,
-      x: 0,
-      y: 0,
-      color: getBlockColor(blockName),
-      highlight: true,
-    };
-  } else {
-    pickedUpBlock.value = null;
-  }
+  pickedUpBlocks.value = [...pickedUpBlocksSet].map((blockName) => ({
+    name: blockName,
+    x: 0,
+    y: 0,
+    color: getBlockColor(blockName),
+    highlight: true,
+  }));
 
   const result: Record<string, string[]> = {};
   for (const base of tableBlocks) {
@@ -199,7 +189,7 @@ function updateVisualBlocks() {
       color: getBlockColor(name),
       highlight: false,
     }));
-    pickedUpBlock.value = null;
+    pickedUpBlocks.value = [];
     return;
   }
 
