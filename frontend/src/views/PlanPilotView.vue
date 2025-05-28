@@ -281,6 +281,7 @@ const listFacets = async () => {
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];
+      lastUsedTimeStep.value = timeStep.value[0];
     } else {
       result = await sendPlanPilotCommand('?');
     }
