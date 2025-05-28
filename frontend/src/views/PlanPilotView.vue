@@ -235,7 +235,10 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
     landmarks.value = [];
     sidebarEnabled.value = false;
 
-    const output = await updateSelectionState(facet, newState);
+    const output = await updateSelectionState({
+      facet,
+      newState
+    });
     
     if (newState !== SelectionState.NotSelected) {
       const alreadySelected = selectedFacets.value.find(f => f.id === facet.id);

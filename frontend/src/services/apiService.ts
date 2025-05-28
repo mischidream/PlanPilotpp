@@ -3,17 +3,19 @@ import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
 import type { AnswerSet } from '@/models/AnswerSet';
+import type { SasPlanInput } from '@/models/SasPlanInput';
+import type { PlanPilotInput } from '@/models/PlanPilotInput';
+import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
 
 let hostUrl = 'http://localhost:5000/api'
 
 export const getSasPlan = async (
-    problemFile: File,
-    domainFile: File
+    input: SasPlanInput
   ): Promise<FastDownwardResponse | undefined> => {
     const formData = new FormData();
     
-    formData.append('domainFile', domainFile);
-    formData.append('problemFile', problemFile);
+    formData.append('domainFile', input.domainFile);
+    formData.append('problemFile', input.problemFile);
   
     try {
       const response = await axios.post<FastDownwardResponse>(hostUrl + '/run-fastdownward', formData, {
@@ -28,20 +30,12 @@ export const getSasPlan = async (
   };
 
 export const runPlanPilot = async (
-    sasFile: string,
-    horizon: number,
-    encoding: string,
-    abstractTimeStep: boolean,
+    input: PlanPilotInput
   ): Promise<Facet[] | undefined> => {
     try {
       const response = await axios.post<{ output: Facet[] }>(
         `${hostUrl}/run-planpilot`,
-        {
-          sasFile,
-          horizon,
-          encoding,
-          abstractTimeStep,
-        }
+        input
       );
       return parseFacetOutput(response.data.output as Facet[]);
     } catch (error) {
@@ -88,9 +82,9 @@ export const sendPlanPilotCommand = async (
   }
 
 export const updateSelectionState = async (
-  facet: Facet,
-  newState: SelectionState
+  input: SelectionUpdateInput
 ): Promise<Facet[] | undefined> => {
+  const { facet, newState } = input;
   facet.selectionState = newState;
 
   //const facetStr = buildFacetString(facet);

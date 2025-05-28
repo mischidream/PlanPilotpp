@@ -47,7 +47,10 @@ async function submitFiles() {
 
   loading.value = true;
   try {
-    const result = await getSasPlan(instanceFile.value, domainFile.value);
+    const result = await getSasPlan({
+      problemFile: instanceFile.value,
+      domainFile: domainFile.value,
+    });
     if (!result) {
       throw new Error('No response received from planner.');
     }
