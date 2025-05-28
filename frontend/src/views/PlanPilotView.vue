@@ -33,15 +33,12 @@
           <InputField label="Restricted To:" v-model="landmarkAction" type="text"/>
         </div>
       </div>
-      <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
-        <Divider/>
-        <div class="count">
-          <p v-if="!answerSetCount && loadingAnswerSetCount"><SkeletonCount/></p>
-          <p v-else-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
-          <p v-if="!facetCount && loadingFacetCount"><SkeletonCount/></p>
-          <p v-else-if="facetCount">Facets: {{ facetCount }}</p>
-        </div>
-      </div>
+      <FacetCountDisplay
+        :loadingAnswerSetCount="loadingAnswerSetCount"
+        :loadingFacetCount="loadingFacetCount"
+        :answerSetCount="answerSetCount"
+        :facetCount="facetCount"
+      />
       <Divider/>
         <div v-if="viewMode === 'facets' || viewMode === 'query'">
           <FacetFilterPanel
@@ -98,6 +95,7 @@ import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/serv
 import type { AnswerSet } from '@/models/AnswerSet';
 import FacetTableView from '@/components/FacetTableView.vue';
 import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
+import FacetCountDisplay from '@/components/FacetCountDisplay.vue';
 import { TimeStepType } from '@/models/TimeStepType';
 
 // Store
