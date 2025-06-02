@@ -106,6 +106,10 @@ import FacetTableView from '@/components/FacetTableView.vue';
 import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
 import FacetCountDisplay from '@/components/FacetCountDisplay.vue';
 import { TimeStepType } from '@/models/TimeStepType';
+import { useFacetFilters } from '@/composables/useFacetFilters';
+import { bindWatch } from '@/utils/bindWatch';
+import { getAllObjects } from '@/utils/getAllObjects';
+import { getAllTimesteps } from '@/utils/getAllTimesteps';
 
 // Store
 const planStore = usePlanStore();
@@ -113,31 +117,41 @@ const instanceFile = computed(() => planStore.instanceFile);
 const domainFile = computed(() => planStore.domainFile);
 const sasFile = computed(() => planStore.sasFile);
 const horizon = ref<number>(planStore.horizon);
-const minHorizon = ref(horizon.value);
 
-// Other values
+// Planning configuration
+const minHorizon = ref(horizon.value);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 const numberOfSolutions = ref<number | undefined>(undefined);
 const landmarkAction = ref<string | undefined>(undefined);
+
+// Data collections
 const facets = ref<Facet[]>([]);
 const selectedFacets = ref<Facet[]>([]);
 const landmarks = ref<Facet[]>([]);
 const solutions = ref<Solution[]>([]);
+
+// Count information
 const solutionCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
+
+// UI state
 const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
+const sidebarEnabled = ref(false);
+
+// Last used settings
 const lastUsedHorizon = ref<number | null>(null);
 const lastUsedEncoding = ref<EncodingType | null>(null);
 const lastUsedTimeStep = ref<TimeStepType | null>(null);
+
+// Loading states
 const loading = ref(false);
 const loadingSolutionCount = ref(false);
 const loadingFacetCount = ref(false);
 const loadingLandmarks = ref(false);
-const sidebarEnabled = ref(false);
 
-// Search filters
+// Filters for search
 const selectedFacetState = ref<SelectionState[]>([]);
 const selectedActionType = ref<ActionType[]>([]);
 const selectedObjects = ref<string[]>([]);
@@ -147,48 +161,30 @@ const selectedTimesteps = ref<string[]>([]);
 const currentPage = ref(1);
 const itemsPerPage = 4;
 
-// === Sync with store ===
-watch(horizon, val => planStore.setHorizon(val));
-watch(minHorizon, val => planStore.setMinHorizon(val));
-watch(encoding, ([val]) => val && planStore.setEncoding(val));
-watch(facets, val => planStore.setFacets(val));
-watch(landmarks, val => planStore.setLandmarks(val));
-watch(solutions, val => planStore.setSolutions(val));
-watch(viewMode, val => planStore.setViewMode(val));
-watch(timeStep, ([val]) => planStore.setTimeStep(val));
+// Sync with store
+bindWatch(horizon, planStore.setHorizon);
+bindWatch(minHorizon, planStore.setMinHorizon);
+bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
+bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
 
-watch(selectedFacetState, val => planStore.setSelectedFacetState(val), { deep: true });
-watch(selectedActionType, val => planStore.setSelectedActionType(val), { deep: true });
-watch(selectedObjects, val => planStore.setSelectedObjects(val), { deep: true });
-watch(selectedTimesteps, val => planStore.setSelectedTimesteps(val), { deep: true });
+bindWatch(facets, planStore.setFacets);
+bindWatch(landmarks, planStore.setLandmarks);
+bindWatch(solutions, planStore.setSolutions);
+
+bindWatch(viewMode, planStore.setViewMode);
+
+bindWatch(selectedFacetState, planStore.setSelectedFacetState, { deep: true });
+bindWatch(selectedActionType, planStore.setSelectedActionType, { deep: true });
+bindWatch(selectedObjects, planStore.setSelectedObjects, { deep: true });
+bindWatch(selectedTimesteps, planStore.setSelectedTimesteps, { deep: true });
 
 function handlePageUpdate(val: number) {
   currentPage.value = val;
 }
 
-const allObjects = computed(() => {
-  const objectsSet = new Set<string>();
-  const allFacets = [...facets.value, ...selectedFacets.value];
-  for (const facet of allFacets) {
-    if (facet.constant1) objectsSet.add(facet.constant1);
-    if (facet.constant2) objectsSet.add(facet.constant2);
-  }
-  return Array.from(objectsSet).sort();
-});
+const allObjects = getAllObjects(facets, selectedFacets);
 
-const allTimesteps = computed(() => {
-  const timestepSet = new Set<string>();
-  const allFacets = [...facets.value, ...selectedFacets.value];
-  for (const facet of allFacets) {
-    const label = facet.timestep === 0 ? 'sometime' : String(facet.timestep);
-    timestepSet.add(label);
-  }
-  return Array.from(timestepSet).sort((a, b) => {
-    if (a === 'sometime') return -1;
-    if (b === 'sometime') return 1;
-    return Number(a) - Number(b);
-  });
-});
+const allTimesteps = getAllTimesteps(facets, selectedFacets);
 
 const columns = computed(() => {
   let base: string[];
@@ -210,31 +206,14 @@ const columns = computed(() => {
 });
 
 // Computed filtered facets based on search
-const filteredFacets = computed(() => {
-  const matchesFilters = (facet: Facet) => {
-    const matchState =
-      !selectedFacetState.value.length ||
-      selectedFacetState.value.includes(facet.selectionState as SelectionState);
-    const matchAction =
-      !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
-    const objects = [facet.constant1, facet.constant2].filter(Boolean) as string[];
-    const matchObjects =
-      !selectedObjects.value.length || objects.some(c => selectedObjects.value.includes(c));
-    const facetTimestep = facet.timestep === 0 ? 'sometime' : String(facet.timestep);
-    const matchTimestep =
-      !selectedTimesteps.value.length || selectedTimesteps.value.includes(facetTimestep);
-    return matchState && matchAction && matchObjects && matchTimestep;
-  };
-
-  const filteredSelected = selectedFacets.value.filter(matchesFilters);
-  const selectedIds = new Set(filteredSelected.map(f => f.id));
-
-  const filteredOthers = facets.value.filter(f => !selectedIds.has(f.id)).filter(matchesFilters);
-
-  const result = [...filteredSelected, ...filteredOthers];
-  console.log('filteredFacets', result);
-  return result;
-});
+const { filteredFacets } = useFacetFilters(
+  facets,
+  selectedFacets,
+  selectedFacetState,
+  selectedActionType,
+  selectedObjects,
+  selectedTimesteps
+);
 
 // Reset to page 1 on filter change
 watch(
