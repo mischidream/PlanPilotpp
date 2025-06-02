@@ -85,31 +85,31 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import type { Facet } from '@/models/Facet';
+import type { Solution } from '@/models/Solution';
+import { ActionType } from '@/models/ActionType';
 import { EncodingType } from '@/models/EncodingType';
 import { SelectionState } from '@/models/SelectionState';
-import { ActionType } from '@/models/ActionType';
-import type { Facet } from '@/models/Facet';
-import { computed, onMounted, ref, watch } from 'vue';
-import InputField from '@/components/InputField.vue';
-import DropdownField from '@/components/DropdownField.vue';
-import Divider from '@/components/Divider.vue';
-import Button from '@/components/Button.vue';
-import SkeletonCount from '@/components/SkeletonCount.vue';
-import FacetFilterPanel from '@/components/FacetFilterPanel.vue';
-import testData from '@/testdata/example_facets.json';
-import testDataSolution from '@/testdata/example_answer_sets.json';
-import { transformToFacets } from '@/utils/transformFacets';
+import { TimeStepType } from '@/models/TimeStepType';
 import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
-import type { Solution } from '@/models/Solution';
-import FacetTableView from '@/components/FacetTableView.vue';
-import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
+import Button from '@/components/Button.vue';
+import Divider from '@/components/Divider.vue';
+import DropdownField from '@/components/DropdownField.vue';
 import FacetCountDisplay from '@/components/FacetCountDisplay.vue';
-import { TimeStepType } from '@/models/TimeStepType';
-import { useFacetFilters } from '@/composables/useFacetFilters';
+import FacetFilterPanel from '@/components/FacetFilterPanel.vue';
+import FacetTableView from '@/components/FacetTableView.vue';
+import InputField from '@/components/InputField.vue';
+import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
 import { bindWatch } from '@/utils/bindWatch';
 import { getAllObjects } from '@/utils/getAllObjects';
 import { getAllTimesteps } from '@/utils/getAllTimesteps';
+import { getFacetTableColumns } from '@/utils/getFacetTableColumns';
+import { transformToFacets } from '@/utils/transformFacets';
+import { useFacetFilters } from '@/composables/useFacetFilters';
+import testData from '@/testdata/example_facets.json';
+import testDataSolution from '@/testdata/example_answer_sets.json';
 
 // Store
 const planStore = usePlanStore();
@@ -186,24 +186,7 @@ const allObjects = getAllObjects(facets, selectedFacets);
 
 const allTimesteps = getAllTimesteps(facets, selectedFacets);
 
-const columns = computed(() => {
-  let base: string[];
-  if (viewMode.value === 'solutions') {
-    base = ['Solutions', 'Action', 'Objects', 'Timestep'];
-  } else if (viewMode.value === 'query') {
-    base = [
-      'Choose facet',
-      'Action',
-      'Objects',
-      'Timestep',
-      'Significance + | -',
-      'Remaining + | -',
-    ];
-  } else {
-    return ['Choose facet', 'Action', 'Objects', 'Timestep'];
-  }
-  return base;
-});
+const columns = computed(() => getFacetTableColumns(viewMode.value));
 
 // Computed filtered facets based on search
 const { filteredFacets } = useFacetFilters(
