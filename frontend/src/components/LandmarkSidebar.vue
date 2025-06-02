@@ -52,7 +52,7 @@ watch(() => props.enabled, (val) => {
   width: 2.5rem;
   transition: width 0.3s ease;
   overflow: hidden;
-  background-color: #f9f9f9;
+  background-color: var(--white-soft);
 }
 
 .sidebar-toggle-button {
@@ -72,7 +72,7 @@ watch(() => props.enabled, (val) => {
 }
 
 .sidebar-content-header {
-  font-size: medium;
+  font-size: 1rem;
   font-weight: bold;
 }
 

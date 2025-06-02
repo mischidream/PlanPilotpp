@@ -8,10 +8,10 @@
 
 <style scoped>
 .skeleton-count {
-  width: 100px;
+  width: 6.25rem;
   height: 1.5rem;
-  background-color: #e0e0e0;
-  border-radius: 4px;
+  background-color: var(--white-mute);
+  border-radius: var(--border-radius);
   animation: pulse 1.5s infinite ease-in-out;
 }
 

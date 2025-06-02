@@ -22,7 +22,6 @@ import Header from './components/Header.vue';
 </script>
 
 <style scoped>
-
 .app-container {
   min-height: 100vh;
   display: flex;
@@ -37,7 +36,7 @@ import Header from './components/Header.vue';
   padding: 1rem;
   background-color: var(--background-soft);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.05);
 }
 
 .header {

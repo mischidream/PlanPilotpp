@@ -132,16 +132,18 @@ onUnmounted(() => {
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  position: relative; 
+  position: relative;
 }
 
 .input {
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
   flex: 1;
-  min-width: 200px;
+  min-width: 12.5rem;
   cursor: pointer;
+  background-color: var(--background);
+  color: var(--text);
 }
 
 .dropdown-input {
@@ -149,10 +151,12 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
   cursor: pointer;
-  min-width: 200px;
+  min-width: 12.5rem;
+  background-color: var(--background);
+  color: var(--text);
 }
 
 .checkbox-dropdown {
@@ -161,36 +165,40 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  max-height: 200px;
+  max-height: 12.5rem;
   overflow-y: auto;
   width: 100%;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1);
 }
 
 .checkbox-item {
-  padding: 8px;
+  padding: 0.5rem;
+  color: var(--text);
 }
 
 .checkbox-dropdown label {
   display: flex;
   align-items: center;
+  color: var(--text);
 }
 
 .checkbox-dropdown input[type="checkbox"] {
-  margin-right: 8px;
+  margin-right: 0.5rem;
 }
 
 .radio-option {
   display: flex;
   align-items: center;
   width: 100%;
+  color: var(--text);
 }
 
 .radio-option .material-icons {
-  margin-right: 8px;
-  font-size: 18px;
+  margin-right: 0.5rem;
+  font-size: 1.125rem;
   display: inline-flex;
   align-items: center;
 }

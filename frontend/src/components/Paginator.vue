@@ -114,7 +114,7 @@ function goToPage(page: number) {
 .paginator {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 0.625rem;
   padding: 0.5rem;
 }
 

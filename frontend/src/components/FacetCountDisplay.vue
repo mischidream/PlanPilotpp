@@ -27,6 +27,6 @@ const props = defineProps<{
 .count {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 1.25rem;
 }
 </style>

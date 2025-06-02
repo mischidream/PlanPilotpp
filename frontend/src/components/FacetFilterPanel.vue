@@ -90,7 +90,7 @@ function onResetFilters() {
 .search-fields {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .search-fields .button{

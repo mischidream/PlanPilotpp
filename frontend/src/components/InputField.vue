@@ -106,13 +106,14 @@
   display: flex;
   flex-direction: column;
 }
+
 .input {
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
   flex: 1;
-  min-width: 200px;
-  min-height: 40px;
+  min-width: 12.5rem;
+  min-height: 2.5rem;
 }
 
 .file-input-container {
@@ -127,9 +128,9 @@
 
 .file-button {
   padding: 0.4rem 0.8rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  background-color: #f5f5f5;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background-color: var(--gray-soft);
   cursor: pointer;
   font-size: 0.9rem;
   user-select: none;
@@ -137,28 +138,27 @@
 }
 
 .file-button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--white-mute);
 }
 
 .file-button:active {
-  background-color: #d6d6d6;
+  background-color: var(--white-soft);
   transform: scale(0.98);
 }
 
 .file-button.disabled {
-  background-color: #e0e0e0;
-  color: #999;
+  background-color: var(--white-mute);
+  color: var(--gray-mute);
   cursor: not-allowed;
   pointer-events: none;
 }
 
 .file-name {
   font-size: 0.9rem;
-  color: #555;
-  max-width: 200px;
+  color: var(--text-light-2);
+  max-width: 12.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 </style>
-  

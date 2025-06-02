@@ -92,45 +92,51 @@ const showRemaining = computed(() => {
 
 <style scoped>
 .facet-row {
-    display: flex;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
 }
+
 .facet-row:first-child {
   padding-top: 0;
 }
+
 .facet-cell {
-    flex: 1;
-    display: flex;
-    align-items: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
+
 .choose-facet button {
-    margin-right: 5px;
-    cursor: pointer;
-    background: transparent;
-    border: 2px solid black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--border-radius);
-    transition: all 0.2s ease;
+  margin-right: 0.3125rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0.125rem solid var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
 }
+
 .choose-facet button.active {
   background-color: var(--light-blue);
 }
+
 .choose-facet button.active:hover {
   background-color: var(--deep-blue);
   transform: scale(1.05);
 }
+
 .choose-facet button:hover:not(.active) {
   background-color: var(--white-mute);
   transform: scale(1.05);
 }
+
 .choose-facet .material-icons {
-  font-size: 28px;
+  font-size: 1.75rem;
   color: inherit;
 }
 </style>
-  

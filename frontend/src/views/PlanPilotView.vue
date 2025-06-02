@@ -436,29 +436,33 @@ onMounted(() => {
 .input-fields {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
 }
+
 .input-fields .button {
     align-self: flex-end;
 }
+
 .button-input {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 1.25rem;
 }
+
 .button-input .button{
     align-self: flex-end;
 }
+
 .count {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
 .button-input-group {
     display: flex;
-    gap: 10px;
+    gap: 0.625rem;
     flex-wrap: nowrap;
     flex-shrink: 0;
 }

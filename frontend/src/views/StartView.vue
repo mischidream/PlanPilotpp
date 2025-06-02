@@ -73,12 +73,12 @@ async function submitFiles() {
 .input-fields {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 1.25rem;
 }
 .input-fields .button{
     align-self: flex-end;
 }
 .horizon-output {
-  margin-top: 10px;
+  margin-top: 0.625rem;
 }
 </style>

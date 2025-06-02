@@ -14,18 +14,20 @@ defineProps<{
 .facet-row {
   display: flex;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border);
 }
 
 .skeleton-bar {
   height: 2.5rem;
   width: 100%;
-  background-color: #e0e0e0;
-  border-radius: 4px;
+  background-color: var(--white-mute);
+  border-radius: var(--border-radius);
   animation: pulse 1.5s infinite ease-in-out;
 }
 
-.skeleton-bar.facets, .skeleton-bar.query, .skeleton-bar.landmarks {
+.skeleton-bar.facets,
+.skeleton-bar.query,
+.skeleton-bar.landmarks {
   height: 2.5rem;
 }
 

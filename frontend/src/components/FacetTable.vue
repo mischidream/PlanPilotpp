@@ -123,7 +123,7 @@ function goToVisualization(solution: Solution) {
 
 .solution-block {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border);
 }
 
 .solution-toggle {
@@ -148,15 +148,15 @@ function goToVisualization(solution: Solution) {
 
 .visualize-button {
   padding: 0.25rem 0.5rem;
-  background-color: #1976d2;
-  color: white;
+  background-color: var(--light-blue);
+  color: var(--white);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   cursor: pointer;
 }
 
 .visualize-button:hover {
-  background-color: #125ea3;
+  background-color: var(--deep-blue);
 }
 </style>
   

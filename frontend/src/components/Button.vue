@@ -31,21 +31,24 @@ import type { PropType } from 'vue';
 </script>
   
 <style scoped>
- .button {
-    padding: 0.5rem 1rem;
-    background-color: var(--light-blue);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    min-width: 100px;
-    min-height: 40px;
- }
- .button:hover {
-    background-color: var(--deep-blue);
- }
+.button {
+  padding: 0.5rem 1rem;
+  background-color: var(--light-blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  min-width: 6.25rem;
+  min-height: 2.5rem;
+  transition: background-color 0.3s, opacity 0.3s;
+}
+
+.button:hover {
+  background-color: var(--deep-blue);
+}
+
 .button:disabled {
-  background-color: gray;
+  background-color: var(--gray-mute);
   cursor: not-allowed;
   opacity: 0.6;
 }

@@ -21,7 +21,7 @@
               :width="blockWidth"
               :height="blockHeight"
               :fill="block.color"
-              rx="8"
+              rx="4"
               stroke="black"
               stroke-width="3"
             />
@@ -45,7 +45,7 @@
                 :width="blockWidth"
                 :height="blockHeight"
                 :fill="block.color"
-                rx="8"
+                rx="4"
                 :stroke="block.highlight ? 'black' : 'none'"
                 :stroke-width="block.highlight ? 3 : 0"
             />
@@ -288,32 +288,37 @@ onUnmounted(() => {
 
 .svg-wrapper {
   overflow-x: auto;
-  border: 1px solid #ccc;
-  background-color: #f3f4f6;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  background-color: var(--background-mute);
+  border-radius: var(--border-radius);
   margin-bottom: 1rem;
 }
 
 .block-area {
-  background-color: #f3f4f6;
+  background-color: var(--gray-soft);
 }
+
 .description {
   font-weight: bold;
   margin-bottom: 1rem;
+  color: var(--text);
 }
+
 button {
   padding: 0.5rem 1rem;
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--light-blue);
+  color: var(--white);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   cursor: pointer;
 }
+
 button:hover {
-  background-color: #2563eb;
+  background-color: var(--deep-blue);
 }
+
 button:disabled {
-  background-color: #9ca3af;
+  background-color: var(--gray-mute);
   cursor: not-allowed;
 }
 </style>
