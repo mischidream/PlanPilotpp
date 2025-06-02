@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios';
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
@@ -7,79 +7,81 @@ import type { SasPlanInput } from '@/models/SasPlanInput';
 import type { PlanPilotInput } from '@/models/PlanPilotInput';
 import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
 
-let hostUrl = 'http://localhost:5000/api'
+let hostUrl = 'http://localhost:5000/api';
 
 export const getSasPlan = async (
-    input: SasPlanInput
-  ): Promise<FastDownwardResponse | undefined> => {
-    const formData = new FormData();
-    
-    formData.append('domainFile', input.domainFile);
-    formData.append('problemFile', input.problemFile);
-  
-    try {
-      const response = await axios.post<FastDownwardResponse>(hostUrl + '/run-fastdownward', formData, {
+  input: SasPlanInput
+): Promise<FastDownwardResponse | undefined> => {
+  const formData = new FormData();
+
+  formData.append('domainFile', input.domainFile);
+  formData.append('problemFile', input.problemFile);
+
+  try {
+    const response = await axios.post<FastDownwardResponse>(
+      hostUrl + '/run-fastdownward',
+      formData,
+      {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      });
-      return response.data;
-    } catch (error) {
-        handleError(error);
-    }
-  };
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
 
-export const runPlanPilot = async (
-    input: PlanPilotInput
-  ): Promise<Facet[] | undefined> => {
-    try {
-      const response = await axios.post<{ output: Facet[] }>(
-        `${hostUrl}/run-planpilot`,
-        input
-      );
-      return parseFacetOutput(response.data.output as Facet[]);
-    } catch (error) {
-      handleError(error);
-    }
-  };
+export const runPlanPilot = async (input: PlanPilotInput): Promise<Facet[] | undefined> => {
+  try {
+    const response = await axios.post<{ output: Facet[] }>(`${hostUrl}/run-planpilot`, input);
+    return parseFacetOutput(response.data.output as Facet[]);
+  } catch (error) {
+    handleError(error);
+  }
+};
 
 export const sendPlanPilotCommand = async (
-    command: string
-  ): Promise<Facet[] | Solution[] | string | undefined> => {
-    try {
-      const response = await axios.post<{ output: Facet[] | Solution[] | string }>(`${hostUrl}/send-planpilot-command`, {
+  command: string
+): Promise<Facet[] | Solution[] | string | undefined> => {
+  try {
+    const response = await axios.post<{ output: Facet[] | Solution[] | string }>(
+      `${hostUrl}/send-planpilot-command`,
+      {
         command,
-      })
-      const output = response.data.output;
-
-      console.log("send plan pilot command: ", command);
-      console.log("send plan pilot command output:", output);
-
-      if (command === '?' || command === '#??' || command === '#!!' || command.startsWith('|= %')) {
-        if (Array.isArray(output) && output.length > 0 && 'reduction' in output[0]) {
-          return parseFacetOutput(output as Facet[]);
-        } else if (output.length === 0) {
-          return [];
-        } else {
-          console.error('Unexpected facet output format:', output);
-          return [];
-        }
       }
+    );
+    const output = response.data.output;
 
-      if (command.startsWith('!')) {
-        if (Array.isArray(output)) {
-          return parseSolutionOutput(output as Solution[]);
-        } else {
-          console.error('Unexpected solution output format:', output);
-          return [];
-        }
+    console.log('send plan pilot command: ', command);
+    console.log('send plan pilot command output:', output);
+
+    if (command === '?' || command === '#??' || command === '#!!' || command.startsWith('|= %')) {
+      if (Array.isArray(output) && output.length > 0 && 'reduction' in output[0]) {
+        return parseFacetOutput(output as Facet[]);
+      } else if (output.length === 0) {
+        return [];
+      } else {
+        console.error('Unexpected facet output format:', output);
+        return [];
       }
-
-      return output;
-    } catch (error) {
-      handleError(error)
     }
+
+    if (command.startsWith('!')) {
+      if (Array.isArray(output)) {
+        return parseSolutionOutput(output as Solution[]);
+      } else {
+        console.error('Unexpected solution output format:', output);
+        return [];
+      }
+    }
+
+    return output;
+  } catch (error) {
+    handleError(error);
   }
+};
 
 export const updateSelectionState = async (
   input: SelectionUpdateInput
@@ -94,7 +96,10 @@ export const updateSelectionState = async (
     command = `+ ${facetStr}`;
   } else if (newState === SelectionState.Negative) {
     command = `+ ~${facetStr}`;
-  } else if (newState === SelectionState.NotSelected && facet.selectionState === SelectionState.Negative) {
+  } else if (
+    newState === SelectionState.NotSelected &&
+    facet.selectionState === SelectionState.Negative
+  ) {
     command = `- ~${facetStr}`;
   } else {
     command = `- ${facetStr}`;
@@ -115,13 +120,13 @@ export const updateSelectionState = async (
 };
 
 export const stopPlanPilot = async (): Promise<string | undefined> => {
-    try {
-      const response = await axios.post<{ status: string }>(`${hostUrl}/stop-planpilot`)
-      return response.data.status
-    } catch (error) {
-      handleError(error)
-    }
+  try {
+    const response = await axios.post<{ status: string }>(`${hostUrl}/stop-planpilot`);
+    return response.data.status;
+  } catch (error) {
+    handleError(error);
   }
+};
 
 function handleError(error: unknown): never {
   if (axios.isAxiosError(error)) {
@@ -175,8 +180,14 @@ function parseSolutionOutput(output: Solution[]): Solution[] {
 
           const processedFacets = facets.map((facetData: Facet) => ({
             ...facetData,
-            reduction: facetData.reduction ?? { solution: { positive: null, negative: null }, facets: { positive: null, negative: null } },
-            remaining: facetData.remaining ?? { solution: { positive: null, negative: null }, facets: { positive: null, negative: null } },
+            reduction: facetData.reduction ?? {
+              solution: { positive: null, negative: null },
+              facets: { positive: null, negative: null },
+            },
+            remaining: facetData.remaining ?? {
+              solution: { positive: null, negative: null },
+              facets: { positive: null, negative: null },
+            },
             selectionState: facetData.selectionState ?? SelectionState.NotSelected,
           }));
 

@@ -25,7 +25,9 @@
         <label v-else>
           <div @click="toggleSelection(option)" class="radio-option">
             <span class="material-icons">
-              {{ selectedValues.includes(option) ? 'radio_button_checked' : 'radio_button_unchecked' }}
+              {{
+                selectedValues.includes(option) ? 'radio_button_checked' : 'radio_button_unchecked'
+              }}
             </span>
             {{ option }}
           </div>
@@ -36,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue'
-import { nanoid } from 'nanoid'
+import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue';
+import { nanoid } from 'nanoid';
 
 const props = defineProps({
   label: {
@@ -57,75 +59,75 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-})
+});
 
 const dropdownRef = ref<HTMLElement | null>(null);
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
-const inputId = computed(() => `select-${nanoid(6)}`)
+const inputId = computed(() => `select-${nanoid(6)}`);
 
-const isOpen = ref(false)
+const isOpen = ref(false);
 
 const toggleDropdown = () => {
-  isOpen.value = !isOpen.value
-}
+  isOpen.value = !isOpen.value;
+};
 
 const selectedValues = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-})
+  set: val => emit('update:modelValue', val),
+});
 
 const toggleSelection = (option: string | number) => {
-  const index = selectedValues.value.indexOf(option)
+  const index = selectedValues.value.indexOf(option);
   if (props.isMultiple) {
     if (index === -1) {
-      selectedValues.value.push(option)
+      selectedValues.value.push(option);
     } else {
-      selectedValues.value.splice(index, 1)
+      selectedValues.value.splice(index, 1);
     }
   } else {
     if (selectedValues.value.includes(option)) {
-      selectedValues.value = []
+      selectedValues.value = [];
     } else {
-      selectedValues.value = [option]
+      selectedValues.value = [option];
     }
-    isOpen.value = false
+    isOpen.value = false;
   }
-}
+};
 
 const selectedItemsPreview = computed(() => {
   if (props.isMultiple) {
-    if(selectedValues.value.length === 0){
-      return 'Select options'
+    if (selectedValues.value.length === 0) {
+      return 'Select options';
     }
-    const previewLimit = 2
-    const previewItems = selectedValues.value.slice(0, previewLimit)
-    const remainingItemsCount = selectedValues.value.length - previewItems.length
+    const previewLimit = 2;
+    const previewItems = selectedValues.value.slice(0, previewLimit);
+    const remainingItemsCount = selectedValues.value.length - previewItems.length;
 
     if (remainingItemsCount > 0) {
-      return `${previewItems.join(', ')} and ${remainingItemsCount} more`
+      return `${previewItems.join(', ')} and ${remainingItemsCount} more`;
     } else {
-      return previewItems.join(', ')
+      return previewItems.join(', ');
     }
   } else {
-    return selectedValues.value.length > 0 ? selectedValues.value[0] : 'Select an option'
+    return selectedValues.value.length > 0 ? selectedValues.value[0] : 'Select an option';
   }
-})
+});
 
 const handleClickOutside = (event: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    isOpen.value = false
+    isOpen.value = false;
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+  document.addEventListener('click', handleClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -185,7 +187,7 @@ onUnmounted(() => {
   color: var(--text);
 }
 
-.checkbox-dropdown input[type="checkbox"] {
+.checkbox-dropdown input[type='checkbox'] {
   margin-right: 0.5rem;
 }
 

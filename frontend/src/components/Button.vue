@@ -1,35 +1,30 @@
 <template>
-    <button
-      :type="type"
-      class="button"
-      :disabled="disabled"
-      @click="$emit('click')"
-    >
-      <slot>{{ label }}</slot>
-    </button>
+  <button :type="type" class="button" :disabled="disabled" @click="$emit('click')">
+    <slot>{{ label }}</slot>
+  </button>
 </template>
-  
+
 <script setup lang="ts">
 import type { PropType } from 'vue';
 
-  const props = defineProps({
-    label: {
-      type: String,
-      default: 'Click me',
-    },
-    type: {
-      type: String as PropType<'button' | 'submit' | 'reset'>,
-      default: 'button',
-    },
-    disabled: {
-      type: Boolean,
-      default: false,
-    }
-  })
-  
-  defineEmits(['click'])
+const props = defineProps({
+  label: {
+    type: String,
+    default: 'Click me',
+  },
+  type: {
+    type: String as PropType<'button' | 'submit' | 'reset'>,
+    default: 'button',
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+defineEmits(['click']);
 </script>
-  
+
 <style scoped>
 .button {
   padding: 0.5rem 1rem;
@@ -40,7 +35,9 @@ import type { PropType } from 'vue';
   cursor: pointer;
   min-width: 6.25rem;
   min-height: 2.5rem;
-  transition: background-color 0.3s, opacity 0.3s;
+  transition:
+    background-color 0.3s,
+    opacity 0.3s;
 }
 
 .button:hover {
@@ -53,4 +50,3 @@ import type { PropType } from 'vue';
   opacity: 0.6;
 }
 </style>
-  

@@ -4,18 +4,23 @@
       <div class="input-fields">
         <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
         <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
-        <InputField label="Horizon:" v-model="horizon" type="number" :placeholder="minHorizon?.toString()" />
-        <DropdownField
-            label="Encoding:"
-            :options="Object.values(EncodingType)"
-            v-model="encoding"
-            :isMultiple="false"
+        <InputField
+          label="Horizon:"
+          v-model="horizon"
+          type="number"
+          :placeholder="minHorizon?.toString()"
         />
         <DropdownField
-            label="Time Steps:"
-            :options="Object.values(TimeStepType)"
-            v-model="timeStep"
-            :isMultiple="false"
+          label="Encoding:"
+          :options="Object.values(EncodingType)"
+          v-model="encoding"
+          :isMultiple="false"
+        />
+        <DropdownField
+          label="Time Steps:"
+          :options="Object.values(TimeStepType)"
+          v-model="timeStep"
+          :isMultiple="false"
         />
         <Button label="List Facets" type="submit" @click="listFacets"></Button>
       </div>
@@ -27,10 +32,14 @@
         <Button label="Number of Solutions" type="button" @click="countSolutions"></Button>
         <Button label="Number of Facets" type="button" @click="countFacets"></Button>
         <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
-        <Button label="Query Remaining Solutions" type="button" @click="queryRemainingSolutions"></Button>
+        <Button
+          label="Query Remaining Solutions"
+          type="button"
+          @click="queryRemainingSolutions"
+        ></Button>
         <div class="button-input-group">
           <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
-          <InputField label="Restricted To:" v-model="landmarkAction" type="text"/>
+          <InputField label="Restricted To:" v-model="landmarkAction" type="text" />
         </div>
       </div>
       <FacetCountDisplay
@@ -39,32 +48,32 @@
         :solutionCount="solutionCount"
         :facetCount="facetCount"
       />
-      <Divider/>
-        <div v-if="viewMode === 'facets' || viewMode === 'query'">
-          <FacetFilterPanel
-            :selectedFacetState="selectedFacetState"
-            :selectedActionType="selectedActionType"
-            :selectedObjects="selectedObjects"
-            :selectedTimesteps="selectedTimesteps"
-            :allObjects="allObjects"
-            :allTimesteps="allTimesteps"
-            @update:selectedFacetState="val => selectedFacetState = val"
-            @update:selectedActionType="val => selectedActionType = val"
-            @update:selectedObjects="val => selectedObjects = val"
-            @update:selectedTimesteps="val => selectedTimesteps = val"
-          />
-          <Divider/>
-        </div>
-        <FacetTableView
-          :headers="columns"
-          :facets="filteredFacets"
-          :solutions="solutions"
-          :viewMode="viewMode"
-          :loading="loading"
-          :itemsPerPage="itemsPerPage"
-          :currentPage="currentPage"
-          @update:currentPage="handlePageUpdate"
-          @selectFacet="updateFacetSelectionState"
+      <Divider />
+      <div v-if="viewMode === 'facets' || viewMode === 'query'">
+        <FacetFilterPanel
+          :selectedFacetState="selectedFacetState"
+          :selectedActionType="selectedActionType"
+          :selectedObjects="selectedObjects"
+          :selectedTimesteps="selectedTimesteps"
+          :allObjects="allObjects"
+          :allTimesteps="allTimesteps"
+          @update:selectedFacetState="val => (selectedFacetState = val)"
+          @update:selectedActionType="val => (selectedActionType = val)"
+          @update:selectedObjects="val => (selectedObjects = val)"
+          @update:selectedTimesteps="val => (selectedTimesteps = val)"
+        />
+        <Divider />
+      </div>
+      <FacetTableView
+        :headers="columns"
+        :facets="filteredFacets"
+        :solutions="solutions"
+        :viewMode="viewMode"
+        :loading="loading"
+        :itemsPerPage="itemsPerPage"
+        :currentPage="currentPage"
+        @update:currentPage="handlePageUpdate"
+        @selectFacet="updateFacetSelectionState"
       />
     </div>
     <LandmarkSidebar
@@ -139,19 +148,19 @@ const currentPage = ref(1);
 const itemsPerPage = 4;
 
 // === Sync with store ===
-watch(horizon, (val) => planStore.setHorizon(val));
-watch(minHorizon, (val) => planStore.setMinHorizon(val));
+watch(horizon, val => planStore.setHorizon(val));
+watch(minHorizon, val => planStore.setMinHorizon(val));
 watch(encoding, ([val]) => val && planStore.setEncoding(val));
-watch(facets, (val) => planStore.setFacets(val));
-watch(landmarks, (val) => planStore.setLandmarks(val));
-watch(solutions, (val) => planStore.setSolutions(val));
-watch(viewMode, (val) => planStore.setViewMode(val));
-watch(timeStep, ([val]) => planStore.setTimeStep(val))
+watch(facets, val => planStore.setFacets(val));
+watch(landmarks, val => planStore.setLandmarks(val));
+watch(solutions, val => planStore.setSolutions(val));
+watch(viewMode, val => planStore.setViewMode(val));
+watch(timeStep, ([val]) => planStore.setTimeStep(val));
 
-watch(selectedFacetState, (val) => planStore.setSelectedFacetState(val), { deep: true });
-watch(selectedActionType, (val) => planStore.setSelectedActionType(val), { deep: true });
-watch(selectedObjects, (val) => planStore.setSelectedObjects(val), { deep: true });
-watch(selectedTimesteps, (val) => planStore.setSelectedTimesteps(val), { deep: true });
+watch(selectedFacetState, val => planStore.setSelectedFacetState(val), { deep: true });
+watch(selectedActionType, val => planStore.setSelectedActionType(val), { deep: true });
+watch(selectedObjects, val => planStore.setSelectedObjects(val), { deep: true });
+watch(selectedTimesteps, val => planStore.setSelectedTimesteps(val), { deep: true });
 
 function handlePageUpdate(val: number) {
   currentPage.value = val;
@@ -171,22 +180,29 @@ const allTimesteps = computed(() => {
   const timestepSet = new Set<string>();
   const allFacets = [...facets.value, ...selectedFacets.value];
   for (const facet of allFacets) {
-    const label = facet.timestep === 0 ? "sometime" : String(facet.timestep);
+    const label = facet.timestep === 0 ? 'sometime' : String(facet.timestep);
     timestepSet.add(label);
   }
   return Array.from(timestepSet).sort((a, b) => {
-    if (a === "sometime") return -1;
-    if (b === "sometime") return 1;
+    if (a === 'sometime') return -1;
+    if (b === 'sometime') return 1;
     return Number(a) - Number(b);
   });
 });
 
 const columns = computed(() => {
   let base: string[];
-  if (viewMode.value === "solutions") {
+  if (viewMode.value === 'solutions') {
     base = ['Solutions', 'Action', 'Objects', 'Timestep'];
-  } else if (viewMode.value === "query") {
-    base = ['Choose facet', 'Action', 'Objects', 'Timestep', 'Significance + | -', 'Remaining + | -'];
+  } else if (viewMode.value === 'query') {
+    base = [
+      'Choose facet',
+      'Action',
+      'Objects',
+      'Timestep',
+      'Significance + | -',
+      'Remaining + | -',
+    ];
   } else {
     return ['Choose facet', 'Action', 'Objects', 'Timestep'];
   }
@@ -196,24 +212,27 @@ const columns = computed(() => {
 // Computed filtered facets based on search
 const filteredFacets = computed(() => {
   const matchesFilters = (facet: Facet) => {
-    const matchState = !selectedFacetState.value.length || selectedFacetState.value.includes(facet.selectionState as SelectionState);
-    const matchAction = !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
+    const matchState =
+      !selectedFacetState.value.length ||
+      selectedFacetState.value.includes(facet.selectionState as SelectionState);
+    const matchAction =
+      !selectedActionType.value.length || selectedActionType.value.includes(facet.action);
     const objects = [facet.constant1, facet.constant2].filter(Boolean) as string[];
-    const matchObjects = !selectedObjects.value.length || objects.some(c => selectedObjects.value.includes(c));
-    const facetTimestep = facet.timestep === 0 ? "sometime" : String(facet.timestep);
-    const matchTimestep = !selectedTimesteps.value.length || selectedTimesteps.value.includes(facetTimestep);
+    const matchObjects =
+      !selectedObjects.value.length || objects.some(c => selectedObjects.value.includes(c));
+    const facetTimestep = facet.timestep === 0 ? 'sometime' : String(facet.timestep);
+    const matchTimestep =
+      !selectedTimesteps.value.length || selectedTimesteps.value.includes(facetTimestep);
     return matchState && matchAction && matchObjects && matchTimestep;
   };
 
   const filteredSelected = selectedFacets.value.filter(matchesFilters);
   const selectedIds = new Set(filteredSelected.map(f => f.id));
 
-  const filteredOthers = facets.value
-    .filter(f => !selectedIds.has(f.id))
-    .filter(matchesFilters);
+  const filteredOthers = facets.value.filter(f => !selectedIds.has(f.id)).filter(matchesFilters);
 
   const result = [...filteredSelected, ...filteredOthers];
-  console.log("filteredFacets", result);
+  console.log('filteredFacets', result);
   return result;
 });
 
@@ -237,14 +256,14 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
 
     const output = await updateSelectionState({
       facet,
-      newState
+      newState,
     });
-    
+
     if (newState !== SelectionState.NotSelected) {
       const alreadySelected = selectedFacets.value.find(f => f.id === facet.id);
       if (!alreadySelected) {
         facet.selectionState = newState;
-        selectedFacets.value.push({...facet});
+        selectedFacets.value.push({ ...facet });
       } else {
         alreadySelected.selectionState = newState;
       }
@@ -282,7 +301,7 @@ const listFacets = async () => {
         sasFile: sasFile.value,
         horizon: horizon.value,
         encoding: encoding.value[0],
-        abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete
+        abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete,
       });
       isFirstRun.value = false;
       lastUsedHorizon.value = horizon.value;
@@ -308,9 +327,7 @@ const listSolutions = async () => {
     viewMode.value = 'solutions';
     solutionCount.value = null;
     facetCount.value = null;
-    const command = numberOfSolutions.value
-      ? `! ${numberOfSolutions.value}`
-      : '!';
+    const command = numberOfSolutions.value ? `! ${numberOfSolutions.value}` : '!';
     const output = await sendPlanPilotCommand(command);
     if (Array.isArray(output)) {
       solutions.value = output as Solution[];
@@ -392,9 +409,7 @@ const listLandmarks = async () => {
   sidebarEnabled.value = true;
   console.log(landmarkAction.value);
   try {
-    const command = landmarkAction.value
-      ? `|= % ${landmarkAction.value}`
-      : '|= %';
+    const command = landmarkAction.value ? `|= % ${landmarkAction.value}` : '|= %';
     const output = await sendPlanPilotCommand(command);
     if (Array.isArray(output)) {
       landmarks.value = (output as Facet[]).sort((a, b) => {
@@ -410,14 +425,13 @@ const listLandmarks = async () => {
   } finally {
     loadingLandmarks.value = false;
   }
-}
-
+};
 
 // Load test data and transform it to facets
 onMounted(() => {
-    //facets.value = transformToFacets(testData);
-    //solutions.value = testDataSolution as Solution[];
-    //viewMode.value = 'solutions';
+  //facets.value = transformToFacets(testData);
+  //solutions.value = testDataSolution as Solution[];
+  //viewMode.value = 'solutions';
 });
 </script>
 
@@ -434,24 +448,24 @@ onMounted(() => {
 }
 
 .input-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-    margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .input-fields .button {
-    align-self: flex-end;
+  align-self: flex-end;
 }
 
 .button-input {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
 }
 
-.button-input .button{
-    align-self: flex-end;
+.button-input .button {
+  align-self: flex-end;
 }
 
 .count {
@@ -461,9 +475,9 @@ onMounted(() => {
 }
 
 .button-input-group {
-    display: flex;
-    gap: 0.625rem;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 </style>

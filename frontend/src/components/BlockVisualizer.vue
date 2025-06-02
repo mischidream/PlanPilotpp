@@ -1,65 +1,75 @@
 <template>
   <div v-if="solution">
-        <div class="controls">
-        <Button label="Restart" type="button" @click="restart" :disabled="solution === null"></Button>
-        <Button label="Prev" type="button" @click="prevStep" :disabled="step <= -1"></Button>
-        <Button :label="playing ? 'Pause' : 'Play'" type="button" @click="togglePlay" :disabled="solution === null"></Button>
-        <Button label="Next" type="button" @click="nextStep" :disabled="step >= sortedFacets.length - 1"></Button>
+    <div class="controls">
+      <Button label="Restart" type="button" @click="restart" :disabled="solution === null"></Button>
+      <Button label="Prev" type="button" @click="prevStep" :disabled="step <= -1"></Button>
+      <Button
+        :label="playing ? 'Pause' : 'Play'"
+        type="button"
+        @click="togglePlay"
+        :disabled="solution === null"
+      ></Button>
+      <Button
+        label="Next"
+        type="button"
+        @click="nextStep"
+        :disabled="step >= sortedFacets.length - 1"
+      ></Button>
     </div>
 
     <p class="description">
-        <span>{{ currentActionDescription }}</span>
+      <span>{{ currentActionDescription }}</span>
     </p>
 
     <div class="svg-wrapper">
-        <svg :width="computedSvgWidth" :height="height" class="block-area">
-          <!-- Picked-up block (in hand) -->
-          <g v-for="(block, idx) in pickedUpBlocks" :key="'picked-' + block.name">
-            <rect
-              :x="width / 2 - blockWidth / 2 + idx * (blockWidth + 10)"
-              :y="50"
-              :width="blockWidth"
-              :height="blockHeight"
-              :fill="block.color"
-              rx="4"
-              stroke="black"
-              stroke-width="3"
-            />
-            <text
-              :x="width / 2 + idx * (blockWidth + 10)"
-              :y="50 + blockHeight / 2 + 5"
-              text-anchor="middle"
-              alignment-baseline="middle"
-              fill="white"
-              font-size="16"
-            >
-              {{ block.name }}
-            </text>
-          </g>
+      <svg :width="computedSvgWidth" :height="height" class="block-area">
+        <!-- Picked-up block (in hand) -->
+        <g v-for="(block, idx) in pickedUpBlocks" :key="'picked-' + block.name">
+          <rect
+            :x="width / 2 - blockWidth / 2 + idx * (blockWidth + 10)"
+            :y="50"
+            :width="blockWidth"
+            :height="blockHeight"
+            :fill="block.color"
+            rx="4"
+            stroke="black"
+            stroke-width="3"
+          />
+          <text
+            :x="width / 2 + idx * (blockWidth + 10)"
+            :y="50 + blockHeight / 2 + 5"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            fill="white"
+            font-size="16"
+          >
+            {{ block.name }}
+          </text>
+        </g>
 
-          <!-- Visual blocks on table -->
-          <g v-for="(block, index) in visualBlocks" :key="block.name">
-            <rect
-                :x="block.x"
-                :y="block.y"
-                :width="blockWidth"
-                :height="blockHeight"
-                :fill="block.color"
-                rx="4"
-                :stroke="block.highlight ? 'black' : 'none'"
-                :stroke-width="block.highlight ? 3 : 0"
-            />
-            <text
-                :x="block.x + blockWidth / 2"
-                :y="block.y + blockHeight / 2 + 5"
-                text-anchor="middle"
-                alignment-baseline="middle"
-                fill="white"
-                font-size="16"
-            >
-                {{ block.name }}
-            </text>
-          </g>
+        <!-- Visual blocks on table -->
+        <g v-for="(block, index) in visualBlocks" :key="block.name">
+          <rect
+            :x="block.x"
+            :y="block.y"
+            :width="blockWidth"
+            :height="blockHeight"
+            :fill="block.color"
+            rx="4"
+            :stroke="block.highlight ? 'black' : 'none'"
+            :stroke-width="block.highlight ? 3 : 0"
+          />
+          <text
+            :x="block.x + blockWidth / 2"
+            :y="block.y + blockHeight / 2 + 5"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            fill="white"
+            font-size="16"
+          >
+            {{ block.name }}
+          </text>
+        </g>
       </svg>
     </div>
   </div>
@@ -126,7 +136,7 @@ function generateColorPalette(n: number): string[] {
   const saturation = 70;
   const lightness = 50;
   for (let i = 0; i < n; i++) {
-    const hue = (i * 360 / n) % 360;
+    const hue = ((i * 360) / n) % 360;
     colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
   }
   return colors;
@@ -167,7 +177,7 @@ function computeStack(stepIndex: number): Record<string, string[]> {
     }
   }
 
-  pickedUpBlocks.value = [...pickedUpBlocksSet].map((blockName) => ({
+  pickedUpBlocks.value = [...pickedUpBlocksSet].map(blockName => ({
     name: blockName,
     x: 0,
     y: 0,

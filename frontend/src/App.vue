@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router';
 import Header from './components/Header.vue';
 </script>
 
@@ -54,7 +54,9 @@ import Header from './components/Header.vue';
   color: var(--text);
   font-weight: 500;
   text-decoration: none;
-  transition: color 0.3s ease, font-weight 0.3s ease;
+  transition:
+    color 0.3s ease,
+    font-weight 0.3s ease;
 }
 
 .nav-link:hover {

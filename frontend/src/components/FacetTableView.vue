@@ -1,14 +1,14 @@
 <template>
   <div>
     <FacetTable
-        :key="viewMode"
-        :headers="headers"
-        :facets="pagedFacets"
-        :solutions="pagedSolutions"
-        :viewMode="viewMode"
-        :loading="loading"
-        :itemsPerPage="itemsPerPage"
-        @selectFacet="handleFacetSelectionState"
+      :key="viewMode"
+      :headers="headers"
+      :facets="pagedFacets"
+      :solutions="pagedSolutions"
+      :viewMode="viewMode"
+      :loading="loading"
+      :itemsPerPage="itemsPerPage"
+      @selectFacet="handleFacetSelectionState"
     />
 
     <Paginator
@@ -45,8 +45,11 @@ const emit = defineEmits<{
 }>();
 
 const localPage = ref(props.currentPage);
-watch(localPage, (val) => emit('update:currentPage', val));
-watch(() => props.currentPage, (val) => (localPage.value = val));
+watch(localPage, val => emit('update:currentPage', val));
+watch(
+  () => props.currentPage,
+  val => (localPage.value = val)
+);
 
 // Determine what to show
 const showFacets = computed(() => props.viewMode === 'facets' || props.viewMode === 'query');
@@ -54,13 +57,19 @@ const showSolutions = computed(() => props.viewMode === 'solutions');
 
 const pagedFacets = computed(() =>
   showFacets.value
-    ? props.facets.slice((localPage.value - 1) * props.itemsPerPage, localPage.value * props.itemsPerPage)
+    ? props.facets.slice(
+        (localPage.value - 1) * props.itemsPerPage,
+        localPage.value * props.itemsPerPage
+      )
     : undefined
 );
 
 const pagedSolutions = computed(() =>
   showSolutions.value
-    ? props.solutions.slice((localPage.value - 1) * props.itemsPerPage, localPage.value * props.itemsPerPage)
+    ? props.solutions.slice(
+        (localPage.value - 1) * props.itemsPerPage,
+        localPage.value * props.itemsPerPage
+      )
     : undefined
 );
 

@@ -31,76 +31,79 @@
     </div>
   </div>
 </template>
-  
+
 <script setup lang="ts">
-  import { ref, watch, computed } from 'vue'
-  import { nanoid } from 'nanoid'
-  import { debounce } from 'lodash-es'
-  
-  const props = defineProps({
-    label: {
-      type: String,
-      required: true,
-    },
-    modelValue: {
-      type: [String, Number, File, Object, null],
-      default: '',
-    },
-    type: {
-      type: String,
-      default: 'text',
-      validator: (val: string) => ['text', 'number', 'file'].includes(val),
-    },
-    placeholder: {
-      type: String,
-      default: '',
-    },
-    accept: {
-      type: String,
-      default: '',
-    },
-    disabled: {
-      type: Boolean,
-      default: false
-    }
-  })
-  
-  const emit = defineEmits(['update:modelValue'])
+import { ref, watch, computed } from 'vue';
+import { nanoid } from 'nanoid';
+import { debounce } from 'lodash-es';
 
-  const debouncedEmit = debounce((val: any) => {
-    emit('update:modelValue', val)
-  }, 300)
-  
-  const inputId = computed(() => `input-${nanoid(6)}`)
-  
-  const inputValue = ref(props.modelValue)
+const props = defineProps({
+  label: {
+    type: String,
+    required: true,
+  },
+  modelValue: {
+    type: [String, Number, File, Object, null],
+    default: '',
+  },
+  type: {
+    type: String,
+    default: 'text',
+    validator: (val: string) => ['text', 'number', 'file'].includes(val),
+  },
+  placeholder: {
+    type: String,
+    default: '',
+  },
+  accept: {
+    type: String,
+    default: '',
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+});
 
-  const fileInput = ref<HTMLInputElement | null>(null)
-  const selectedFileName = ref('')
-  
-  watch(() => props.modelValue, val => (inputValue.value = val))
+const emit = defineEmits(['update:modelValue']);
 
-  watch(inputValue, (val) => {
-    if (props.type === 'number') {
-      const parsed = typeof val === 'string' ? parseFloat(val) : val
-      debouncedEmit(isNaN(parsed as number) ? null : parsed)
-    } else if (props.type === 'text' && typeof val === 'string') {
-      debouncedEmit(val)
-    }
-  })
+const debouncedEmit = debounce((val: any) => {
+  emit('update:modelValue', val);
+}, 300);
 
-  const fileName = computed(() => {
-    const val = props.modelValue
-    return val && typeof val === 'object' && 'name' in val ? val.name : 'No file selected.'
-  })
+const inputId = computed(() => `input-${nanoid(6)}`);
 
-  function handleFileChange(e: Event) {
-    const target = e.target as HTMLInputElement
-    const file = target.files ? target.files[0] : null
-    emit('update:modelValue', file)
+const inputValue = ref(props.modelValue);
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const selectedFileName = ref('');
+
+watch(
+  () => props.modelValue,
+  val => (inputValue.value = val)
+);
+
+watch(inputValue, val => {
+  if (props.type === 'number') {
+    const parsed = typeof val === 'string' ? parseFloat(val) : val;
+    debouncedEmit(isNaN(parsed as number) ? null : parsed);
+  } else if (props.type === 'text' && typeof val === 'string') {
+    debouncedEmit(val);
   }
+});
+
+const fileName = computed(() => {
+  const val = props.modelValue;
+  return val && typeof val === 'object' && 'name' in val ? val.name : 'No file selected.';
+});
+
+function handleFileChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files ? target.files[0] : null;
+  emit('update:modelValue', file);
+}
 </script>
-  
+
 <style scoped>
 .input-wrapper {
   display: flex;
@@ -134,7 +137,9 @@
   cursor: pointer;
   font-size: 0.9rem;
   user-select: none;
-  transition: background-color 0.2s, transform 0.1s ease;
+  transition:
+    background-color 0.2s,
+    transform 0.1s ease;
 }
 
 .file-button:hover {

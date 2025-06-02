@@ -6,15 +6,15 @@
   --gray-soft: #f3f4f6;
   --gray-mute: #9ca3af;
 
-  --black: #181818;  /* Dark text color */
+  --black: #181818; /* Dark text color */
   --black-soft: #222222;
   --black-mute: #282828;
 
   /* Primary & Accent colors */
-  --light-blue: #1E88E5;  /* Primary Color */
-  --deep-blue: #1565C0;   /* Darker Blue for contrast */
-  --soft-purple: #9C27B0; /* Secondary Accent */
-  --teal-green: #00796B;  /* Success/Positive Accent */
+  --light-blue: #1e88e5; /* Primary Color */
+  --deep-blue: #1565c0; /* Darker Blue for contrast */
+  --soft-purple: #9c27b0; /* Secondary Accent */
+  --teal-green: #00796b; /* Success/Positive Accent */
 
   /* Divider colors */
   --divider-light-1: rgba(60, 60, 60, 0.29);
@@ -25,13 +25,13 @@
   /* Text colors */
   --text-light-1: var(--light-blue);
   --text-light-2: rgba(60, 60, 60, 0.66);
-  --text-dark-1: var(--black);  /* Dark text for normal text */
+  --text-dark-1: var(--black); /* Dark text for normal text */
   --text-dark-2: rgba(235, 235, 235, 0.64);
 }
 
 /* semantic color variables for this project */
 :root {
-  --background: var(--white);  /* Background light color */
+  --background: var(--white); /* Background light color */
   --background-soft: var(--white-soft);
   --background-mute: var(--white-mute);
 
@@ -40,11 +40,10 @@
   --border-radius: 4px;
 
   --heading: var(--text-light-1);
-  --text: var(--text-dark-1);  /* Dark text for normal content */
+  --text: var(--text-dark-1); /* Dark text for normal content */
 
   --section-gap: 160px;
 }
-
 
 *,
 *::before,

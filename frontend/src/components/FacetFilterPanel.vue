@@ -56,27 +56,38 @@ const internalActionType = ref([...props.selectedActionType]);
 const internalObjects = ref([...props.selectedObjects]);
 const internalTimesteps = ref([...props.selectedTimesteps]);
 
-watch(internalFacetState, (val) => emit('update:selectedFacetState', val), { deep: true });
-watch(internalActionType, (val) => emit('update:selectedActionType', val), { deep: true });
-watch(internalObjects, (val) => emit('update:selectedObjects', val), { deep: true });
-watch(internalTimesteps, (val) => emit('update:selectedTimesteps', val), { deep: true });
+watch(internalFacetState, val => emit('update:selectedFacetState', val), { deep: true });
+watch(internalActionType, val => emit('update:selectedActionType', val), { deep: true });
+watch(internalObjects, val => emit('update:selectedObjects', val), { deep: true });
+watch(internalTimesteps, val => emit('update:selectedTimesteps', val), { deep: true });
 
-watch(() => props.allObjects, (newOptions) => {
-  internalObjects.value = internalObjects.value.filter(obj => newOptions.includes(obj));
-});
+watch(
+  () => props.allObjects,
+  newOptions => {
+    internalObjects.value = internalObjects.value.filter(obj => newOptions.includes(obj));
+  }
+);
 
-watch(() => props.allTimesteps, (newOptions) => {
-  internalTimesteps.value = internalTimesteps.value.filter(t => newOptions.includes(t));
-});
+watch(
+  () => props.allTimesteps,
+  newOptions => {
+    internalTimesteps.value = internalTimesteps.value.filter(t => newOptions.includes(t));
+  }
+);
 
-watch(() => Object.values(SelectionState), (validStates) => {
-  internalFacetState.value = internalFacetState.value.filter(s => validStates.includes(s));
-});
+watch(
+  () => Object.values(SelectionState),
+  validStates => {
+    internalFacetState.value = internalFacetState.value.filter(s => validStates.includes(s));
+  }
+);
 
-watch(() => Object.values(ActionType), (validActions) => {
-  internalActionType.value = internalActionType.value.filter(a => validActions.includes(a));
-});
-
+watch(
+  () => Object.values(ActionType),
+  validActions => {
+    internalActionType.value = internalActionType.value.filter(a => validActions.includes(a));
+  }
+);
 
 function onResetFilters() {
   internalFacetState.value = [];
@@ -93,7 +104,7 @@ function onResetFilters() {
   gap: 1.25rem;
 }
 
-.search-fields .button{
+.search-fields .button {
   align-self: flex-end;
 }
 </style>

@@ -32,10 +32,10 @@ export const usePlanStore = defineStore('plan', {
       this.instanceFile = instanceFile;
       this.domainFile = domainFile;
     },
-    setInstanceFile(instanceFile: File | null){
+    setInstanceFile(instanceFile: File | null) {
       this.instanceFile = instanceFile;
     },
-    setDomainFile(domainFile: File | null){
+    setDomainFile(domainFile: File | null) {
       this.domainFile = domainFile;
     },
     setFastDownwardResponse(horizon: number, sasFile: string, planFile: string) {
@@ -81,7 +81,7 @@ export const usePlanStore = defineStore('plan', {
     },
     setSelectedSolution(val: Solution) {
       this.selectedSolution = val;
-    }
+    },
   },
   persist: true,
 });

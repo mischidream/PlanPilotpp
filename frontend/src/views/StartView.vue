@@ -1,9 +1,9 @@
 <template>
   <div class="layout">
     <div class="input-fields">
-        <InputField label="Problem file:" v-model="instanceFile" type="file" accept=".pddl" />
-        <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
-        <Button label="Start" type="submit" @click="submitFiles"></Button>
+      <InputField label="Problem file:" v-model="instanceFile" type="file" accept=".pddl" />
+      <InputField label="Domain file:" v-model="domainFile" type="file" accept=".pddl" />
+      <Button label="Start" type="submit" @click="submitFiles"></Button>
     </div>
     <div v-if="loading" class="horizon-output">
       <SkeletonCount></SkeletonCount>
@@ -62,7 +62,6 @@ async function submitFiles() {
     loading.value = false;
   }
 }
-
 </script>
 
 <style scoped>
@@ -71,12 +70,12 @@ async function submitFiles() {
 }
 
 .input-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
 }
-.input-fields .button{
-    align-self: flex-end;
+.input-fields .button {
+  align-self: flex-end;
 }
 .horizon-output {
   margin-top: 0.625rem;

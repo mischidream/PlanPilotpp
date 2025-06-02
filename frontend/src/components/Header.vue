@@ -1,13 +1,9 @@
 <template>
-    <header>
-      <h1>PlanPilot</h1>
-    </header>
+  <header>
+    <h1>PlanPilot</h1>
+  </header>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts"></script>
 
-</script>
-
-<style scoped>
-</style>
-  
+<style scoped></style>

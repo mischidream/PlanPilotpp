@@ -27,9 +27,9 @@ import { ref, watch } from 'vue';
 import FacetTable from './FacetTable.vue';
 
 const props = defineProps<{
-  enabled: boolean,
-  landmarks: any[],
-  loadingLandmarks: boolean
+  enabled: boolean;
+  landmarks: any[];
+  loadingLandmarks: boolean;
 }>();
 
 const isOpen = ref(true);
@@ -39,10 +39,13 @@ const toggleSidebar = () => {
   isOpen.value = !isOpen.value;
 };
 
-watch(() => props.enabled, (val) => {
-  if (!val) isOpen.value = false;
-  if (val) isOpen.value = true;
-});
+watch(
+  () => props.enabled,
+  val => {
+    if (!val) isOpen.value = false;
+    if (val) isOpen.value = true;
+  }
+);
 </script>
 
 <style scoped>
@@ -68,7 +71,9 @@ watch(() => props.enabled, (val) => {
   gap: 1rem;
   width: 0;
   overflow: hidden;
-  transition: width 0.3s ease, padding 0.3s ease;
+  transition:
+    width 0.3s ease,
+    padding 0.3s ease;
 }
 
 .sidebar-content-header {

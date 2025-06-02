@@ -1,4 +1,4 @@
 export enum TimeStepType {
-    abstract = "abstract",
-    concrete = "concrete"
+  abstract = 'abstract',
+  concrete = 'concrete',
 }

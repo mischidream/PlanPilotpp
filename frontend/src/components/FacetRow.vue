@@ -1,45 +1,43 @@
 <template>
-    <div class="facet-row">
-      <!-- Choose Facet -->
-      <div v-if="viewMode !== 'landmarks'" class="facet-cell choose-facet">
-        <template v-if="!readonly">
-          <button
-            :class="{ active: facet.selectionState === SelectionState.Positive }"
-            @click="toggleState(SelectionState.Positive)"
-          >
-            <span class="material-icons">add</span>
-          </button>
-          <button
-            :class="{ active: facet.selectionState === SelectionState.Negative }"
-            @click="toggleState(SelectionState.Negative)"
-          >
-            <span class="material-icons">remove</span>
-          </button>
-        </template>
-      </div>
-  
-      <!-- Action -->
-      <div class="facet-cell">{{ facet.action }}</div>
-  
-      <!-- Constants -->
-      <div class="facet-cell">
-        <template v-if="facet.constant2">
-          {{ facet.constant1 }} | {{ facet.constant2 }}
-        </template>
-        <template v-else>
-          {{ facet.constant1 }}
-        </template>
-      </div>
-  
-      <!-- Timestep -->
-      <div class="facet-cell">{{ facet.timestep === 0 ? 'sometime' : facet.timestep }}</div>
-      
-      <!-- Reduction -->
-      <div class="facet-cell" v-if="showReduction">{{ showReduction }}</div>
-
-      <!-- Remaining -->
-      <div class="facet-cell" v-if="showRemaining">{{ showRemaining }}</div>
+  <div class="facet-row">
+    <!-- Choose Facet -->
+    <div v-if="viewMode !== 'landmarks'" class="facet-cell choose-facet">
+      <template v-if="!readonly">
+        <button
+          :class="{ active: facet.selectionState === SelectionState.Positive }"
+          @click="toggleState(SelectionState.Positive)"
+        >
+          <span class="material-icons">add</span>
+        </button>
+        <button
+          :class="{ active: facet.selectionState === SelectionState.Negative }"
+          @click="toggleState(SelectionState.Negative)"
+        >
+          <span class="material-icons">remove</span>
+        </button>
+      </template>
     </div>
+
+    <!-- Action -->
+    <div class="facet-cell">{{ facet.action }}</div>
+
+    <!-- Constants -->
+    <div class="facet-cell">
+      <template v-if="facet.constant2"> {{ facet.constant1 }} | {{ facet.constant2 }} </template>
+      <template v-else>
+        {{ facet.constant1 }}
+      </template>
+    </div>
+
+    <!-- Timestep -->
+    <div class="facet-cell">{{ facet.timestep === 0 ? 'sometime' : facet.timestep }}</div>
+
+    <!-- Reduction -->
+    <div class="facet-cell" v-if="showReduction">{{ showReduction }}</div>
+
+    <!-- Remaining -->
+    <div class="facet-cell" v-if="showRemaining">{{ showRemaining }}</div>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -48,17 +46,16 @@ import { SelectionState } from '@/models/SelectionState';
 import { computed } from 'vue';
 
 const props = defineProps<{
-    facet: Facet;
-    readonly?: boolean;
-    viewMode?: 'facets' | 'solutions' | 'query' | 'landmarks';
-    onSelectFacet?: (facet: Facet, newState: SelectionState) => void;
+  facet: Facet;
+  readonly?: boolean;
+  viewMode?: 'facets' | 'solutions' | 'query' | 'landmarks';
+  onSelectFacet?: (facet: Facet, newState: SelectionState) => void;
 }>();
 
 function toggleState(state: SelectionState) {
   if (!props.onSelectFacet) return;
   const current = props.facet.selectionState;
-  const newState =
-    current === state ? SelectionState.NotSelected : state;
+  const newState = current === state ? SelectionState.NotSelected : state;
   props.onSelectFacet(props.facet, newState);
 }
 
@@ -87,7 +84,6 @@ const showRemaining = computed(() => {
   }
   return null;
 });
-
 </script>
 
 <style scoped>

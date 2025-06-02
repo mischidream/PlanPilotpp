@@ -142,32 +142,266 @@
   {
     "label": "solution 3",
     "facets": [
-      { "id": "0", "action": "pick-up", "constant1": "a", "constant2": null, "timestep": 1, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "1", "action": "stack", "constant1": "a", "constant2": "b", "timestep": 2, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "2", "action": "pick-up", "constant1": "c", "constant2": null, "timestep": 3, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "3", "action": "stack", "constant1": "c", "constant2": "d", "timestep": 4, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "4", "action": "pick-up", "constant1": "e", "constant2": null, "timestep": 5, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "5", "action": "stack", "constant1": "e", "constant2": "f", "timestep": 6, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "6", "action": "pick-up", "constant1": "g", "constant2": null, "timestep": 7, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "7", "action": "stack", "constant1": "g", "constant2": "h", "timestep": 8, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "8", "action": "pick-up", "constant1": "i", "constant2": null, "timestep": 9, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "9", "action": "stack", "constant1": "i", "constant2": "j", "timestep": 10, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "10", "action": "pick-up", "constant1": "k", "constant2": null, "timestep": 11, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "11", "action": "stack", "constant1": "k", "constant2": "l", "timestep": 12, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "12", "action": "pick-up", "constant1": "m", "constant2": null, "timestep": 13, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "13", "action": "stack", "constant1": "m", "constant2": "n", "timestep": 14, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "14", "action": "pick-up", "constant1": "o", "constant2": null, "timestep": 15, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "15", "action": "stack", "constant1": "o", "constant2": "p", "timestep": 16, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "16", "action": "pick-up", "constant1": "q", "constant2": null, "timestep": 17, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "17", "action": "stack", "constant1": "q", "constant2": "r", "timestep": 18, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "18", "action": "pick-up", "constant1": "s", "constant2": null, "timestep": 19, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "19", "action": "stack", "constant1": "s", "constant2": "t", "timestep": 20, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "20", "action": "pick-up", "constant1": "u", "constant2": null, "timestep": 21, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "21", "action": "stack", "constant1": "u", "constant2": "v", "timestep": 22, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "22", "action": "pick-up", "constant1": "w", "constant2": null, "timestep": 23, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "23", "action": "stack", "constant1": "w", "constant2": "x", "timestep": 24, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "24", "action": "pick-up", "constant1": "y", "constant2": null, "timestep": 25, "reduction": null, "remaining": null, "selectionState": "Not selected" },
-      { "id": "25", "action": "stack", "constant1": "y", "constant2": "z", "timestep": 26, "reduction": null, "remaining": null, "selectionState": "Not selected" }
+      {
+        "id": "0",
+        "action": "pick-up",
+        "constant1": "a",
+        "constant2": null,
+        "timestep": 1,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "1",
+        "action": "stack",
+        "constant1": "a",
+        "constant2": "b",
+        "timestep": 2,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "2",
+        "action": "pick-up",
+        "constant1": "c",
+        "constant2": null,
+        "timestep": 3,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "3",
+        "action": "stack",
+        "constant1": "c",
+        "constant2": "d",
+        "timestep": 4,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "4",
+        "action": "pick-up",
+        "constant1": "e",
+        "constant2": null,
+        "timestep": 5,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "5",
+        "action": "stack",
+        "constant1": "e",
+        "constant2": "f",
+        "timestep": 6,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "6",
+        "action": "pick-up",
+        "constant1": "g",
+        "constant2": null,
+        "timestep": 7,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "7",
+        "action": "stack",
+        "constant1": "g",
+        "constant2": "h",
+        "timestep": 8,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "8",
+        "action": "pick-up",
+        "constant1": "i",
+        "constant2": null,
+        "timestep": 9,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "9",
+        "action": "stack",
+        "constant1": "i",
+        "constant2": "j",
+        "timestep": 10,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "10",
+        "action": "pick-up",
+        "constant1": "k",
+        "constant2": null,
+        "timestep": 11,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "11",
+        "action": "stack",
+        "constant1": "k",
+        "constant2": "l",
+        "timestep": 12,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "12",
+        "action": "pick-up",
+        "constant1": "m",
+        "constant2": null,
+        "timestep": 13,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "13",
+        "action": "stack",
+        "constant1": "m",
+        "constant2": "n",
+        "timestep": 14,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "14",
+        "action": "pick-up",
+        "constant1": "o",
+        "constant2": null,
+        "timestep": 15,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "15",
+        "action": "stack",
+        "constant1": "o",
+        "constant2": "p",
+        "timestep": 16,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "16",
+        "action": "pick-up",
+        "constant1": "q",
+        "constant2": null,
+        "timestep": 17,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "17",
+        "action": "stack",
+        "constant1": "q",
+        "constant2": "r",
+        "timestep": 18,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "18",
+        "action": "pick-up",
+        "constant1": "s",
+        "constant2": null,
+        "timestep": 19,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "19",
+        "action": "stack",
+        "constant1": "s",
+        "constant2": "t",
+        "timestep": 20,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "20",
+        "action": "pick-up",
+        "constant1": "u",
+        "constant2": null,
+        "timestep": 21,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "21",
+        "action": "stack",
+        "constant1": "u",
+        "constant2": "v",
+        "timestep": 22,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "22",
+        "action": "pick-up",
+        "constant1": "w",
+        "constant2": null,
+        "timestep": 23,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "23",
+        "action": "stack",
+        "constant1": "w",
+        "constant2": "x",
+        "timestep": 24,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "24",
+        "action": "pick-up",
+        "constant1": "y",
+        "constant2": null,
+        "timestep": 25,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      },
+      {
+        "id": "25",
+        "action": "stack",
+        "constant1": "y",
+        "constant2": "z",
+        "timestep": 26,
+        "reduction": null,
+        "remaining": null,
+        "selectionState": "Not selected"
+      }
     ]
   }
 ]

@@ -1,5 +1,5 @@
 export enum SelectionState {
-    NotSelected = 'Not selected',
-    Positive = '+',
-    Negative = '-'
+  NotSelected = 'Not selected',
+  Positive = '+',
+  Negative = '-',
 }
