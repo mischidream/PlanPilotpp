@@ -1,9 +1,9 @@
 <template>
-  <div v-if="loadingFacetCount || loadingAnswerSetCount || answerSetCount || facetCount">
+  <div v-if="loadingFacetCount || loadingSolutionCount || solutionCount || facetCount">
     <Divider />
     <div class="count">
-      <p v-if="loadingAnswerSetCount"><SkeletonCount /></p>
-      <p v-else-if="answerSetCount">Answer Sets: {{ answerSetCount }}</p>
+      <p v-if="loadingSolutionCount"><SkeletonCount /></p>
+      <p v-else-if="solutionCount">Solutions: {{ solutionCount }}</p>
 
       <p v-if="loadingFacetCount"><SkeletonCount /></p>
       <p v-else-if="facetCount">Facets: {{ facetCount }}</p>
@@ -16,9 +16,9 @@ import Divider from '@/components/Divider.vue';
 import SkeletonCount from '@/components/SkeletonCount.vue';
 
 const props = defineProps<{
-  loadingAnswerSetCount: boolean;
+  loadingSolutionCount: boolean;
   loadingFacetCount: boolean;
-  answerSetCount: string | null;
+  solutionCount: string | null;
   facetCount: string | null;
 }>();
 </script>

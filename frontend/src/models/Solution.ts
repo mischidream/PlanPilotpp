@@ -1,6 +1,6 @@
 import type { Facet } from "./Facet";
 
-export interface AnswerSet {
+export interface Solution {
   label: string,
   facets: Facet[]
 }

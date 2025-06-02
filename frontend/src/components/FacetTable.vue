@@ -63,7 +63,7 @@ import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
 import Divider from './Divider.vue';
 import { ref } from 'vue';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { AnswerSet } from '@/models/Solution';
 import { useRouter } from 'vue-router';
 import { usePlanStore } from '@/stores/planStore';
 

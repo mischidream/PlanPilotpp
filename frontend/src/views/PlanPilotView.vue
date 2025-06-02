@@ -24,19 +24,19 @@
           <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
           <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
         </div>
-        <Button label="Number of Answer Sets" type="button" @click="countAnswerSets"></Button>
+        <Button label="Number of Solutions" type="button" @click="countSolutions"></Button>
         <Button label="Number of Facets" type="button" @click="countFacets"></Button>
         <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
-        <Button label="Query Remaining Answer Sets" type="button" @click="queryRemainingAnswerSets"></Button>
+        <Button label="Query Remaining Solutions" type="button" @click="queryRemainingSolutions"></Button>
         <div class="button-input-group">
           <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
           <InputField label="Restricted To:" v-model="landmarkAction" type="text"/>
         </div>
       </div>
       <FacetCountDisplay
-        :loadingAnswerSetCount="loadingAnswerSetCount"
+        :loadingSolutionCount="loadingSolutionCount"
         :loadingFacetCount="loadingFacetCount"
-        :answerSetCount="answerSetCount"
+        :solutionCount="solutionCount"
         :facetCount="facetCount"
       />
       <Divider/>
@@ -58,7 +58,7 @@
         <FacetTableView
           :headers="columns"
           :facets="filteredFacets"
-          :answerSets="answerSets"
+          :solutions="solutions"
           :viewMode="viewMode"
           :loading="loading"
           :itemsPerPage="itemsPerPage"
@@ -88,11 +88,11 @@ import Button from '@/components/Button.vue';
 import SkeletonCount from '@/components/SkeletonCount.vue';
 import FacetFilterPanel from '@/components/FacetFilterPanel.vue';
 import testData from '@/testdata/example_facets.json';
-import testDataAnswerSet from '@/testdata/example_answer_sets.json';
+import testDataSolution from '@/testdata/example_answer_sets.json';
 import { transformToFacets } from '@/utils/transformFacets';
 import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { Solution } from '@/models/Solution';
 import FacetTableView from '@/components/FacetTableView.vue';
 import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
 import FacetCountDisplay from '@/components/FacetCountDisplay.vue';
@@ -114,8 +114,8 @@ const landmarkAction = ref<string | undefined>(undefined);
 const facets = ref<Facet[]>([]);
 const selectedFacets = ref<Facet[]>([]);
 const landmarks = ref<Facet[]>([]);
-const answerSets = ref<AnswerSet[]>([]);
-const answerSetCount = ref<string | null>(null);
+const solutions = ref<Solution[]>([]);
+const solutionCount = ref<string | null>(null);
 const facetCount = ref<string | null>(null);
 const viewMode = ref<'facets' | 'solutions' | 'query'>('facets');
 const isFirstRun = ref(true);
@@ -123,7 +123,7 @@ const lastUsedHorizon = ref<number | null>(null);
 const lastUsedEncoding = ref<EncodingType | null>(null);
 const lastUsedTimeStep = ref<TimeStepType | null>(null);
 const loading = ref(false);
-const loadingAnswerSetCount = ref(false);
+const loadingSolutionCount = ref(false);
 const loadingFacetCount = ref(false);
 const loadingLandmarks = ref(false);
 const sidebarEnabled = ref(false);
@@ -144,7 +144,7 @@ watch(minHorizon, (val) => planStore.setMinHorizon(val));
 watch(encoding, ([val]) => val && planStore.setEncoding(val));
 watch(facets, (val) => planStore.setFacets(val));
 watch(landmarks, (val) => planStore.setLandmarks(val));
-watch(answerSets, (val) => planStore.setAnswerSets(val));
+watch(solutions, (val) => planStore.setSolutions(val));
 watch(viewMode, (val) => planStore.setViewMode(val));
 watch(timeStep, ([val]) => planStore.setTimeStep(val))
 
@@ -230,7 +230,7 @@ watch(
 async function updateFacetSelectionState(facet: Facet, newState: SelectionState) {
   loading.value = true;
   try {
-    answerSetCount.value = null;
+    solutionCount.value = null;
     facetCount.value = null;
     landmarks.value = [];
     sidebarEnabled.value = false;
@@ -273,7 +273,7 @@ const listFacets = async () => {
     const timeStepChanged = lastUsedTimeStep.value !== timeStep.value[0];
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged || timeStepChanged) {
-      answerSetCount.value = null;
+      solutionCount.value = null;
       facetCount.value = null;
       landmarks.value = [];
       sidebarEnabled.value = false;
@@ -306,14 +306,14 @@ const listSolutions = async () => {
   loading.value = true;
   try {
     viewMode.value = 'solutions';
-    answerSetCount.value = null;
+    solutionCount.value = null;
     facetCount.value = null;
     const command = numberOfSolutions.value
       ? `! ${numberOfSolutions.value}`
       : '!';
     const output = await sendPlanPilotCommand(command);
     if (Array.isArray(output)) {
-      answerSets.value = output as AnswerSet[];
+      solutions.value = output as Solution[];
       currentPage.value = 1;
     } else {
       console.warn('Unexpected output format for solutions:', output);
@@ -325,15 +325,15 @@ const listSolutions = async () => {
   }
 };
 
-const countAnswerSets = async () => {
-  loadingAnswerSetCount.value = true;
+const countSolutions = async () => {
+  loadingSolutionCount.value = true;
   try {
     const output = await sendPlanPilotCommand('#!');
-    answerSetCount.value = typeof output === 'string' ? output : null;
+    solutionCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
   } finally {
-    loadingAnswerSetCount.value = false;
+    loadingSolutionCount.value = false;
   }
 };
 
@@ -368,7 +368,7 @@ const queryRemainingFacets = async () => {
   }
 };
 
-const queryRemainingAnswerSets = async () => {
+const queryRemainingSolutions = async () => {
   loading.value = true;
   try {
     viewMode.value = 'query';
@@ -378,10 +378,10 @@ const queryRemainingAnswerSets = async () => {
       facets.value = updatedFacets as Facet[];
       currentPage.value = 1;
     } else {
-      console.warn('Unexpected output format for remaining answer sets:', updatedFacets);
+      console.warn('Unexpected output format for remaining solutions:', updatedFacets);
     }
   } catch (error) {
-    console.error('Error querying remaining answer sets:', error);
+    console.error('Error querying remaining solutions:', error);
   } finally {
     loading.value = false;
   }
@@ -416,7 +416,7 @@ const listLandmarks = async () => {
 // Load test data and transform it to facets
 onMounted(() => {
     //facets.value = transformToFacets(testData);
-    //answerSets.value = testDataAnswerSet as AnswerSet[];
+    //solutions.value = testDataSolution as Solution[];
     //viewMode.value = 'solutions';
 });
 </script>

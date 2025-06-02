@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { AnswerSet } from '@/models/Solution';
 import Button from '@/components/Button.vue';
 import type { Block } from '@/models/Block';
 

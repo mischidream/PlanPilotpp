@@ -26,14 +26,14 @@ import FacetTable from '@/components/FacetTable.vue';
 import Paginator from '@/components/Paginator.vue';
 
 import type { Facet } from '@/models/Facet';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { Solution } from '@/models/Solution';
 import type { SelectionState } from '@/models/SelectionState';
 
 const props = defineProps<{
   viewMode: 'facets' | 'query' | 'solutions';
   headers: string[];
   facets: Facet[];
-  answerSets: AnswerSet[];
+  solutions: Solution[];
   loading: boolean;
   itemsPerPage: number;
   currentPage: number;
@@ -60,12 +60,12 @@ const pagedFacets = computed(() =>
 
 const pagedSolutions = computed(() =>
   showSolutions.value
-    ? props.answerSets.slice((localPage.value - 1) * props.itemsPerPage, localPage.value * props.itemsPerPage)
+    ? props.solutions.slice((localPage.value - 1) * props.itemsPerPage, localPage.value * props.itemsPerPage)
     : undefined
 );
 
 const totalItems = computed(() =>
-  showFacets.value ? props.facets.length : props.answerSets.length
+  showFacets.value ? props.facets.length : props.solutions.length
 );
 
 function handleFacetSelectionState(facet: Facet, state: SelectionState) {

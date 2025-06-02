@@ -1,5 +1,5 @@
 import type { ActionType } from '@/models/ActionType';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { Solution } from '@/models/Solution';
 import { EncodingType } from '@/models/EncodingType';
 import type { Facet } from '@/models/Facet';
 import type { SelectionState } from '@/models/SelectionState';
@@ -18,13 +18,13 @@ export const usePlanStore = defineStore('plan', {
     timeStep: TimeStepType.concrete as TimeStepType,
     facets: [] as Facet[],
     landmarks: [] as Facet[],
-    answerSets: [] as AnswerSet[],
+    solutions: [] as Solution[],
     viewMode: 'facets' as 'facets' | 'solutions' | 'query',
     selectedFacetState: [] as SelectionState[],
     selectedActionType: [] as ActionType[],
     selectedObjects: [] as string[],
     selectedTimesteps: [] as string[],
-    selectedSolution: null as AnswerSet | null,
+    selectedSolution: null as Solution | null,
   }),
 
   actions: {
@@ -61,8 +61,8 @@ export const usePlanStore = defineStore('plan', {
     setLandmarks(landmarks: Facet[]) {
       this.landmarks = landmarks;
     },
-    setAnswerSets(answerSets: AnswerSet[]) {
-      this.answerSets = answerSets;
+    setSolutions(solutions: Solution[]) {
+      this.solutions = solutions;
     },
     setViewMode(mode: 'facets' | 'solutions' | 'query') {
       this.viewMode = mode;
@@ -79,7 +79,7 @@ export const usePlanStore = defineStore('plan', {
     setSelectedTimesteps(val: string[]) {
       this.selectedTimesteps = val;
     },
-    setSelectedSolution(val: AnswerSet) {
+    setSelectedSolution(val: Solution) {
       this.selectedSolution = val;
     }
   },

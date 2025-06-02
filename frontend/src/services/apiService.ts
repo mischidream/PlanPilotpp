@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios'
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
 import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
-import type { AnswerSet } from '@/models/AnswerSet';
+import type { Solution } from '@/models/Solution';
 import type { SasPlanInput } from '@/models/SasPlanInput';
 import type { PlanPilotInput } from '@/models/PlanPilotInput';
 import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
@@ -45,9 +45,9 @@ export const runPlanPilot = async (
 
 export const sendPlanPilotCommand = async (
     command: string
-  ): Promise<Facet[] | AnswerSet[] | string | undefined> => {
+  ): Promise<Facet[] | Solution[] | string | undefined> => {
     try {
-      const response = await axios.post<{ output: Facet[] | AnswerSet[] | string }>(`${hostUrl}/send-planpilot-command`, {
+      const response = await axios.post<{ output: Facet[] | Solution[] | string }>(`${hostUrl}/send-planpilot-command`, {
         command,
       })
       const output = response.data.output;
@@ -68,7 +68,7 @@ export const sendPlanPilotCommand = async (
 
       if (command.startsWith('!')) {
         if (Array.isArray(output)) {
-          return parseSolutionOutput(output as AnswerSet[]);
+          return parseSolutionOutput(output as Solution[]);
         } else {
           console.error('Unexpected solution output format:', output);
           return [];
@@ -166,12 +166,12 @@ function parseFacetOutput(output: Facet[]): Facet[] {
 }
 
 // Function to parse the solution output
-function parseSolutionOutput(output: AnswerSet[]): AnswerSet[] {
+function parseSolutionOutput(output: Solution[]): Solution[] {
   try {
     if (Array.isArray(output)) {
-      return output.map((answerSetData: any) => {
-        if (answerSetData && answerSetData.label && Array.isArray(answerSetData.facets)) {
-          const { label, facets } = answerSetData;
+      return output.map((solutionData: any) => {
+        if (solutionData && solutionData.label && Array.isArray(solutionData.facets)) {
+          const { label, facets } = solutionData;
 
           const processedFacets = facets.map((facetData: Facet) => ({
             ...facetData,
