@@ -6,7 +6,7 @@
         "constant2": "b",
         "timestep": 5,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -16,7 +16,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -34,7 +34,7 @@
         "constant2": "d",
         "timestep": 9,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -44,7 +44,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -62,7 +62,7 @@
         "constant2": "d",
         "timestep": 6,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -72,7 +72,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -90,7 +90,7 @@
         "constant2": "d",
         "timestep": 6,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -100,7 +100,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -118,7 +118,7 @@
         "constant2": "b",
         "timestep": 7,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -128,7 +128,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -146,7 +146,7 @@
         "constant2": null,
         "timestep": 2,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -156,7 +156,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -174,7 +174,7 @@
         "constant2": "b",
         "timestep": 4,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -184,7 +184,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -202,7 +202,7 @@
         "constant2": "d",
         "timestep": 5,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -212,7 +212,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -230,7 +230,7 @@
         "constant2": "c",
         "timestep": 11,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -240,7 +240,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -258,7 +258,7 @@
         "constant2": null,
         "timestep": 4,
         "reduction": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },
@@ -268,7 +268,7 @@
             }
         },
         "remaining": {
-            "answer_set": {
+            "solution": {
                 "positive": null,
                 "negative": null
             },

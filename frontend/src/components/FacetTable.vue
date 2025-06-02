@@ -63,14 +63,14 @@ import type { Facet } from '@/models/Facet';
 import { SelectionState } from '@/models/SelectionState';
 import Divider from './Divider.vue';
 import { ref } from 'vue';
-import type { AnswerSet } from '@/models/Solution';
+import type { Solution } from '@/models/Solution';
 import { useRouter } from 'vue-router';
 import { usePlanStore } from '@/stores/planStore';
 
 const props = defineProps<{
   headers: string[];
   facets?: Facet[];
-  solutions?: AnswerSet[];
+  solutions?: Solution[];
   viewMode: 'facets' | 'solutions' | 'query' | 'landmarks';
   loading?: boolean;
   itemsPerPage?: number;
@@ -102,7 +102,7 @@ function isSolutionOpen(index: number): boolean {
   return openSolutions.value.includes(index);
 }
 
-function goToVisualization(solution: AnswerSet) {
+function goToVisualization(solution: Solution) {
   planStore.setSelectedSolution(solution);
   router.push({ name: 'visualization' });
 }

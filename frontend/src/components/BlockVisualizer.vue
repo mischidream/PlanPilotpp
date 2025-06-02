@@ -70,13 +70,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import type { AnswerSet } from '@/models/Solution';
+import type { Solution } from '@/models/Solution';
 import Button from '@/components/Button.vue';
 import type { Block } from '@/models/Block';
 
 // Props
 const props = defineProps<{
-  solution: AnswerSet | null;
+  solution: Solution | null;
 }>();
 
 // Extract all unique block names

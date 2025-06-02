@@ -153,8 +153,8 @@ function parseFacetOutput(output: Facet[]): Facet[] {
     if (Array.isArray(output)) {
       return output.map((facetData: Facet) => ({
         ...facetData,
-        reduction: facetData.reduction ?? { answer_set: null, facets: null },
-        remaining: facetData.remaining ?? { answer_set: null, facets: null },
+        reduction: facetData.reduction ?? { solution: null, facets: null },
+        remaining: facetData.remaining ?? { solution: null, facets: null },
       }));
     } else {
       throw new Error('Invalid facet structure in the response');
@@ -175,14 +175,14 @@ function parseSolutionOutput(output: Solution[]): Solution[] {
 
           const processedFacets = facets.map((facetData: Facet) => ({
             ...facetData,
-            reduction: facetData.reduction ?? { answer_set: { positive: null, negative: null }, facets: { positive: null, negative: null } },
-            remaining: facetData.remaining ?? { answer_set: { positive: null, negative: null }, facets: { positive: null, negative: null } },
+            reduction: facetData.reduction ?? { solution: { positive: null, negative: null }, facets: { positive: null, negative: null } },
+            remaining: facetData.remaining ?? { solution: { positive: null, negative: null }, facets: { positive: null, negative: null } },
             selectionState: facetData.selectionState ?? SelectionState.NotSelected,
           }));
 
           return { label, facets: processedFacets };
         } else {
-          throw new Error('Invalid answer set structure in the response');
+          throw new Error('Invalid solution structure in the response');
         }
       });
     } else {

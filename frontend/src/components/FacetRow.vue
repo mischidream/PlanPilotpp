@@ -69,8 +69,8 @@ const showReduction = computed(() => {
   if (red?.facets?.positive != null && red?.facets?.negative != null) {
     return `${red.facets.positive} | ${red.facets.negative}`;
   }
-  if (red?.answer_set?.positive != null && red?.answer_set?.negative != null) {
-    return `${red.answer_set.positive} | ${red.answer_set.negative}`;
+  if (red?.solution?.positive != null && red?.solution?.negative != null) {
+    return `${red.solution.positive} | ${red.solution.negative}`;
   }
   return null;
 });
@@ -82,8 +82,8 @@ const showRemaining = computed(() => {
   if (rem?.facets?.positive != null && rem?.facets?.negative != null) {
     return `${rem.facets.positive} | ${rem.facets.negative}`;
   }
-  if (rem?.answer_set?.positive != null && rem?.answer_set?.negative != null) {
-    return `${rem.answer_set.positive} | ${rem.answer_set.negative}`;
+  if (rem?.solution?.positive != null && rem?.solution?.negative != null) {
+    return `${rem.solution.positive} | ${rem.solution.negative}`;
   }
   return null;
 });

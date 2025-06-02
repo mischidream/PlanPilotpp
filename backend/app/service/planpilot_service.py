@@ -85,11 +85,11 @@ class PlanpilotService:
                 "constant2": parts[2] if len(parts) > 2 else None,
                 "timestep": int(timestep),
                 "reduction": {
-                    "answer_set": {"positive": None, "negative": None},
+                    "solution": {"positive": None, "negative": None},
                     "facets": {"positive": None, "negative": None}
                 },
                 "remaining": {
-                    "answer_set": {"positive": None, "negative": None},
+                    "solution": {"positive": None, "negative": None},
                     "facets": {"positive": None, "negative": None}
                 },
                 "selectionState": "Not selected"
@@ -127,7 +127,7 @@ class PlanpilotService:
                     facets[key] = make_facet(action_str, ts, full_match)
 
                 facet = facets[key]
-                target = "answer_set" if command == "#!!" else "facets"
+                target = "solution" if command == "#!!" else "facets"
                 sign = "negative" if '~' in action_part else "positive"
 
                 facet["reduction"][target][sign] = float(val1_str)
@@ -138,7 +138,7 @@ class PlanpilotService:
         return []
     
     def _parse_solution_output(self, output: str) -> List[Dict]:
-        answer_sets = []
+        solutions = []
         action_id = 0
 
         # Split by each solution block
@@ -174,12 +174,12 @@ class PlanpilotService:
                 current_actions.append(action_dict)
                 action_id += 1
 
-            answer_sets.append({
+            solutions.append({
                 "label": f"solution {solution_number}",
                 "facets": current_actions
             })
         
-        return answer_sets
+        return solutions
 
     def _generate_lp_with_plasp(self, sas_or_pddl_path: str, lp_output_path: str, encoding_type: str = "exact", is_pddl_instance: bool = False, domain_file: str = None, abstract_time_steps: bool = False):
         current_dir = os.getcwd()

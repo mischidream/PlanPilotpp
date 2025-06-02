@@ -8,12 +8,12 @@
 import BlockVisualizer from '@/components/BlockVisualizer.vue';
 import { usePlanStore } from '@/stores/planStore';
 import testData from '../testdata/example_answer_sets.json';
-import type { AnswerSet } from '@/models/Solution';
+import type { Solution } from '@/models/Solution';
 
 const planStore = usePlanStore();
 const solution = planStore.selectedSolution;
 
-//const solution = testData[2] as AnswerSet;
+//const solution = testData[2] as Solution;
 
 </script>
 

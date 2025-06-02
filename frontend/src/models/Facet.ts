@@ -7,7 +7,7 @@ export interface Facet {
     constant1: string;
     constant2?: string | null;
     timestep: number;
-    reduction?: { answer_set: { positive: number | null; negative: number | null } | null, facets: { positive: number | null; negative: number | null } | null } | null;
-    remaining?: { answer_set: { positive: number | null; negative: number | null } | null, facets: { positive: number | null; negative: number | null } | null } | null;
+    reduction?: { solution: { positive: number | null; negative: number | null } | null, facets: { positive: number | null; negative: number | null } | null } | null;
+    remaining?: { solution: { positive: number | null; negative: number | null } | null, facets: { positive: number | null; negative: number | null } | null } | null;
     selectionState?: SelectionState;
 }
