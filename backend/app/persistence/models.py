@@ -1,5 +1,6 @@
 from .db import db
 
+
 class FastDownwardRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hash_value = db.Column(db.String(64), unique=True, nullable=False)

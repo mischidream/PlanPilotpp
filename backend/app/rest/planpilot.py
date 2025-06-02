@@ -1,28 +1,32 @@
 from flask import Blueprint, request, jsonify
 from ..service.planpilot_service import PlanpilotService
 
-planpilot_bp = Blueprint('planpilot', __name__)
+planpilot_bp = Blueprint("planpilot", __name__)
 planpilot_service = PlanpilotService()
 
-@planpilot_bp.route('/run-planpilot', methods=['POST'])
+
+@planpilot_bp.route("/run-planpilot", methods=["POST"])
 def run_planpilot():
     data = request.json
-    sas_file = data.get('sasFile')
-    horizon = data.get('horizon')
-    encoding = data.get('encoding')
-    abstract_time_steps = data.get('abstractTimeStep')
+    sas_file = data.get("sasFile")
+    horizon = data.get("horizon")
+    encoding = data.get("encoding")
+    abstract_time_steps = data.get("abstractTimeStep")
 
     if not sas_file or not horizon or not encoding:
         return jsonify({"error": "sasFile, horizon, and encoding are required"}), 400
 
     try:
         # Run PlanPilot service and get the facets
-        facets = planpilot_service.run_planpilot_service(sas_file, horizon, encoding, abstract_time_steps)
+        facets = planpilot_service.run_planpilot_service(
+            sas_file, horizon, encoding, abstract_time_steps
+        )
         return jsonify({"output": facets}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@planpilot_bp.route('/send-planpilot-command', methods=['POST'])
+
+@planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():
     data = request.json
     command = data.get("command")
@@ -34,7 +38,8 @@ def send_command():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@planpilot_bp.route('/stop-planpilot', methods=['POST'])
+
+@planpilot_bp.route("/stop-planpilot", methods=["POST"])
 def stop_planpilot():
     try:
         planpilot_service.stop_fasb()

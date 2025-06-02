@@ -4,6 +4,7 @@ import hashlib
 from ..persistence.db import db
 from ..persistence.models import FastDownwardRequest
 
+
 def run_fastdownward_service(domain_file, problem_file):
     # Read file content
     domain_bytes = domain_file.read()
@@ -15,7 +16,7 @@ def run_fastdownward_service(domain_file, problem_file):
     # Define a base directory for storing this run
     current_directory = os.getcwd()
     base_dir = os.path.join(current_directory, "temp", hash_value)
-    #base_dir = os.path.join(current_directory, "backend", "temp", hash_value)
+    # base_dir = os.path.join(current_directory, "backend", "temp", hash_value)
     os.makedirs(base_dir, exist_ok=True)
 
     # File paths
@@ -26,35 +27,43 @@ def run_fastdownward_service(domain_file, problem_file):
 
     # Save domain/problem files if they don’t exist yet
     if not os.path.exists(domain_file_path):
-        with open(domain_file_path, 'wb') as f:
+        with open(domain_file_path, "wb") as f:
             f.write(domain_bytes)
     if not os.path.exists(problem_file_path):
-        with open(problem_file_path, 'wb') as f:
+        with open(problem_file_path, "wb") as f:
             f.write(problem_bytes)
 
     # Check if result already exists
-    existing_request = FastDownwardRequest.query.filter_by(hash_value=hash_value).first()
+    existing_request = FastDownwardRequest.query.filter_by(
+        hash_value=hash_value
+    ).first()
     if existing_request:
         horizon = calculate_horizon(existing_request.plan_file_path)
         return {
-            "horizon": horizon, 
+            "horizon": horizon,
             "sasFile": existing_request.sas_file_path,
             "planFile": existing_request.plan_file_path,
-            "cached": True
+            "cached": True,
         }
 
     # Paths to necessary files and directories
-    fast_downward_script = os.path.join(current_directory, "lib", "downward", "fast-downward.py")
+    fast_downward_script = os.path.join(
+        current_directory, "lib", "downward", "fast-downward.py"
+    )
 
     # Command to execute fast-downward
     command = [
-        "python3", fast_downward_script,
-        "--plan-file", plan_file_path,
-        "--sas-file", sas_file_path,
+        "python3",
+        fast_downward_script,
+        "--plan-file",
+        plan_file_path,
+        "--sas-file",
+        sas_file_path,
         "--keep-sas-file",
         domain_file_path,
         problem_file_path,
-        "--search", "astar(lmcut())"
+        "--search",
+        "astar(lmcut())",
     ]
 
     # Execute the command
@@ -62,7 +71,7 @@ def run_fastdownward_service(domain_file, problem_file):
 
     if result.returncode != 0:
         raise RuntimeError(f"Fast Downward execution failed: {result.stderr}")
-    
+
     # Calculate horizon
     horizon = calculate_horizon(plan_file_path)
 
@@ -73,7 +82,7 @@ def run_fastdownward_service(domain_file, problem_file):
             domain_file_path=domain_file_path,
             problem_file_path=problem_file_path,
             sas_file_path=sas_file_path,
-            plan_file_path=plan_file_path
+            plan_file_path=plan_file_path,
         )
         db.session.add(new_request)
         db.session.commit()
@@ -85,8 +94,9 @@ def run_fastdownward_service(domain_file, problem_file):
         "horizon": horizon,
         "sasFile": sas_file_path,
         "planFile": plan_file_path,
-        "cached": False
+        "cached": False,
     }
+
 
 def compute_hash_from_files(domain_file_bytes, problem_file_bytes):
     hasher = hashlib.sha256()
@@ -94,11 +104,12 @@ def compute_hash_from_files(domain_file_bytes, problem_file_bytes):
     hasher.update(problem_file_bytes)
     return hasher.hexdigest()
 
+
 def calculate_horizon(plan_file_path):
-    with open(plan_file_path, 'r') as f:
+    with open(plan_file_path, "r") as f:
         lines = [line.strip() for line in f if line.strip()]
-    
+
     # If last line starts with a semicolon, it's a comment (like "; cost = ...")
-    if lines and lines[-1].startswith(';'):
+    if lines and lines[-1].startswith(";"):
         return len(lines) - 1
     return len(lines)
