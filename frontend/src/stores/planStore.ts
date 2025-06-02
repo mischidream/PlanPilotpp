@@ -24,6 +24,7 @@ export const usePlanStore = defineStore('plan', {
     selectedActionType: [] as ActionType[],
     selectedObjects: [] as string[],
     selectedTimesteps: [] as string[],
+    selectedSolution: null as AnswerSet | null,
   }),
 
   actions: {
@@ -78,6 +79,9 @@ export const usePlanStore = defineStore('plan', {
     setSelectedTimesteps(val: string[]) {
       this.selectedTimesteps = val;
     },
+    setSelectedSolution(val: AnswerSet) {
+      this.selectedSolution = val;
+    }
   },
   persist: true,
 });

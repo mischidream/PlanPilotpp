@@ -2,6 +2,7 @@
     <button
       :type="type"
       class="button"
+      :disabled="disabled"
       @click="$emit('click')"
     >
       <slot>{{ label }}</slot>
@@ -19,6 +20,10 @@ import type { PropType } from 'vue';
     type: {
       type: String as PropType<'button' | 'submit' | 'reset'>,
       default: 'button',
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
     }
   })
   
@@ -26,7 +31,7 @@ import type { PropType } from 'vue';
 </script>
   
 <style scoped>
-  .button {
+ .button {
     padding: 0.5rem 1rem;
     background-color: var(--light-blue);
     color: white;
@@ -35,9 +40,14 @@ import type { PropType } from 'vue';
     cursor: pointer;
     min-width: 100px;
     min-height: 40px;
-  }
-  .button:hover {
+ }
+ .button:hover {
     background-color: var(--deep-blue);
-  }
+ }
+.button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 </style>
   

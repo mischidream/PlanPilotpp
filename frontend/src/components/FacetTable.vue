@@ -29,13 +29,18 @@
           :key="solution.label"
           class="solution-block"
         >
-          <div @click="toggleSolution(index)" class="solution-toggle">
-            <span class="material-icons">
-              {{ isSolutionOpen(index) ? 'expand_less' : 'expand_more' }}
-            </span>
-            <span class="solution-label">
-              {{ solution.label.charAt(0).toUpperCase() + solution.label.slice(1) }}
-            </span>
+          <div class="solution-toggle">
+            <div class="solution-toggle-left" @click="toggleSolution(index)">
+              <span class="material-icons">
+                {{ isSolutionOpen(index) ? 'expand_less' : 'expand_more' }}
+              </span>
+              <span class="solution-label">
+                {{ solution.label.charAt(0).toUpperCase() + solution.label.slice(1) }}
+              </span>
+            </div>
+            <button class="visualize-button" @click.stop="goToVisualization(solution)">
+              Visualize
+            </button>
           </div>
           <div v-if="isSolutionOpen(index)" class="solution-facets">
             <FacetRow
@@ -59,6 +64,8 @@ import { SelectionState } from '@/models/SelectionState';
 import Divider from './Divider.vue';
 import { ref } from 'vue';
 import type { AnswerSet } from '@/models/AnswerSet';
+import { useRouter } from 'vue-router';
+import { usePlanStore } from '@/stores/planStore';
 
 const props = defineProps<{
   headers: string[];
@@ -68,6 +75,9 @@ const props = defineProps<{
   loading?: boolean;
   itemsPerPage?: number;
 }>();
+
+const planStore = usePlanStore();
+const router = useRouter();
 
 const emit = defineEmits<{
     (event: 'selectFacet', facet: Facet, newState: SelectionState): void;
@@ -90,6 +100,11 @@ function toggleSolution(index: number) {
 
 function isSolutionOpen(index: number): boolean {
   return openSolutions.value.includes(index);
+}
+
+function goToVisualization(solution: AnswerSet) {
+  planStore.setSelectedSolution(solution);
+  router.push({ name: 'visualization' });
 }
 </script>
 
@@ -115,11 +130,33 @@ function isSolutionOpen(index: number): boolean {
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.solution-toggle-left {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  cursor: pointer;
+  gap: 0.5rem;
 }
 
 .solution-facets {
   margin-left: 1rem;
 }
 
+.visualize-button {
+  padding: 0.25rem 0.5rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.visualize-button:hover {
+  background-color: #125ea3;
+}
 </style>
   
