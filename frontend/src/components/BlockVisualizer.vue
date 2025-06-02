@@ -88,14 +88,7 @@ const allBlockNames = Array.from(
   )
 );
 
-// Generate color palette and mapping
-const colorPalette = [
-  '#e11d48', '#0ea5e9', '#10b981', '#f59e0b', '#6366f1', '#14b8a6',
-  '#f43f5e', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280',
-  '#ef4444', '#3b82f6', '#16a34a', '#facc15', '#a855f7', '#10b981',
-  '#db2777', '#0284c7', '#84cc16', '#f97316', '#2563eb', '#7c3aed',
-  '#d97706', '#0d9488', '#eab308', '#4ade80', '#38bdf8', '#c084fc'
-];
+const colorPalette = generateColorPalette(allBlockNames.length);
 
 const blockColors = Object.fromEntries(
   allBlockNames.map((name, i) => [name, colorPalette[i % colorPalette.length]])
@@ -117,12 +110,27 @@ const pickedUpBlocks = ref<Block[]>([]);
 let interval: number | null = null;
 
 // Step data
-const sortedFacets = [...(props.solution?.facets ?? [])].sort((a, b) => a.timestep - b.timestep);
+const sortedFacets = [...(props.solution?.facets ?? [])]
+  .filter(f => f.timestep !== 0)
+  .sort((a, b) => a.timestep - b.timestep);
 
 const computedSvgWidth = computed(() => {
   const numStacks = Object.keys(computeStack(step.value)).length;
-  return Math.max(width, numStacks * (blockWidth + 20) + 100);
+  const pickupLength = pickedUpBlocks.value.length;
+  const pickupWidth = width / 2 - blockWidth / 2 + pickupLength * (blockWidth + 10) + 50;
+  return Math.max(width, numStacks * (blockWidth + 20) + 100, pickupWidth);
 });
+
+function generateColorPalette(n: number): string[] {
+  const colors: string[] = [];
+  const saturation = 70;
+  const lightness = 50;
+  for (let i = 0; i < n; i++) {
+    const hue = (i * 360 / n) % 360;
+    colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+  }
+  return colors;
+}
 
 // Compute stack state for all blocks on table
 function computeStack(stepIndex: number): Record<string, string[]> {

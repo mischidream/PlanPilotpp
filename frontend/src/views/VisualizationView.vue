@@ -11,9 +11,9 @@ import testData from '../testdata/example_answer_sets.json';
 import type { AnswerSet } from '@/models/AnswerSet';
 
 const planStore = usePlanStore();
-//const solution = planStore.selectedSolution;
+const solution = planStore.selectedSolution;
 
-const solution = testData[1] as AnswerSet;
+//const solution = testData[2] as AnswerSet;
 
 </script>
 
