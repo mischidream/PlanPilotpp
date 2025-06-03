@@ -5,13 +5,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import BlockVisualizer from '@/components/BlockVisualizer.vue';
 import { usePlanStore } from '@/stores/planStore';
 import testData from '../testdata/example_answer_sets.json';
 import type { Solution } from '@/models/Solution';
 
 const planStore = usePlanStore();
-const solution = planStore.selectedSolution;
+const solution = computed(() => planStore.selectedSolution);
 
 //const solution = testData[2] as Solution;
 </script>
