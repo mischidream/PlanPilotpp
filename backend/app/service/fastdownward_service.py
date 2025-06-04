@@ -1,8 +1,8 @@
 import os
 import subprocess
-import hashlib
 from ..persistence.db import db
 from ..persistence.models import FastDownwardRequest
+from ..utils.hashing import compute_hash_from_files
 
 
 def run_fastdownward_service(domain_file, problem_file):
@@ -95,13 +95,6 @@ def run_fastdownward_service(domain_file, problem_file):
         "planFile": plan_file_path,
         "cached": False,
     }
-
-
-def compute_hash_from_files(domain_file_bytes, problem_file_bytes):
-    hasher = hashlib.sha256()
-    hasher.update(domain_file_bytes)
-    hasher.update(problem_file_bytes)
-    return hasher.hexdigest()
 
 
 def calculate_horizon(plan_file_path):
