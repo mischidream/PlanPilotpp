@@ -11,8 +11,16 @@
       </span>
     </div>
 
-    <div v-show="isOpen" class="checkbox-dropdown">
-      <div v-for="(option, index) in options" :key="index" class="checkbox-item">
+    <div v-show="isOpen" class="checkbox-dropdown" @click.stop>
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Search..."
+        class="search-input"
+        @click.stop
+        autocomplete="off"
+      />
+      <div v-for="(option, index) in filteredOptions" :key="option" class="checkbox-item">
         <label v-if="props.isMultiple">
           <input
             type="checkbox"
@@ -68,9 +76,13 @@ const emit = defineEmits(['update:modelValue']);
 const inputId = computed(() => `select-${nanoid(6)}`);
 
 const isOpen = ref(false);
+const searchQuery = ref('');
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
+   if (!isOpen.value) {
+    searchQuery.value = '';
+  }
 };
 
 const selectedValues = computed({
@@ -93,8 +105,22 @@ const toggleSelection = (option: string | number) => {
       selectedValues.value = [option];
     }
     isOpen.value = false;
+    searchQuery.value = '';
   }
 };
+
+const filteredOptions = computed(() => {
+  const lowerSearch = searchQuery.value.toLowerCase();
+
+  const filtered = props.options.filter((option) =>
+    String(option).toLowerCase().includes(lowerSearch)
+  );
+
+  const selectedFiltered = filtered.filter(option => selectedValues.value.includes(option));
+  const nonSelectedFiltered = filtered.filter(option => !selectedValues.value.includes(option));
+
+  return [...selectedFiltered, ...nonSelectedFiltered];
+});
 
 const selectedItemsPreview = computed(() => {
   if (props.isMultiple) {
@@ -118,6 +144,7 @@ const selectedItemsPreview = computed(() => {
 const handleClickOutside = (event: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     isOpen.value = false;
+    searchQuery.value = '';
   }
 };
 
@@ -135,17 +162,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-.input {
-  padding: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
-  flex: 1;
-  min-width: 12.5rem;
-  cursor: pointer;
-  background-color: var(--background);
-  color: var(--text);
 }
 
 .dropdown-input {
@@ -203,5 +219,15 @@ onUnmounted(() => {
   font-size: 1.125rem;
   display: inline-flex;
   align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 </style>
