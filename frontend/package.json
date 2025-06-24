@@ -18,7 +18,8 @@
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.3.0",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "vue-select": "^4.0.0-beta.6"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
@@ -26,6 +27,7 @@
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.13.9",
     "@types/vue": "^2.0.0",
+    "@types/vue-select": "^2.5.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.5.0",
