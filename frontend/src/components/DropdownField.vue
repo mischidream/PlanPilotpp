@@ -20,26 +20,51 @@
         @click.stop
         autocomplete="off"
       />
-      <div v-for="(option, index) in filteredOptions" :key="option" class="checkbox-item">
-        <label v-if="props.isMultiple">
-          <input
-            type="checkbox"
-            :value="option"
-            :checked="selectedValues.includes(option)"
-            @change="toggleSelection(option)"
-          />
-          {{ option }}
-        </label>
-        <label v-else>
-          <div @click="toggleSelection(option)" class="radio-option">
-            <span class="material-icons">
-              {{
-                selectedValues.includes(option) ? 'radio_button_checked' : 'radio_button_unchecked'
-              }}
+      <div v-for="option in filteredOptions" :key="option" class="checkbox-item">
+        <div v-if="props.isMultiple">
+          <div v-if="props.isMultiStatus" class="multi-state-option">
+            <span
+              class="material-icons state-icon"
+              :class="{ active: selectedValuesMap[option] === 'add' }"
+              @click="setState(option, 'add')"
+            >
+              add_box
             </span>
-            {{ option }}
+            <span
+              class="material-icons state-icon"
+              :class="{ active: selectedValuesMap[option] === 'remove' }"
+              @click="setState(option, 'remove')"
+            >
+              indeterminate_check_box
+            </span>
+            <span class="option-label">{{ option }}</span>
           </div>
-        </label>
+          <div v-else>
+            <label>
+              <input
+                type="checkbox"
+                :value="option"
+                :checked="selectedValues.includes(option)"
+                @change="toggleSelection(option)"
+              />
+              {{ option }}
+            </label>
+          </div>
+        </div>
+        <div v-else>
+          <label>
+            <div @click="toggleSelection(option)" class="radio-option">
+              <span class="material-icons">
+                {{
+                  selectedValues.includes(option)
+                    ? 'radio_button_checked'
+                    : 'radio_button_unchecked'
+                }}
+              </span>
+              {{ option }}
+            </div>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -48,6 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue';
 import { nanoid } from 'nanoid';
+import type { MultiSelectState } from '@/models/MultiSelectState';
 
 const props = defineProps({
   label: {
@@ -55,7 +81,7 @@ const props = defineProps({
     required: true,
   },
   modelValue: {
-    type: Array as PropType<(string | number)[]>,
+    type: Array as PropType<(string | number | MultiSelectState)[]>,
     default: () => [],
   },
   options: {
@@ -64,6 +90,10 @@ const props = defineProps({
     default: () => [],
   },
   isMultiple: {
+    type: Boolean,
+    default: false,
+  },
+  isMultiStatus: {
     type: Boolean,
     default: false,
   },
@@ -80,7 +110,7 @@ const searchQuery = ref('');
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
-   if (!isOpen.value) {
+  if (!isOpen.value) {
     searchQuery.value = '';
   }
 };
@@ -89,6 +119,41 @@ const selectedValues = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val),
 });
+
+const isMultiSelectState = (entry: unknown): entry is MultiSelectState => {
+  return (
+    (typeof entry === 'object' &&
+      entry !== null &&
+      'option' in entry &&
+      'state' in entry &&
+      (entry as any).state === 'add') ||
+    (entry as any).state === 'remove'
+  );
+};
+
+const selectedValuesMap = computed(() => {
+  const map: Record<string | number, 'add' | 'remove' | null> = {};
+  props.options.forEach(option => {
+    const match = props.modelValue.find(
+      (entry): entry is MultiSelectState => isMultiSelectState(entry) && entry.option === option
+    );
+    map[option] = match?.state ?? null;
+  });
+  return map;
+});
+
+const setState = (option: string | number, state: 'add' | 'remove') => {
+  const updated = props.modelValue.filter(
+    (entry): entry is string | number | MultiSelectState =>
+      !isMultiSelectState(entry) || entry.option !== option
+  );
+  if (selectedValuesMap.value[option] === state) {
+    emit('update:modelValue', updated);
+  } else {
+    updated.push({ option, state });
+    emit('update:modelValue', updated);
+  }
+};
 
 const toggleSelection = (option: string | number) => {
   const index = selectedValues.value.indexOf(option);
@@ -112,7 +177,7 @@ const toggleSelection = (option: string | number) => {
 const filteredOptions = computed(() => {
   const lowerSearch = searchQuery.value.toLowerCase();
 
-  const filtered = props.options.filter((option) =>
+  const filtered = props.options.filter(option =>
     String(option).toLowerCase().includes(lowerSearch)
   );
 
@@ -123,21 +188,17 @@ const filteredOptions = computed(() => {
 });
 
 const selectedItemsPreview = computed(() => {
-  if (props.isMultiple) {
-    if (selectedValues.value.length === 0) {
-      return 'Select options';
-    }
-    const previewLimit = 2;
-    const previewItems = selectedValues.value.slice(0, previewLimit);
-    const remainingItemsCount = selectedValues.value.length - previewItems.length;
+  if (props.isMultiple && props.isMultiStatus) {
+    const added = props.modelValue.filter(isMultiSelectState).filter(e => e.state === 'add');
+    const removed = props.modelValue.filter(isMultiSelectState).filter(e => e.state === 'remove');
 
-    if (remainingItemsCount > 0) {
-      return `${previewItems.join(', ')} and ${remainingItemsCount} more`;
-    } else {
-      return previewItems.join(', ');
-    }
+    const previewParts: string[] = [];
+    if (added.length > 0) previewParts.push(`+ ${added.map(e => e.option).join(', ')}`);
+    if (removed.length > 0) previewParts.push(`- ${removed.map(e => e.option).join(', ')}`);
+    if (previewParts.length === 0) return 'Select options';
+    return previewParts.join(' | ');
   } else {
-    return selectedValues.value.length > 0 ? selectedValues.value[0] : 'Select an option';
+    return selectedValues.value.length > 0 ? String(selectedValues.value[0]) : 'Select an option';
   }
 });
 
@@ -229,5 +290,28 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--border);
   margin-bottom: 0.5rem;
   font-size: 1rem;
+}
+
+.multi-state-option {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.state-icon {
+  cursor: pointer;
+  font-size: 1.25rem;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.state-icon.active {
+  opacity: 1;
+  color: var(--light-blue);
+}
+
+.option-label {
+  margin-left: 0.5rem;
+  flex: 1;
 }
 </style>
