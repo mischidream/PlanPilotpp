@@ -69,7 +69,7 @@ const showReduction = computed(() => {
   if (red?.solution?.positive != null && red?.solution?.negative != null) {
     return `${red.solution.positive} | ${red.solution.negative}`;
   }
-  return "- | -";;
+  return '- | -';
 });
 
 const showRemaining = computed(() => {
@@ -82,7 +82,7 @@ const showRemaining = computed(() => {
   if (rem?.solution?.positive != null && rem?.solution?.negative != null) {
     return `${rem.solution.positive} | ${rem.solution.negative}`;
   }
-  return "- | -";;
+  return '- | -';
 });
 </script>
 
