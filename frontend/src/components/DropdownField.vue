@@ -177,12 +177,26 @@ const toggleSelection = (option: string | number) => {
 const filteredOptions = computed(() => {
   const lowerSearch = searchQuery.value.toLowerCase();
 
+  // Filter options by search query
   const filtered = props.options.filter(option =>
     String(option).toLowerCase().includes(lowerSearch)
   );
 
-  const selectedFiltered = filtered.filter(option => selectedValues.value.includes(option));
-  const nonSelectedFiltered = filtered.filter(option => !selectedValues.value.includes(option));
+  const selectedSet = new Set<string | number>();
+
+  for (const entry of props.modelValue) {
+    if (isMultiSelectState(entry)) {
+      // Multi-status entry
+      selectedSet.add(entry.option);
+    } else {
+      // Regular string/number entry
+      selectedSet.add(entry);
+    }
+  }
+
+  // Separate selected and unselected options
+  const selectedFiltered = filtered.filter(option => selectedSet.has(option));
+  const nonSelectedFiltered = filtered.filter(option => !selectedSet.has(option));
 
   return [...selectedFiltered, ...nonSelectedFiltered];
 });
