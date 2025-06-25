@@ -78,7 +78,6 @@ import type { MultiSelectState } from '@/models/MultiSelectState';
 const props = defineProps({
   label: {
     type: String,
-    required: true,
   },
   modelValue: {
     type: Array as PropType<(string | number | MultiSelectState)[]>,
