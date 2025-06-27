@@ -104,3 +104,19 @@ def parse_solution_output(output: str) -> List[Dict]:
         )
 
     return solutions
+
+def extract_plan_actions(plan_file_path: str) -> list[str]:
+    actions = []
+    with open(plan_file_path, "r") as file:
+        timestep = 1
+        for line in file:
+            line = line.strip()
+            if line and not line.startswith(";"):
+                if line.startswith("(") and line.endswith(")"):
+                    parts = line[1:-1].lower().split()
+                    # Create action string separately
+                    action_str = ",".join(['"{}"'.format(p) for p in parts])
+                    formatted = f'+ occurs(action(({action_str})),{timestep})'
+                    actions.append(formatted)
+                    timestep += 1
+    return actions

@@ -24,7 +24,20 @@ def run_planpilot():
         return jsonify({"output": facets}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@planpilot_bp.route("/activate-plan", methods=["POST"])
+def activate_plan():
+    data = request.json
+    plan_file = data.get("planFile")
 
+    if not plan_file:
+        return jsonify({"error": "planFile is required"}), 400
+
+    try:
+        result = planpilot_service.activate_best_plan(plan_file)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():

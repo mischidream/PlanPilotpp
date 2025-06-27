@@ -5,7 +5,7 @@ import subprocess
 import threading
 from typing import List, Dict
 from ..persistence.models import FastDownwardRequest
-from ..utils.parsing import parse_facet_output, parse_solution_output
+from ..utils.parsing import parse_facet_output, parse_solution_output, extract_plan_actions
 
 
 class PlanpilotService:
@@ -122,6 +122,46 @@ class PlanpilotService:
                 raise RuntimeError(
                     f"Unexpected error communicating with FASB or parsing output: {e}"
                 )
+            
+    def activate_best_plan(self, plan_file_path: str) -> Dict:
+        # Resolve the request from DB
+        request_data = FastDownwardRequest.query.filter_by(
+            plan_file_path=plan_file_path
+        ).first()
+        if not request_data:
+            raise ValueError("Plan file not found in the database.")
+        
+        hash_value = request_data.hash_value
+        current_directory = os.getcwd()
+        plan_file_path = os.path.join(current_directory, "temp", hash_value, "sas_plan")
+        
+        if not os.path.isfile(plan_file_path):
+            raise FileNotFoundError("sas_plan file not found in expected location.")
+
+
+        # Extract actions from plan
+        actions = extract_plan_actions(plan_file_path)
+        print("actions: ", actions)
+        activated = []
+        errors = []
+
+        for action in actions:
+            try:
+                self.send_command(action)
+                activated.append(action)
+                time.sleep(0.1)
+            except Exception as e:
+                errors.append({"action": action, "error": str(e)})
+
+        final_output = self.send_command("!")
+        print(final_output)
+        
+        return {
+            "activated": activated,
+            "errors": errors,
+            "solution": final_output
+        }
+
 
     def stop_fasb(self):
         if self.process:
