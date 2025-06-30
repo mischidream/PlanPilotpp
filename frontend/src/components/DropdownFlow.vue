@@ -7,6 +7,7 @@
       :ref="el => setDropdownRef(el, index)"
     >
       <DropdownField
+        :label="`Timestep: ${index + 1}`"
         :modelValue="normalizeToArray(value)"
         :options="options"
         :isMultiple="true"

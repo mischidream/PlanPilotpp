@@ -5,6 +5,7 @@ import type { Facet } from '@/models/Facet';
 import type { SelectionState } from '@/models/SelectionState';
 import { TimeStepType } from '@/models/TimeStepType';
 import { defineStore } from 'pinia';
+import type { MultiSelectState } from '@/models/MultiSelectState';
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
@@ -25,6 +26,9 @@ export const usePlanStore = defineStore('plan', {
     selectedObjects: [] as string[],
     selectedTimesteps: [] as string[],
     selectedSolution: null as Solution | null,
+    dropdownValues: [] as (MultiSelectState[] | null)[],
+    dropdownOptions: [] as string[],
+    bestPlan: null as Solution | null,
   }),
 
   actions: {
@@ -81,6 +85,15 @@ export const usePlanStore = defineStore('plan', {
     },
     setSelectedSolution(val: Solution) {
       this.selectedSolution = val;
+    },
+    setDropdownValues(values: (MultiSelectState[] | null)[]) {
+      this.dropdownValues = values;
+    },
+    setDropdownOptions(options: string[]) {
+      this.dropdownOptions = options;
+    },
+     setBestPlan(plan: Solution | null) {
+      this.bestPlan = plan;
     },
   },
   persist: true,

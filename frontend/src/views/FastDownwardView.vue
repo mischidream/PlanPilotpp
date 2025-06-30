@@ -44,15 +44,22 @@ import { bindWatch } from '@/utils/bindWatch';
 import { computed, ref } from 'vue';
 import type { Facet } from '@/models/Facet';
 
-const dropdownValues = ref<(MultiSelectState[] | null)[]>([]);
-const options = ref<string[]>([]);
-
 // Store
 const planStore = usePlanStore();
 const instanceFile = computed(() => planStore.instanceFile);
 const domainFile = computed(() => planStore.domainFile);
 const sasFile = computed(() => planStore.sasFile);
 const horizon = ref<number>(planStore.horizon);
+
+const dropdownValues = computed({
+  get: () => planStore.dropdownValues,
+  set: val => planStore.setDropdownValues(val),
+});
+
+const options = computed({
+  get: () => planStore.dropdownOptions,
+  set: val => planStore.setDropdownOptions(val),
+});
 
 // Planning configuration
 const minHorizon = ref(horizon.value);
@@ -98,16 +105,18 @@ const start = async () => {
       result = await activateBestPlan(planStore.planFile);
     }
     if (result?.bestPlan) {
-      dropdownValues.value = result.bestPlan.facets.map((facet) => [
+      planStore.setBestPlan(result.bestPlan);
+
+      const formattedOptions = result.bestPlan.facets.map(formatFacetOption);
+      const formattedValues = result.bestPlan.facets.map((facet) => [
         {
           option: formatFacetOption(facet),
           state: 'add' as const,
         }
       ]);
-      options.value = result.bestPlan.facets.map(
-        (facet) =>
-          formatFacetOption(facet)
-      );
+
+      planStore.setDropdownOptions(formattedOptions);
+      planStore.setDropdownValues(formattedValues);
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
