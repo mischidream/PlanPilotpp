@@ -6,6 +6,7 @@ import type { Solution } from '@/models/Solution';
 import type { SasPlanInput } from '@/models/SasPlanInput';
 import type { PlanPilotInput } from '@/models/PlanPilotInput';
 import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
+import type { ActivatePlanResponse } from '@/models/ActivePlanResponse';
 
 let hostUrl = 'http://localhost:5000/api';
 
@@ -37,6 +38,20 @@ export const runPlanPilot = async (input: PlanPilotInput): Promise<Facet[] | und
   try {
     const response = await axios.post<{ output: Facet[] }>(`${hostUrl}/run-planpilot`, input);
     return parseFacetOutput(response.data.output as Facet[]);
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const activateBestPlan = async (
+  planFile: string
+): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.post<ActivatePlanResponse>(
+      `${hostUrl}/activate-plan`,
+      { planFile }
+    );
+    return response.data;
   } catch (error) {
     handleError(error);
   }

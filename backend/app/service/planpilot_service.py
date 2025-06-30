@@ -159,7 +159,7 @@ class PlanpilotService:
         return {
             "activated": activated,
             "errors": errors,
-            "solution": final_output
+            "bestPlan": final_output[0]
         }
 
 
