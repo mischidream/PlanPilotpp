@@ -22,7 +22,15 @@
     />
     <Button label="Start" type="submit" @click="start"></Button>
   </div>
+  <SkeletonFacetRow
+    class="skeleton"
+    v-if="loading"
+    v-for="i in 3"
+    :key="i"
+    viewMode="facets"
+  />
   <DropdownFlow
+    v-else
     :dropdowns="dropdownValues"
     :options="options"
     @update:dropdowns="dropdownValues = $event"
@@ -33,11 +41,11 @@
 import DropdownFlow from '@/components/DropdownFlow.vue';
 import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
+import SkeletonFacetRow from '@/components/SkeletonFacetRow.vue';
 import Button from '@/components/Button.vue';
 import { EncodingType } from '@/models/EncodingType';
-import type { MultiSelectState } from '@/models/MultiSelectState';
 import { TimeStepType } from '@/models/TimeStepType';
-import { activateBestPlan, runPlanPilot, sendPlanPilotCommand } from '@/services/apiService';
+import { activateBestPlan, runPlanPilot } from '@/services/apiService';
 import { usePlanStore } from '@/stores/planStore';
 import { bindWatch } from '@/utils/bindWatch';
 
@@ -150,6 +158,10 @@ function formatFacetOption(facet: Facet): string {
 
 .input-fields .button {
   align-self: flex-end;
+}
+
+.skeleton {
+  padding: 1rem;
 }
 
 </style>
