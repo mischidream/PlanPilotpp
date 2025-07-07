@@ -14,6 +14,7 @@ class PlanpilotService:
         self.lock = threading.RLock()
         self.output_buffer = []
         self.reader_thread = None
+        self.horizon = 0
 
     def run_planpilot_service(
         self, sas_file: str, horizon: int, encoding: str, abstract_time_steps: bool
@@ -76,6 +77,8 @@ class PlanpilotService:
             self.reader_thread = threading.Thread(target=self._read_stdout, daemon=True)
             self.reader_thread.start()
 
+        self.horizon = horizon
+
         self._wait_for_fasb_ready()
         output = self.send_command("?")
         return output
@@ -104,7 +107,7 @@ class PlanpilotService:
                 new_output = self.output_buffer[prev_len:]
                 output_str = "".join(new_output)
 
-                if command in ("?", "#??", "#!!") or command.startswith("|= %"):
+                if command.startswith(("?", "#??", "#!!", "|= %")):
                     return parse_facet_output(output_str, command)
 
                 if re.match(r"!\s*\d*$", command.strip()):
@@ -138,20 +141,60 @@ class PlanpilotService:
         if not os.path.isfile(plan_file_path):
             raise FileNotFoundError("sas_plan file not found in expected location.")
 
-
         # Extract actions from plan
-        actions = extract_plan_actions(plan_file_path)
-        print("actions: ", actions)
-        activated = []
-        errors = []
+        parsed_facets = extract_plan_actions(plan_file_path)
+        #print("parsed facets: ", parsed_facets)
+        facets_by_time = {i: [] for i in range(1, self.horizon + 1)}
+        activated, errors, timeline = [], [], []
 
-        for action in actions:
+        for f in parsed_facets:
+            facets_by_time[f["timestep"]].append({
+                "type": "plan",
+                "facet": f
+            })
+        
+        for t in range(1, self.horizon + 1):
+            step = facets_by_time.get(t, [])
+
             try:
-                self.send_command(action)
-                activated.append(action)
+                optional_facets = self.send_command(f"#?? {t}")
+                # Filter out optional facets already in plan
+                plan_facets = [f["facet"]["id"] for f in step if f["type"] == "plan"]
+                optional_facets = [f for f in optional_facets if f["id"] not in plan_facets]
+                if optional_facets:
+                    step.append({
+                        "type": "optional",
+                        "facets": optional_facets
+                    })
+            except Exception as e:
+                errors.append({"step": t, "type": "optional", "error": str(e)})
+
+            try:
+                implied_facets = self.send_command(f"|= % {t}")
+                if implied_facets:
+                    step.append({
+                        "type": "implied",
+                        "facets": implied_facets
+                    })
+            except Exception as e:
+                errors.append({"step": t, "type": "implied", "error": str(e)})
+
+            if not any(f["type"] == "plan" for f in step) and not any(f["type"] == "implied" for f in step):
+                step.append({
+                    "type": "empty",
+                    "facet": {}
+                })
+
+            timeline.append({"timestep": t, "facets": step})
+
+        for facet in parsed_facets:
+            try:
+                cmd_str = "+ " + facet["id"]
+                self.send_command(cmd_str)
+                activated.append(cmd_str)
                 time.sleep(0.1)
             except Exception as e:
-                errors.append({"action": action, "error": str(e)})
+                errors.append({"action": cmd_str, "error": str(e)})
 
         final_output = self.send_command("!")
         print(final_output)
@@ -159,7 +202,8 @@ class PlanpilotService:
         return {
             "activated": activated,
             "errors": errors,
-            "bestPlan": final_output[0]
+            "bestPlan": final_output[0] if final_output else None,
+            "timeline": timeline
         }
 
 

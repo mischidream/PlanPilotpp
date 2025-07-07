@@ -31,9 +31,8 @@
   />
   <DropdownFlow
     v-else
-    :dropdowns="dropdownValues"
-    :options="options"
-    @update:dropdowns="dropdownValues = $event"
+    :timeline="timeline"
+    @update:timeline="timeline = $event"
   />
 </template>
 
@@ -51,6 +50,7 @@ import { bindWatch } from '@/utils/bindWatch';
 
 import { computed, ref } from 'vue';
 import type { Facet } from '@/models/Facet';
+import type { TimelineStep } from '@/models/TimelineStep';
 
 // Store
 const planStore = usePlanStore();
@@ -68,6 +68,8 @@ const options = computed({
   get: () => planStore.dropdownOptions,
   set: val => planStore.setDropdownOptions(val),
 });
+
+const timeline = ref<TimelineStep[]>([]);
 
 // Planning configuration
 const minHorizon = ref(horizon.value);
@@ -108,14 +110,12 @@ const start = async () => {
       lastUsedHorizon.value = horizon.value;
       lastUsedEncoding.value = encoding.value[0];
       lastUsedTimeStep.value = timeStep.value[0];
-      result = await activateBestPlan(planStore.planFile);
-    } else {
-      result = await activateBestPlan(planStore.planFile);
     }
+    result = await activateBestPlan(planStore.planFile);
     if (result?.bestPlan) {
       planStore.setBestPlan(result.bestPlan);
 
-      const formattedOptions = result.bestPlan.facets.map(formatFacetOption);
+      /* const formattedOptions = result.bestPlan.facets.map(formatFacetOption);
       const formattedValues = result.bestPlan.facets.map((facet) => [
         {
           option: formatFacetOption(facet),
@@ -124,7 +124,11 @@ const start = async () => {
       ]);
 
       planStore.setDropdownOptions(formattedOptions);
-      planStore.setDropdownValues(formattedValues);
+      planStore.setDropdownValues(formattedValues); */
+    }
+    if (result?.timeline) {
+      timeline.value = result.timeline;
+      console.log("timeline: ", timeline.value);
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);

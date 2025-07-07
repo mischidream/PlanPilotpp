@@ -22,7 +22,7 @@ def parse_facet_output(output: str, command: str) -> List[Dict]:
             "selectionState": "Not selected",
         }
 
-    if command == "?" or command.startswith("|= %"):
+    if command.startswith(("?","|= %")):
         facets = []
         pattern = r"(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))"
         matches = re.findall(pattern, output)
@@ -31,7 +31,7 @@ def parse_facet_output(output: str, command: str) -> List[Dict]:
             facets.append(make_facet(action_str, ts, full_match))
         return facets
 
-    elif command in ("#??", "#!!"):
+    elif command.startswith(("#??", "#!!")):
         tokens = output.strip().split()
         facets = {}
         key_to_id = {}
@@ -105,18 +105,17 @@ def parse_solution_output(output: str) -> List[Dict]:
 
     return solutions
 
-def extract_plan_actions(plan_file_path: str) -> list[str]:
+def extract_plan_actions(plan_file_path: str) -> List[Dict]:
     actions = []
+    timestep = 1
     with open(plan_file_path, "r") as file:
-        timestep = 1
         for line in file:
             line = line.strip()
             if line and not line.startswith(";"):
                 if line.startswith("(") and line.endswith(")"):
                     parts = line[1:-1].lower().split()
-                    # Create action string separately
-                    action_str = ",".join(['"{}"'.format(p) for p in parts])
-                    formatted = f'+ occurs(action(({action_str})),{timestep})'
+                    action_str = ",".join(f'"{p}"' for p in parts)
+                    formatted = f'occurs(action(({action_str})),{timestep})'
                     actions.append(formatted)
                     timestep += 1
-    return actions
+    return parse_facet_output(" ".join(actions).strip(), "?")
