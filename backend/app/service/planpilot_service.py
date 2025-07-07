@@ -143,62 +143,86 @@ class PlanpilotService:
 
         # Extract actions from plan
         parsed_facets = extract_plan_actions(plan_file_path)
+        parsed_facets.sort(key=lambda x: x["timestep"])
         #print("parsed facets: ", parsed_facets)
         facets_by_time = {i: [] for i in range(1, self.horizon + 1)}
         activated, errors, timeline = [], [], []
 
-        for f in parsed_facets:
-            facets_by_time[f["timestep"]].append({
-                "type": "plan",
-                "facet": f
-            })
-        
+        def group_facets_by_timestep(facets, horizon):
+            grouped = {t: [] for t in range(1, horizon + 1)}
+            for f in facets:
+                t = f.get("timestep")
+                if 1 <= t <= horizon:
+                    grouped[t].append(f)
+            return grouped
+
+        try:
+            all_optionals = self.send_command("#??")
+            optional_by_time = group_facets_by_timestep(all_optionals, self.horizon)
+        except Exception as e:
+            optional_by_time = {t: [] for t in range(1, self.horizon + 1)}
+            errors.append({"type": "optional-fetch", "error": str(e)})
+
+        # Initialize timeline structure first
+        timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
+        global_implied_ids = set()
+
         for t in range(1, self.horizon + 1):
-            step = facets_by_time.get(t, [])
+            step = timeline[t - 1]["facets"]
 
-            try:
-                optional_facets = self.send_command(f"#?? {t}")
-                # Filter out optional facets already in plan
-                plan_facets = [f["facet"]["id"] for f in step if f["type"] == "plan"]
-                optional_facets = [f for f in optional_facets if f["id"] not in plan_facets]
-                if optional_facets:
-                    step.append({
-                        "type": "optional",
-                        "facets": optional_facets
-                    })
-            except Exception as e:
-                errors.append({"step": t, "type": "optional", "error": str(e)})
+            # Plan facets for this timestep
+            plan_facets = [f for f in parsed_facets if f["timestep"] == t]
 
-            try:
-                implied_facets = self.send_command(f"|= % {t}")
-                if implied_facets:
-                    step.append({
-                        "type": "implied",
-                        "facets": implied_facets
-                    })
-            except Exception as e:
-                errors.append({"step": t, "type": "implied", "error": str(e)})
+            for facet in plan_facets:
+                if facet["id"] in global_implied_ids:
+                    continue
 
-            if not any(f["type"] == "plan" for f in step) and not any(f["type"] == "implied" for f in step):
-                step.append({
-                    "type": "empty",
-                    "facet": {}
-                })
+                step.append({"type": "plan", "facet": facet})
 
-            timeline.append({"timestep": t, "facets": step})
+                try:
+                    cmd_str = "+ " + facet["id"]
+                    self.send_command(cmd_str)
+                    activated.append(f"+ {facet['id']}")
+                except Exception as e:
+                    errors.append({"action": cmd_str, "error": str(e)})
+                    continue
 
-        for facet in parsed_facets:
-            try:
-                cmd_str = "+ " + facet["id"]
-                self.send_command(cmd_str)
-                activated.append(cmd_str)
-                time.sleep(0.1)
-            except Exception as e:
-                errors.append({"action": cmd_str, "error": str(e)})
+                try:
+                    all_implied = self.send_command("|= %")
+                    for implied_facet in all_implied:
+                        implied_id = implied_facet["id"]
+                        implied_ts = implied_facet.get("timestep")
+
+                        if implied_id in global_implied_ids or implied_ts is None:
+                            continue  # Skip if already added or malformed
+
+                        global_implied_ids.add(implied_id)
+
+                        # Add implied facet to correct future step
+                        if 1 <= implied_ts <= self.horizon:
+                            timeline[implied_ts - 1]["facets"].append({
+                                "type": "implied",
+                                "facet": implied_facet,
+                                "causedBy": facet["id"]
+                            })
+
+                except Exception as e:
+                    errors.append({"type": "implied-fetch", "error": str(e)})
+
+            # If this step has no plan or implied facets, try to fetch open ones
+            if not any(f["type"] in ("plan", "implied") for f in step):
+                try:
+                    all_open = self.send_command("?")
+                    open_facets = [f for f in all_open if f.get("timestep") == t]
+                except Exception as e:
+                    open_facets = []
+                    errors.append({"type": "open-fetch", "error": str(e)})
+
+                step.append({"type": "empty", "facets": open_facets})
+
 
         final_output = self.send_command("!")
-        print(final_output)
-        
+
         return {
             "activated": activated,
             "errors": errors,
@@ -238,10 +262,10 @@ class PlanpilotService:
         domain_file: str = None,
         abstract_time_steps: bool = False,
     ):
-        current_dir = os.getcwd()
-        plasp_binary = os.path.join(current_dir, "lib", "planpilot", "bin", "plasp")
+        current_directory = os.getcwd()
+        plasp_binary = os.path.join(current_directory, "lib", "planpilot", "bin", "plasp")
 
-        encoding_dir = os.path.join(current_dir, "lib", "planpilot", "encodings")
+        encoding_dir = os.path.join(current_directory, "lib", "planpilot", "encodings")
         encoding_file = os.path.join(
             encoding_dir,
             (
