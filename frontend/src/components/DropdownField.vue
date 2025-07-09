@@ -2,7 +2,7 @@
   <div class="input-wrapper" ref="dropdownRef">
     <label :for="inputId">{{ label }}</label>
 
-    <div class="dropdown-input" @click="toggleDropdown">
+    <div class="dropdown-input" @click="toggleDropdown"  :class="{ disabled: props.disabled }">
       <span>
         {{ selectedItemsPreview }}
       </span>
@@ -96,6 +96,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -108,6 +112,7 @@ const isOpen = ref(false);
 const searchQuery = ref('');
 
 const toggleDropdown = () => {
+  if (props.disabled) return;
   isOpen.value = !isOpen.value;
   if (!isOpen.value) {
     searchQuery.value = '';
@@ -155,6 +160,7 @@ const setState = (option: string | number, state: 'add' | 'remove') => {
 };
 
 const toggleSelection = (option: string | number) => {
+  if (props.disabled) return;
   const index = selectedValues.value.indexOf(option);
   if (props.isMultiple) {
     if (index === -1) {
@@ -249,6 +255,14 @@ onUnmounted(() => {
   min-width: 12.5rem;
   background-color: var(--background);
   color: var(--text);
+}
+
+.dropdown-input.disabled {
+  background-color: var(--gray-soft);
+  color: var(--gray-mute);
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: var(--divider-light-1);
 }
 
 .checkbox-dropdown {

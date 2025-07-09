@@ -32,7 +32,9 @@
   <DropdownFlow
     v-else
     :timeline="timeline"
+    :selected-values="selectedValues"
     @update:timeline="timeline = $event"
+    @update:selectedValues="selectedValues = $event"
   />
 </template>
 
@@ -51,6 +53,7 @@ import { bindWatch } from '@/utils/bindWatch';
 import { computed, ref } from 'vue';
 import type { Facet } from '@/models/Facet';
 import type { TimelineStep } from '@/models/TimelineStep';
+import type { MultiSelectState } from '@/models/MultiSelectState';
 
 // Store
 const planStore = usePlanStore();
@@ -59,15 +62,7 @@ const domainFile = computed(() => planStore.domainFile);
 const sasFile = computed(() => planStore.sasFile);
 const horizon = ref<number>(planStore.horizon);
 
-const dropdownValues = computed({
-  get: () => planStore.dropdownValues,
-  set: val => planStore.setDropdownValues(val),
-});
-
-const options = computed({
-  get: () => planStore.dropdownOptions,
-  set: val => planStore.setDropdownOptions(val),
-});
+const selectedValues = ref<((string | MultiSelectState)[] | null)[]>([]);
 
 const timeline = ref<TimelineStep[]>([]);
 

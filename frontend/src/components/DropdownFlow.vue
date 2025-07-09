@@ -1,17 +1,18 @@
 <template>
   <div class="dropdown-wrapper" ref="wrapper">
     <div
-      v-for="(value, index) in dropdowns"
+      v-for="(value, index) in timeline"
       :key="index"
       class="dropdown"
-      :ref="el => setDropdownRef(el, index)"
+      :ref="el => setRef(el, index)"
     >
       <DropdownField
         :label="`Timestep: ${index + 1}`"
-        :modelValue="normalizeToArray(value)"
-        :options="options"
+        :modelValue="props.selectedValues[index] ?? getSelectedValue(value.facets, index)"
+        :options="getOptions(value.facets)"
         :isMultiple="true"
         :isMultiStatus="true"
+        :disabled="value.facets.find(f => f.type === TimelineStepType.implied) !== undefined"
         @update:modelValue="val => emitUpdate(index, val)"
       />
     </div>
@@ -48,53 +49,84 @@ import {
 } from 'vue';
 import DropdownField from './DropdownField.vue';
 import type { MultiSelectState } from '@/models/MultiSelectState';
-
-type DropdownValue = 
-  | null 
-  | string 
-  | MultiSelectState 
-  | (string | MultiSelectState)[];
+import type { TimelineStep } from '@/models/TimelineStep';
+import type { TimelineFacet } from '@/models/TimelineFacet';
+import { TimelineStepType } from '@/models/TimelineStepType';
+import type { Facet } from '@/models/Facet';
 
 // Props
 const props = defineProps({
-  dropdowns: {
-    type: Array as PropType<DropdownValue[]>,
+  timeline: {
+    type: Array as PropType<TimelineStep[]>,
     default: () => [],
   },
-  options: {
-    type: Array as PropType<string[]>,
+  selectedValues: {
+    type: Array as PropType<((string | MultiSelectState)[] | null)[]>,
     default: () => [],
   },
 });
-const emit = defineEmits(['update:dropdowns']);
+const emit = defineEmits(['update:selectedValues']);
 
 // Refs
 const dropdownRefs = ref<(HTMLElement | null)[]>([]);
 const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
 
-// Normalize any value to array for DropdownField
-function normalizeToArray(value: DropdownValue): (string | MultiSelectState)[] {
-  if (value === null) return [];
-  if (Array.isArray(value)) return value;
-  return [value];
-}
-
-// Emit updated value as array or null (if empty)
-function emitUpdate(index: number, value: (string | MultiSelectState)[]) {
-  const updated = [...props.dropdowns];
-  updated[index] = value.length === 0 ? null : value;
-  console.log('DropdownFlow emitting update:', updated);
-  emit('update:dropdowns', updated);
-}
-
-// Set refs
-function setDropdownRef(el: Element | ComponentPublicInstance | null, index: number) {
-  if (el && '$el' in el) {
-    dropdownRefs.value[index] = (el as ComponentPublicInstance).$el as HTMLElement;
-  } else {
-    dropdownRefs.value[index] = el as HTMLElement | null;
+function getSelectedValue(value: TimelineFacet[], index: number): (string | MultiSelectState)[] | undefined {
+  const selected = value.find(v => 
+    v.type === TimelineStepType.plan || v.type === TimelineStepType.implied
+  );
+  const firstFacet = selected?.facets?.[0];
+  if (firstFacet) {
+    return [{
+      option: formatFacetOption(firstFacet),
+      state: 'add',
+    }];
   }
+
+  return undefined;
+}
+
+function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
+  if (value.some(f => f.type === TimelineStepType.plan)) {
+    const optional = value.find(f => f.type === TimelineStepType.optional);
+    if (Array.isArray(optional?.facets)) {
+      return optional.facets.map(formatFacetOption);
+    }
+  } else if (value.some(f => f.type === TimelineStepType.empty)) {
+    const empty = value.find(f => f.type === TimelineStepType.empty);
+    if (Array.isArray(empty?.facets)) {
+      return empty.facets.map(formatFacetOption);
+    }
+  }
+
+  return undefined;
+}
+
+
+function emitUpdate(index: number, value: (string | MultiSelectState)[]) {
+  const updated = [...props.selectedValues];
+  updated[index] = value.length === 0 ? null : value;
+  emit('update:selectedValues', updated);
+}
+
+function setRef(el: Element | ComponentPublicInstance | null, index: number) {
+  dropdownRefs.value[index] = el instanceof HTMLElement
+    ? el
+    : (el && '$el' in el)
+      ? (el as ComponentPublicInstance).$el as HTMLElement
+      : null;
+}
+
+function formatFacetOption(facet: Facet): string {
+  const { action, constant1, constant2 } = facet;
+
+  if ((action === "stack" || action === "unstack") && constant2) {
+    const preposition = action === "stack" ? "on" : "from";
+    return `${action} ${constant1} ${preposition} ${constant2}`;
+  }
+
+  return `${action} ${constant1}${constant2 ? ` ${constant2}` : ''}`;
 }
 
 // Arrow drawing logic
@@ -137,17 +169,6 @@ function updateArrows() {
     }
   }
 }
-
-// Watchers
-watch(
-  () => props.dropdowns,
-  (newVal) => {
-    console.log('DropdownFlow received dropdowns:', newVal);
-    nextTick(updateArrows);
-  },
-  { immediate: true, deep: true }
-);
-
 
 
 onMounted(() => {
