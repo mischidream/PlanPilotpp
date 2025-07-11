@@ -148,21 +148,6 @@ class PlanpilotService:
         facets_by_time = {i: [] for i in range(1, self.horizon + 1)}
         activated, errors, timeline = [], [], []
 
-        def group_facets_by_timestep(facets, horizon):
-            grouped = {t: [] for t in range(1, horizon + 1)}
-            for f in facets:
-                t = f.get("timestep")
-                if 1 <= t <= horizon:
-                    grouped[t].append(f)
-            return grouped
-
-        try:
-            all_optionals = self.send_command("#??")
-            optional_by_time = group_facets_by_timestep(all_optionals, self.horizon)
-        except Exception as e:
-            optional_by_time = {t: [] for t in range(1, self.horizon + 1)}
-            errors.append({"type": "optional-fetch", "error": str(e)})
-
         timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
         global_implied_ids = set()
         activated_plan_ids = set()
@@ -170,48 +155,50 @@ class PlanpilotService:
         for t in range(1, self.horizon + 1):
             step = timeline[t - 1]["facets"]
 
-            plan_facets = [f for f in parsed_facets if f["timestep"] == t]
+            plan_facet = next((f for f in parsed_facets if f["timestep"] == t), None)
 
-            for facet in plan_facets:
-                facet_id = facet["id"]
-                if facet_id in global_implied_ids:
-                    continue
-
-                step.append({"type": "plan", "facets": [facet]})
-
+            if plan_facet:
                 try:
-                    cmd_str = "+ " + facet_id
-                    self.send_command(cmd_str)
-                    activated.append(cmd_str)
-                    activated_plan_ids.add(facet_id)
+                    optionals = self.send_command(f"? {t}")
                 except Exception as e:
-                    errors.append({"action": cmd_str, "error": str(e)})
-                    continue
+                    optionals = []
+                    errors.append({"type": "optional-fetch", "error": str(e)})
 
-                try:
-                    all_implied = self.send_command("|= %")
-                    for implied_facet in all_implied:
-                        implied_id = implied_facet["id"]
-                        implied_ts = implied_facet.get("timestep")
+                if optionals:
+                    step.append({"type": "optional", "facets": optionals})
 
-                        if implied_id in global_implied_ids or implied_id in activated_plan_ids or implied_ts is None:
-                            continue
+                facet_id = plan_facet["id"]
+                if facet_id not in global_implied_ids:
+                    step.append({"type": "plan", "facets": [plan_facet]})
 
-                        global_implied_ids.add(implied_id)
+                    try:
+                        cmd_str = "+ " + facet_id
+                        self.send_command(cmd_str)
+                        activated.append(cmd_str)
+                        activated_plan_ids.add(facet_id)
+                    except Exception as e:
+                        errors.append({"action": cmd_str, "error": str(e)})
 
-                        if 1 <= implied_ts <= self.horizon:
-                            timeline[implied_ts - 1]["facets"].append({
-                                "type": "implied",
-                                "facets": [implied_facet],
-                                "causedBy": facet_id
-                            })
+                    try:
+                        all_implied = self.send_command("|= %")
+                        for implied_facet in all_implied:
+                            implied_id = implied_facet["id"]
+                            implied_ts = implied_facet.get("timestep")
 
-                except Exception as e:
-                    errors.append({"type": "implied-fetch", "error": str(e)})
+                            if implied_id in global_implied_ids or implied_id in activated_plan_ids or implied_ts is None:
+                                continue
 
-            if any(f["type"] == "plan" for f in step):
-                optionals = optional_by_time.get(t, [])
-                step.append({"type": "optional", "facets": optionals})
+                            global_implied_ids.add(implied_id)
+
+                            if 1 <= implied_ts <= self.horizon:
+                                timeline[implied_ts - 1]["facets"].append({
+                                    "type": "implied",
+                                    "facets": [implied_facet],
+                                    "causedBy": facet_id
+                                })
+
+                    except Exception as e:
+                        errors.append({"type": "implied-fetch", "error": str(e)})
 
             if not any(f["type"] in ("plan", "implied") for f in step):
                 try:
