@@ -22,7 +22,7 @@ def parse_facet_output(output: str, command: str) -> List[Dict]:
             "selectionState": "Not selected",
         }
 
-    if command.startswith(("?","|= %")):
+    if command.startswith(("?","|= %", "+", "-")):
         facets = []
         pattern = r"(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))"
         matches = re.findall(pattern, output)

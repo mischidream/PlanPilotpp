@@ -15,11 +15,16 @@ class PlanpilotService:
         self.output_buffer = []
         self.reader_thread = None
         self.horizon = 0
+        self.timeline = None
 
     def run_planpilot_service(
         self, sas_file: str, horizon: int, encoding: str, abstract_time_steps: bool
     ) -> List[Dict]:
         print("Run planpilot")
+
+        # Reset horizon and timeline
+        self.horizon = 0
+        self.timeline = None
 
         # Fetch SAS file from DB
         request_data = FastDownwardRequest.query.filter_by(
@@ -145,7 +150,6 @@ class PlanpilotService:
         parsed_facets = extract_plan_actions(plan_file_path)
         parsed_facets.sort(key=lambda x: x["timestep"])
         #print("parsed facets: ", parsed_facets)
-        facets_by_time = {i: [] for i in range(1, self.horizon + 1)}
         activated, errors, timeline = [], [], []
 
         timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
@@ -210,6 +214,7 @@ class PlanpilotService:
 
                 step.append({"type": "empty", "facets": open_facets})
 
+        self.timeline = timeline
 
         final_output = self.send_command("!")
 
@@ -218,6 +223,119 @@ class PlanpilotService:
             "errors": errors,
             "bestPlan": final_output[0] if final_output else None,
             "timeline": timeline
+        }
+
+    def update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
+        activated = []
+        errors = []
+
+        if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
+            raise RuntimeError("Timeline or horizon not initialized in service.")
+
+        def remove_plan_facets(step):
+            step["facets"] = [f for f in step["facets"] if f.get("type") != "plan"]
+
+        if isinstance(commands, list):
+            for t in range(changed_timestep, self.horizon + 1):
+                step = self.timeline[t - 1]
+                remove_plan_facets(step)
+
+            
+            for idx, cmd in enumerate(commands):
+                t = changed_timestep + idx
+                if t > self.horizon:
+                    break
+
+                step = self.timeline[t - 1]
+
+                try:
+                    optional_facets = self.send_command(f"? {t}")
+                    if optional_facets:
+                        step["facets"].append({
+                            "type": "optional",
+                            "facets": optional_facets
+                        })
+                except Exception as e:
+                    errors.append({"type": "optional-fetch", "timestep": t, "error": str(e)})
+
+                try:
+                    self.send_command(cmd)
+                    activated.append(cmd)
+
+                    implied_facets = self.send_command("|= %")
+
+                    for implied in implied_facets:
+                        implied_timestep = implied.get("timestep")
+                        if implied_timestep and changed_timestep <= implied_timestep <= self.horizon:
+                            implied_step = self.timeline[implied_timestep - 1]
+
+                            if any(f.get("type") == "selected" for f in implied_step["facets"]):
+                                continue
+
+                            implied_step["facets"].append({
+                                "type": "implied",
+                                "facets": [implied],
+                                "causedBy": commands
+                            })
+
+                except Exception as e:
+                    errors.append({"command": cmd, "error": str(e)})
+
+        else:
+            t = changed_timestep
+            if t > self.horizon:
+                return {"timeline": self.timeline, "activated": [], "errors": [{"error": "Timestep out of range"}]}
+
+            step = self.timeline[t - 1]
+
+            step["facets"] = [f for f in step["facets"] if f.get("type") == "selected"]
+
+            try:
+                optional_facets = self.send_command(f"? {t}")
+                if optional_facets:
+                     step["facets"].append({
+                        "type": "optional",
+                        "facets": optional_facets
+                    })
+            except Exception as e:
+                errors.append({"type": "optional-fetch", "timestep": t, "error": str(e)})
+
+            try:
+                self.send_command(commands)
+                activated.append(commands)
+
+                clean_command = commands.lstrip("+- ").strip()
+                print("clean command: ", clean_command)
+                parsed_facets = parse_facet_output(clean_command, commands)
+                print("parsed facet: ", parsed_facets)
+
+                step["facets"].append({
+                    "type": "selected",
+                    "facets": parsed_facets
+                })
+
+                implied_facets = self.send_command("|= %")
+                for implied in implied_facets:
+                    implied_timestep = implied.get("timestep")
+                    if implied_timestep and changed_timestep < implied_timestep <= self.horizon:
+                        implied_step = self.timeline[implied_timestep - 1]
+
+                        if any(f.get("type") == "selected" for f in implied_step["facets"]):
+                            continue
+
+                        implied_step["facets"].append({
+                            "type": "implied",
+                            "facets": [implied],
+                            "causedBy": commands
+                        })
+
+            except Exception as e:
+                errors.append({"command": commands, "error": str(e)})
+
+        return {
+            "timeline": self.timeline,
+            "activated": activated,
+            "errors": errors
         }
 
 

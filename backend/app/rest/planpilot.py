@@ -38,6 +38,22 @@ def activate_plan():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@planpilot_bp.route("/update-plan", methods=["POST"])
+def update_plan():
+    data = request.json
+    changed_timestep = data.get("changedTimestep")
+    commands = data.get("commands")
+
+    if changed_timestep is None or commands is None:
+        return jsonify({"error": "changedTimestep and commands are required"}), 400
+
+    try:
+        result = planpilot_service.update_plan_from_timestep(changed_timestep, commands)
+
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():
