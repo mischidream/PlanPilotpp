@@ -147,10 +147,16 @@ const selectedValuesMap = computed(() => {
 });
 
 const setState = (option: string | number, state: 'add' | 'remove') => {
-  const updated = props.modelValue.filter(
+  let updated = props.modelValue.filter(
     (entry): entry is string | number | MultiSelectState =>
       !isMultiSelectState(entry) || entry.option !== option
   );
+  if (state === 'add') {
+    updated = updated.filter(
+      (entry): entry is string | number | MultiSelectState =>
+        !(isMultiSelectState(entry) && entry.state === 'add')
+    );
+  }
   if (selectedValuesMap.value[option] === state) {
     emit('update:modelValue', updated);
   } else {

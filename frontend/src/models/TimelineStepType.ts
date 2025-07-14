@@ -3,4 +3,5 @@ export enum TimelineStepType {
   optional = 'optional',
   implied = 'implied',
   empty = 'empty',
+  selected = 'selected',
 }

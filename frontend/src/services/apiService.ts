@@ -51,6 +51,23 @@ export const activateBestPlan = async (
       `${hostUrl}/activate-plan`,
       { planFile }
     );
+    console.log("best plan data timeline: ", response.data.timeline);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const updatePlan = async (
+  changedTimestep: number,
+  commands: string | string[]
+): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.post<ActivatePlanResponse>(
+      `${hostUrl}/update-plan`,
+      { changedTimestep, commands }
+    );
+    console.log("timeline from plan update:", response.data.timeline);
     return response.data;
   } catch (error) {
     handleError(error);
