@@ -66,6 +66,11 @@ import Header from './components/Header.vue';
   font-weight: bold;
 }
 
+.nav-link.router-link-active {
+  font-weight: bold;
+  color: var(--deep-blue);
+}
+
 .divider {
   height: 1.5rem;
   width: 1px;
