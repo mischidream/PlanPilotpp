@@ -8,7 +8,7 @@
     >
       <DropdownField
         :label="`Timestep: ${index + 1}`"
-        :modelValue="props.selectedValues[index] ?? getSelectedValue(value.facets, index)"
+        :modelValue="props.selectedValues[index] ?? undefined"
         :options="getOptions(value.facets)"
         :isMultiple="true"
         :isMultiStatus="true"
@@ -71,21 +71,6 @@ const emit = defineEmits(['update:selectedValues']);
 const dropdownRefs = ref<(HTMLElement | null)[]>([]);
 const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
-
-function getSelectedValue(value: TimelineFacet[], index: number): (string | MultiSelectState)[] | undefined {
-  const selected = value.find(v => 
-    v.type === TimelineStepType.plan || v.type === TimelineStepType.implied
-  );
-  const firstFacet = selected?.facets?.[0];
-  if (firstFacet) {
-    return [{
-      option: formatFacetOption(firstFacet),
-      state: 'add',
-    }];
-  }
-
-  return undefined;
-}
 
 function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
   if (value.some(f => f.type === TimelineStepType.plan)) {

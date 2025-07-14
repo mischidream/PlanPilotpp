@@ -54,6 +54,8 @@ import { computed, ref } from 'vue';
 import type { Facet } from '@/models/Facet';
 import type { TimelineStep } from '@/models/TimelineStep';
 import type { MultiSelectState } from '@/models/MultiSelectState';
+import type { TimelineFacet } from '@/models/TimelineFacet';
+import { TimelineStepType } from '@/models/TimelineStepType';
 
 // Store
 const planStore = usePlanStore();
@@ -109,21 +111,15 @@ const start = async () => {
     result = await activateBestPlan(planStore.planFile);
     if (result?.bestPlan) {
       planStore.setBestPlan(result.bestPlan);
-
-      /* const formattedOptions = result.bestPlan.facets.map(formatFacetOption);
-      const formattedValues = result.bestPlan.facets.map((facet) => [
-        {
-          option: formatFacetOption(facet),
-          state: 'add' as const,
-        }
-      ]);
-
-      planStore.setDropdownOptions(formattedOptions);
-      planStore.setDropdownValues(formattedValues); */
     }
     if (result?.timeline) {
       timeline.value = result.timeline;
       console.log("timeline: ", timeline.value);
+      selectedValues.value = timeline.value.map((step, index) =>
+        getSelectedValue(step.facets, index) ?? null
+      );
+      console.log("has selected stuff");
+      console.log("pre selectedValues: ", selectedValues.value);
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
@@ -143,6 +139,20 @@ function formatFacetOption(facet: Facet): string {
   return `${action} ${constant1}${constant2 ? ` ${constant2}` : ''}`;
 }
 
+function getSelectedValue(value: TimelineFacet[], index: number): (string | MultiSelectState)[] | undefined {
+  const selected = value.find(v => 
+    v.type === TimelineStepType.plan || v.type === TimelineStepType.implied
+  );
+  const firstFacet = selected?.facets?.[0];
+  if (firstFacet) {
+    return [{
+      option: formatFacetOption(firstFacet),
+      state: 'add',
+    }];
+  }
+
+  return undefined;
+}
 
 </script>
 
