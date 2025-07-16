@@ -5,7 +5,12 @@ import subprocess
 import threading
 from typing import List, Dict
 from ..persistence.models import FastDownwardRequest
-from ..utils.parsing import parse_facet_output, parse_solution_output, extract_plan_actions
+from ..utils.parsing import (
+    parse_facet_output,
+    parse_solution_output,
+    extract_plan_actions,
+)
+from ..utils.plan_utils import *
 
 
 class PlanpilotService:
@@ -132,7 +137,7 @@ class PlanpilotService:
                 raise RuntimeError(
                     f"Unexpected error communicating with FASB or parsing output: {e}"
                 )
-            
+
     def activate_best_plan(self, plan_file_path: str) -> Dict:
         # Resolve the request from DB
         request_data = FastDownwardRequest.query.filter_by(
@@ -140,20 +145,22 @@ class PlanpilotService:
         ).first()
         if not request_data:
             raise ValueError("Plan file not found in the database.")
-        
+
         hash_value = request_data.hash_value
         current_directory = os.getcwd()
         plan_file_path = os.path.join(current_directory, "temp", hash_value, "sas_plan")
-        
+
         if not os.path.isfile(plan_file_path):
             raise FileNotFoundError("sas_plan file not found in expected location.")
 
         # Extract actions from plan
         parsed_facets = extract_plan_actions(plan_file_path)
-        parsed_facets.sort(key=lambda x: x["timestep"])
-        #print("parsed facets: ", parsed_facets)
-        activated, errors, timeline = [], [], []
+        facets_by_timestep = {}
+        for facet in parsed_facets:
+            ts = facet["timestep"]
+            facets_by_timestep[ts] = facet
 
+        activated, errors, timeline = [], [], []
         timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
         global_implied_ids = set()
         activated_plan_ids = set()
@@ -161,17 +168,10 @@ class PlanpilotService:
         for t in range(1, self.horizon + 1):
             step = timeline[t - 1]["facets"]
 
-            plan_facet = next((f for f in parsed_facets if f["timestep"] == t), None)
+            plan_facet = facets_by_timestep.get(t)
 
             if plan_facet:
-                try:
-                    optionals = self.send_command(f"? {t}")
-                except Exception as e:
-                    optionals = []
-                    errors.append({"type": "optional-fetch", "error": str(e)})
-
-                if optionals:
-                    step.append({"type": "optional", "facets": optionals})
+                errors.extend(fetch_and_add_optional_facets(self, timeline, t))
 
                 facet_id = plan_facet["id"]
                 if facet_id not in global_implied_ids:
@@ -185,36 +185,14 @@ class PlanpilotService:
                     except Exception as e:
                         errors.append({"action": cmd_str, "error": str(e)})
 
-                    try:
-                        all_implied = self.send_command("|= %")
-                        for implied_facet in all_implied:
-                            implied_id = implied_facet["id"]
-                            implied_ts = implied_facet.get("timestep")
-
-                            if implied_id in global_implied_ids or implied_id in activated_plan_ids or implied_ts is None:
-                                continue
-
-                            global_implied_ids.add(implied_id)
-
-                            if 1 <= implied_ts <= self.horizon:
-                                timeline[implied_ts - 1]["facets"].append({
-                                    "type": "implied",
-                                    "facets": [implied_facet],
-                                    "causedBy": facet_id
-                                })
-
-                    except Exception as e:
-                        errors.append({"type": "implied-fetch", "error": str(e)})
+                err = fetch_and_add_implied_facets(
+                    self, timeline, global_implied_ids, activated_plan_ids, facet_id, self.horizon
+                )
+                if err:
+                    errors.append(err)
 
             if not any(f["type"] in ("plan", "implied") for f in step):
-                try:
-                    all_open = self.send_command("?")
-                    open_facets = [f for f in all_open if f.get("timestep") == t]
-                except Exception as e:
-                    open_facets = []
-                    errors.append({"type": "open-fetch", "error": str(e)})
-
-                step.append({"type": "empty", "facets": open_facets})
+                errors.extend(fetch_and_add_empty_facets(self, timeline, t))
 
         self.timeline = timeline
 
@@ -224,7 +202,7 @@ class PlanpilotService:
             "activated": activated,
             "errors": errors,
             "bestPlan": final_output[0] if final_output else None,
-            "timeline": timeline
+            "timeline": timeline,
         }
 
     def update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
@@ -249,12 +227,13 @@ class PlanpilotService:
                 try:
                     optional_facets = self.send_command(f"? {t}")
                     if optional_facets:
-                        step["facets"].append({
-                            "type": "optional",
-                            "facets": optional_facets
-                        })
+                        step["facets"].append(
+                            {"type": "optional", "facets": optional_facets}
+                        )
                 except Exception as e:
-                    errors.append({"type": "optional-fetch", "timestep": t, "error": str(e)})
+                    errors.append(
+                        {"type": "optional-fetch", "timestep": t, "error": str(e)}
+                    )
 
                 try:
                     self.send_command(cmd, no_Output=True)
@@ -264,17 +243,25 @@ class PlanpilotService:
 
                     for implied in implied_facets:
                         implied_timestep = implied.get("timestep")
-                        if implied_timestep and changed_timestep < implied_timestep <= self.horizon:
+                        if (
+                            implied_timestep
+                            and changed_timestep < implied_timestep <= self.horizon
+                        ):
                             implied_step = self.timeline[implied_timestep - 1]
 
-                            if any(f.get("type") in ("selected", "implied") for f in implied_step["facets"]):
+                            if any(
+                                f.get("type") in ("selected", "implied")
+                                for f in implied_step["facets"]
+                            ):
                                 continue
 
-                            implied_step["facets"].append({
-                                "type": "implied",
-                                "facets": [implied],
-                                "causedBy": commands
-                            })
+                            implied_step["facets"].append(
+                                {
+                                    "type": "implied",
+                                    "facets": [implied],
+                                    "causedBy": commands,
+                                }
+                            )
 
                 except Exception as e:
                     errors.append({"command": cmd, "error": str(e)})
@@ -287,20 +274,26 @@ class PlanpilotService:
                             if "id" in facet:
                                 used_facet_ids.add(facet["id"])
 
-                    filtered_empty = [f for f in empty_facets if f.get("id") not in used_facet_ids]
+                    filtered_empty = [
+                        f for f in empty_facets if f.get("id") not in used_facet_ids
+                    ]
                     if filtered_empty:
-                        step["facets"].append({
-                            "type": "empty",
-                            "facets": filtered_empty
-                        })
+                        step["facets"].append(
+                            {"type": "empty", "facets": filtered_empty}
+                        )
                 except Exception as e:
-                    errors.append({"type": "empty-fetch", "timestep": t, "error": str(e)})
-
+                    errors.append(
+                        {"type": "empty-fetch", "timestep": t, "error": str(e)}
+                    )
 
         else:
             t = changed_timestep
             if t > self.horizon:
-                return {"timeline": self.timeline, "activated": [], "errors": [{"error": "Timestep out of range"}]}
+                return {
+                    "timeline": self.timeline,
+                    "activated": [],
+                    "errors": [{"error": "Timestep out of range"}],
+                }
 
             step = self.timeline[t - 1]
 
@@ -309,12 +302,13 @@ class PlanpilotService:
             try:
                 optional_facets = self.send_command(f"? {t}")
                 if optional_facets:
-                     step["facets"].append({
-                        "type": "optional",
-                        "facets": optional_facets
-                    })
+                    step["facets"].append(
+                        {"type": "optional", "facets": optional_facets}
+                    )
             except Exception as e:
-                errors.append({"type": "optional-fetch", "timestep": t, "error": str(e)})
+                errors.append(
+                    {"type": "optional-fetch", "timestep": t, "error": str(e)}
+                )
 
             try:
                 self.send_command(commands, no_Output=True)
@@ -323,25 +317,30 @@ class PlanpilotService:
                 clean_command = commands.lstrip("+- ").strip()
                 parsed_facets = parse_facet_output(clean_command, commands)
 
-                step["facets"].append({
-                    "type": "selected",
-                    "facets": parsed_facets
-                })
+                step["facets"].append({"type": "selected", "facets": parsed_facets})
 
                 implied_facets = self.send_command("|= %")
                 for implied in implied_facets:
                     implied_timestep = implied.get("timestep")
-                    if implied_timestep and changed_timestep < implied_timestep <= self.horizon:
+                    if (
+                        implied_timestep
+                        and changed_timestep < implied_timestep <= self.horizon
+                    ):
                         implied_step = self.timeline[implied_timestep - 1]
 
-                        if any(f.get("type") in ("selected", "implied") for f in implied_step["facets"]):
+                        if any(
+                            f.get("type") in ("selected", "implied")
+                            for f in implied_step["facets"]
+                        ):
                             continue
 
-                        implied_step["facets"].append({
-                            "type": "implied",
-                            "facets": [implied],
-                            "causedBy": commands
-                        })
+                        implied_step["facets"].append(
+                            {
+                                "type": "implied",
+                                "facets": [implied],
+                                "causedBy": commands,
+                            }
+                        )
 
             except Exception as e:
                 errors.append({"command": commands, "error": str(e)})
@@ -349,7 +348,10 @@ class PlanpilotService:
             for update_t in range(t, self.horizon + 1):
                 step = self.timeline[update_t - 1]
 
-                if any(f.get("type") in ("plan", "implied", "selected") for f in step["facets"]):
+                if any(
+                    f.get("type") in ("plan", "implied", "selected")
+                    for f in step["facets"]
+                ):
                     continue
 
                 try:
@@ -361,25 +363,25 @@ class PlanpilotService:
                             if "id" in facet:
                                 used_facet_ids.add(facet["id"])
 
-                    filtered_empty = [f for f in empty_facets if f.get("id") not in used_facet_ids]
+                    filtered_empty = [
+                        f for f in empty_facets if f.get("id") not in used_facet_ids
+                    ]
 
-                    step["facets"] = [f for f in step["facets"] if f.get("type") != "empty"]
+                    step["facets"] = [
+                        f for f in step["facets"] if f.get("type") != "empty"
+                    ]
 
                     if filtered_empty:
-                        step["facets"].append({
-                            "type": "empty",
-                            "facets": filtered_empty
-                        })
+                        step["facets"].append(
+                            {"type": "empty", "facets": filtered_empty}
+                        )
 
                 except Exception as e:
-                    errors.append({"type": "empty-fetch", "timestep": update_t, "error": str(e)})
+                    errors.append(
+                        {"type": "empty-fetch", "timestep": update_t, "error": str(e)}
+                    )
 
-        return {
-            "timeline": self.timeline,
-            "activated": activated,
-            "errors": errors
-        }
-
+        return {"timeline": self.timeline, "activated": activated, "errors": errors}
 
     def stop_fasb(self):
         if self.process:
@@ -413,7 +415,9 @@ class PlanpilotService:
         abstract_time_steps: bool = False,
     ):
         current_directory = os.getcwd()
-        plasp_binary = os.path.join(current_directory, "lib", "planpilot", "bin", "plasp")
+        plasp_binary = os.path.join(
+            current_directory, "lib", "planpilot", "bin", "plasp"
+        )
 
         encoding_dir = os.path.join(current_directory, "lib", "planpilot", "encodings")
         encoding_file = os.path.join(
