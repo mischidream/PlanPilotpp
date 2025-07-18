@@ -74,7 +74,10 @@ const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
 
 function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
-  if (value.some(f => f.type === TimelineStepType.plan) || value.some(f => f.type === TimelineStepType.selected)) {
+  if (
+    value.some(f => f.type === TimelineStepType.plan) ||
+    value.some(f => f.type === TimelineStepType.selected)
+  ) {
     const optional = value.find(f => f.type === TimelineStepType.optional);
     if (Array.isArray(optional?.facets)) {
       return optional.facets.map(formatFacetOption);
@@ -89,7 +92,6 @@ function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
   return undefined;
 }
 
-
 function emitUpdate(index: number, value: MultiSelectState[]) {
   const updated = [...props.selectedValues];
   updated[index] = value.length === 0 ? null : value;
@@ -97,11 +99,12 @@ function emitUpdate(index: number, value: MultiSelectState[]) {
 }
 
 function setRef(el: Element | ComponentPublicInstance | null, index: number) {
-  dropdownRefs.value[index] = el instanceof HTMLElement
-    ? el
-    : (el && '$el' in el)
-      ? (el as ComponentPublicInstance).$el as HTMLElement
-      : null;
+  dropdownRefs.value[index] =
+    el instanceof HTMLElement
+      ? el
+      : el && '$el' in el
+        ? ((el as ComponentPublicInstance).$el as HTMLElement)
+        : null;
 }
 
 // Arrow drawing logic
@@ -144,7 +147,6 @@ function updateArrows() {
     }
   }
 }
-
 
 onMounted(() => {
   nextTick(() => {

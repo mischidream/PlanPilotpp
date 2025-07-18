@@ -22,13 +22,7 @@
     />
     <Button label="Start" type="submit" @click="start"></Button>
   </div>
-  <SkeletonFacetRow
-    class="skeleton"
-    v-if="loading"
-    v-for="i in 3"
-    :key="i"
-    viewMode="facets"
-  />
+  <SkeletonFacetRow class="skeleton" v-if="loading" v-for="i in 3" :key="i" viewMode="facets" />
   <DropdownFlow
     v-else
     :timeline="timeline"
@@ -46,7 +40,12 @@ import SkeletonFacetRow from '@/components/SkeletonFacetRow.vue';
 import Button from '@/components/Button.vue';
 import { EncodingType } from '@/models/EncodingType';
 import { TimeStepType } from '@/models/TimeStepType';
-import { activateBestPlan, runPlanPilot, sendPlanPilotCommand, updatePlan } from '@/services/apiService';
+import {
+  activateBestPlan,
+  runPlanPilot,
+  sendPlanPilotCommand,
+  updatePlan,
+} from '@/services/apiService';
 import { usePlanStore } from '@/stores/planStore';
 import { bindWatch } from '@/utils/bindWatch';
 
@@ -91,14 +90,18 @@ bindWatch(minHorizon, planStore.setMinHorizon);
 bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
 bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
 
-watch(selectedValues, async (newVal, oldVal) => {
-  if (isUpdating.value) {
-    isUpdating.value = false;
-    return;
-  }
+watch(
+  selectedValues,
+  async (newVal, oldVal) => {
+    if (isUpdating.value) {
+      isUpdating.value = false;
+      return;
+    }
 
-  await handleSelectedValuesChange(newVal, oldVal);
-}, { deep: true });
+    await handleSelectedValuesChange(newVal, oldVal);
+  },
+  { deep: true }
+);
 
 const start = async () => {
   loading.value = true;
@@ -125,41 +128,49 @@ const start = async () => {
     }
     if (result?.timeline) {
       timeline.value = result.timeline;
-      console.log("timeline: ", timeline.value);
-      selectedValues.value = timeline.value.map((step, index) =>
-        getSelectedValue(step.facets, index) ?? null
+      console.log('timeline: ', timeline.value);
+      selectedValues.value = timeline.value.map(
+        (step, index) => getSelectedValue(step.facets, index) ?? null
       );
-      console.log("pre selectedValues: ", selectedValues.value);
+      console.log('pre selectedValues: ', selectedValues.value);
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
   } finally {
     loading.value = false;
   }
-}
+};
 
 function getSelectedValue(value: TimelineFacet[], index: number): MultiSelectState[] | undefined {
-  const selected = value.find(v => 
-    v.type === TimelineStepType.plan || v.type === TimelineStepType.implied || v.type === TimelineStepType.selected
+  const selected = value.find(
+    v =>
+      v.type === TimelineStepType.plan ||
+      v.type === TimelineStepType.implied ||
+      v.type === TimelineStepType.selected
   );
   const firstFacet = selected?.facets?.[0];
   if (firstFacet) {
-    return [{
-      option: formatFacetOption(firstFacet),
-      state: 'add',
-    }];
+    return [
+      {
+        option: formatFacetOption(firstFacet),
+        state: 'add',
+      },
+    ];
   }
 
   return undefined;
 }
 
-async function handleSelectedValuesChange(newVal: typeof selectedValues.value, oldVal: typeof selectedValues.value) {
+async function handleSelectedValuesChange(
+  newVal: typeof selectedValues.value,
+  oldVal: typeof selectedValues.value
+) {
   if (!oldVal || oldVal.every(v => v == null)) {
     return;
   }
   loading.value = true;
   try {
-    console.log("newValue, oldValue: ", newVal, oldVal);
+    console.log('newValue, oldValue: ', newVal, oldVal);
     const batchedCommands: string[] = [];
     let changedTimestep: number = -1;
     let result;
@@ -198,7 +209,7 @@ async function handleSelectedValuesChange(newVal: typeof selectedValues.value, o
 
       if (!newSelection && oldSelection) {
         const matchingFacet = findFacet(oldOpt);
-        console.log("facet deleted: ", matchingFacet);
+        console.log('facet deleted: ', matchingFacet);
         if (matchingFacet) {
           batchedCommands.push(`- ${matchingFacet.id}`);
         }
@@ -207,7 +218,7 @@ async function handleSelectedValuesChange(newVal: typeof selectedValues.value, o
 
       if (newOpt !== oldOpt) {
         const matchingFacet = findFacet(newOpt);
-        console.log("new option is different to old one: ", matchingFacet);
+        console.log('new option is different to old one: ', matchingFacet);
         if (!matchingFacet) continue;
 
         const isPlanStep = step.facets.some(f => f.type === 'plan');
@@ -223,39 +234,34 @@ async function handleSelectedValuesChange(newVal: typeof selectedValues.value, o
               });
           }
 
-          const addCmd = newState === 'remove'
-            ? `+ ~${matchingFacet.id}`
-            : `+ ${matchingFacet.id}`;
+          const addCmd = newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`;
           batchedCommands.push(addCmd);
         } else {
-          const cmd = newState === 'remove'
-            ? `+ ~${matchingFacet.id}`
-            : `+ ${matchingFacet.id}`;
+          const cmd = newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`;
           result = await updatePlan(changedTimestep, cmd);
         }
       }
     }
 
     if (batchedCommands.length && changedTimestep > -1) {
-      console.log("batched commands: ", batchedCommands);
+      console.log('batched commands: ', batchedCommands);
       result = await updatePlan(changedTimestep, batchedCommands);
     }
 
-    console.log("result in watch: ", result);
+    console.log('result in watch: ', result);
     if (result?.timeline) {
       timeline.value = result.timeline;
-      console.log("timeline: ", timeline.value);
+      console.log('timeline: ', timeline.value);
       isUpdating.value = true;
-      selectedValues.value = result.timeline.map((step, index) =>
-        getSelectedValue(step.facets, index) ?? null
+      selectedValues.value = result.timeline.map(
+        (step, index) => getSelectedValue(step.facets, index) ?? null
       );
-      console.log("updated selectedValues: ", selectedValues.value);
+      console.log('updated selectedValues: ', selectedValues.value);
     }
   } finally {
     loading.value = false;
   }
 }
-
 </script>
 
 <style scoped>
@@ -274,5 +280,4 @@ async function handleSelectedValuesChange(newVal: typeof selectedValues.value, o
 .skeleton {
   padding: 1rem;
 }
-
 </style>

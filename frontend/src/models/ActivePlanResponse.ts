@@ -1,5 +1,5 @@
-import type { Solution } from "./Solution";
-import type { TimelineStep } from "./TimelineStep";
+import type { Solution } from './Solution';
+import type { TimelineStep } from './TimelineStep';
 
 export interface ActivatePlanResponse {
   activated: string[];

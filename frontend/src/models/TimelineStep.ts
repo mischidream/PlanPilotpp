@@ -1,4 +1,4 @@
-import type { TimelineFacet } from "./TimelineFacet";
+import type { TimelineFacet } from './TimelineFacet';
 
 export interface TimelineStep {
   timestep: number;

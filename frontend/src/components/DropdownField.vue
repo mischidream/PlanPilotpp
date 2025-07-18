@@ -2,7 +2,7 @@
   <div class="input-wrapper" ref="dropdownRef">
     <label :for="inputId">{{ label }}</label>
 
-    <div class="dropdown-input" @click="toggleDropdown"  :class="{ disabled: props.disabled }">
+    <div class="dropdown-input" @click="toggleDropdown" :class="{ disabled: props.disabled }">
       <span>
         {{ selectedItemsPreview }}
       </span>

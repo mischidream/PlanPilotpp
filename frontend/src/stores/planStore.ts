@@ -92,7 +92,7 @@ export const usePlanStore = defineStore('plan', {
     setDropdownOptions(options: string[]) {
       this.dropdownOptions = options;
     },
-     setBestPlan(plan: Solution | null) {
+    setBestPlan(plan: Solution | null) {
       this.bestPlan = plan;
     },
   },
