@@ -124,11 +124,9 @@ const start = async () => {
     }
     if (result?.timeline) {
       timeline.value = result.timeline;
-      console.log('timeline: ', timeline.value);
       selectedValues.value = timeline.value.map(
         (step, index) => getSelectedValueFromTimeline(step.facets, index) ?? null
       );
-      console.log('pre selectedValues: ', selectedValues.value);
     }
   } catch (error) {
     console.error('Error running PlanPilot:', error);

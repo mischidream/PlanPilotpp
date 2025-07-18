@@ -43,34 +43,34 @@ export async function handleSelectedValuesChange(
         changedTimestep = i + 1;
       }
 
-      // Handle deletion
+      // CASE 1: Deletion
       if (!newSelection && oldSelection) {
         const matchingFacet = findMatchingFacet(step, oldOpt);
         if (matchingFacet) batchedCommands.push(`- ${matchingFacet.id}`);
         continue;
       }
 
-      // Handle change
+      // CASE 2: Value changed
       if (newOpt !== oldOpt) {
         const matchingFacet = findMatchingFacet(step, newOpt);
         if (!matchingFacet) continue;
 
         const isPlanStep: boolean = step.facets.some(f => f.type === TimelineStepType.plan);
-
         if (isPlanStep) {
-          batchedCommands.push(...collectPlanRemovals(timeline.value, i));
           batchedCommands.push(
             newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`
           );
         } else {
           const cmd: string =
             newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`;
+          console.log("changed timestep, command: ", changedTimestep, cmd);
           result = await updatePlan(changedTimestep, cmd);
         }
       }
     }
 
     if (batchedCommands.length && changedTimestep > -1) {
+      console.log("changed timestep, batched commands: ", changedTimestep, batchedCommands);
       result = await updatePlan(changedTimestep, batchedCommands);
     }
 

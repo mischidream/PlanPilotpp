@@ -211,80 +211,101 @@ class PlanpilotService:
 
         if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
             raise RuntimeError("Timeline or horizon not initialized in service.")
+        
+        if not isinstance(commands, list): 
+            commands = [commands]
 
         if isinstance(commands, list):
+            # Save current facets for every step from the change point onward
+            saved_steps = []
             for t in range(changed_timestep, self.horizon + 1):
                 step = self.timeline[t - 1]
-                step["facets"] = []
+                saved_steps.append({
+                    "timestep": t,
+                    "facets": step.get("facets", [])
+                })
 
-            for idx, cmd in enumerate(commands):
-                t = changed_timestep + idx
-                if t > self.horizon:
-                    break
+            # Clear timeline steps
+            clear_timeline_from_timestep(self.timeline, changed_timestep)
 
-                step = self.timeline[t - 1]
+            global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(self.timeline)
 
-                try:
-                    optional_facets = self.send_command(f"? {t}")
-                    if optional_facets:
-                        step["facets"].append(
-                            {"type": "optional", "facets": optional_facets}
-                        )
-                except Exception as e:
-                    errors.append(
-                        {"type": "optional-fetch", "timestep": t, "error": str(e)}
-                    )
+            # Undo all existing facet activations
+            errors.extend(undo_facets(self, reversed(saved_steps)))
 
-                try:
-                    self.send_command(cmd, no_Output=True)
-                    activated.append(cmd)
+            # Apply new command at timestep
+            t = changed_timestep
+            errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
+            try:
+                self.send_command(commands, no_Output=True)
+                activated.append(commands)
+                clean_cmd = commands.lstrip("+- ").strip()
+                activated_plan_ids.add(clean_cmd)
+                parsed_facet = parse_facet_output(clean_cmd, commands)
+                add_facet_to_timestep(self.timeline, t, "selected", parsed_facet)
+            except Exception as e:
+                errors.append({"command-error": commands, "error": str(e)})
 
-                    implied_facets = self.send_command("|= %")
+            for step_data in saved_steps[1:]:
+                t = step_data["timestep"]
 
-                    for implied in implied_facets:
-                        implied_timestep = implied.get("timestep")
-                        if (
-                            implied_timestep
-                            and changed_timestep < implied_timestep <= self.horizon
-                        ):
-                            implied_step = self.timeline[implied_timestep - 1]
+                errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
 
-                            if any(
-                                f.get("type") in ("selected", "implied")
-                                for f in implied_step["facets"]
-                            ):
-                                continue
+                optionals = []
+                for block in self.timeline[t - 1]["facets"]:
+                    if block.get("type") == "optional":
+                        optionals = block.get("facets", [])
+                        break
 
-                            implied_step["facets"].append(
-                                {
-                                    "type": "implied",
-                                    "facets": [implied],
-                                    "causedBy": commands,
-                                }
-                            )
+                optional_ids = {f.get("id") for f in optionals if "id" in f}
 
-                except Exception as e:
-                    errors.append({"command": cmd, "error": str(e)})
+                reactivated_any = False
 
-                try:
-                    empty_facets = self.send_command(f"? {t}")
-                    used_facet_ids = set()
-                    for f in step["facets"]:
-                        for facet in f.get("facets", []):
-                            if "id" in facet:
-                                used_facet_ids.add(facet["id"])
+                # Use facets only from the current step_data
+                for block in step_data.get("facets", []):
+                    if block.get("type") in ("selected", "plan"):  # TODO: maybe add implied
+                        for facet in block.get("facets", []):
+                            facet_id = facet.get("id")
+                            if facet_id and facet_id in optional_ids:
+                                try:
+                                    # TODO: check if + is correct or if it can be also -
+                                    self.send_command(f"+ {facet_id}", no_Output=True)
+                                    activated.append(f"+ {facet_id}")
+                                    activated_plan_ids.add(facet_id)
+                                    reactivated_any = True
 
-                    filtered_empty = [
-                        f for f in empty_facets if f.get("id") not in used_facet_ids
-                    ]
-                    if filtered_empty:
-                        step["facets"].append(
-                            {"type": "empty", "facets": filtered_empty}
-                        )
-                except Exception as e:
-                    errors.append(
-                        {"type": "empty-fetch", "timestep": t, "error": str(e)}
-                    )
+                                    # Also add facet back to timeline with original type
+                                    add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
+
+                                    # TODO: Maybe need to update all implied ones? Does not do it correctly right now
+                                    errors.extend(fetch_and_add_implied_facets(
+                                        self,
+                                        self.timeline,
+                                        global_implied_ids,
+                                        activated_plan_ids,
+                                        facet_id,
+                                        self.horizon
+                                    ))
+
+                                except Exception as e:
+                                    errors.append({"reactivate-error": f"{facet_id}", "error": str(e)})
+
+                if not reactivated_any and optionals:
+                    current_step = self.timeline[t - 1]
+                    # Remove all facets with type 'optional'
+                    current_step["facets"] = [f for f in current_step.get("facets", []) if f.get("type") != "optional"]
+                    
+                    add_facet_to_timestep(self.timeline, t, "empty", optionals)
+
+            # Finally update empty facets for all steps from changed timestep to horizon
+            for t in range(changed_timestep, self.horizon + 1):
+                used_ids = {
+                    f["id"]
+                    for block in self.timeline[t - 1]["facets"]
+                    for f in block.get("facets", [])
+                    if "id" in f
+                }
+                errors.extend(fetch_and_add_empty_facets(self, self.timeline, t, used_ids))
 
         else:
             t = changed_timestep
@@ -299,16 +320,8 @@ class PlanpilotService:
 
             step["facets"] = []
 
-            try:
-                optional_facets = self.send_command(f"? {t}")
-                if optional_facets:
-                    step["facets"].append(
-                        {"type": "optional", "facets": optional_facets}
-                    )
-            except Exception as e:
-                errors.append(
-                    {"type": "optional-fetch", "timestep": t, "error": str(e)}
-                )
+            # TODO: When I deactivate a plan facet, it does not fetch anymore the correct optionals
+            errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
 
             try:
                 self.send_command(commands, no_Output=True)
