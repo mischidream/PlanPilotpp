@@ -55,17 +55,9 @@ export async function handleSelectedValuesChange(
         const matchingFacet = findMatchingFacet(step, newOpt);
         if (!matchingFacet) continue;
 
-        const isPlanStep: boolean = step.facets.some(f => f.type === TimelineStepType.plan);
-        if (isPlanStep) {
-          batchedCommands.push(
-            newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`
-          );
-        } else {
-          const cmd: string =
-            newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`;
-          console.log("changed timestep, command: ", changedTimestep, cmd);
-          result = await updatePlan(changedTimestep, cmd);
-        }
+        batchedCommands.push(
+          newState === 'remove' ? `+ ~${matchingFacet.id}` : `+ ${matchingFacet.id}`
+        );
       }
     }
 

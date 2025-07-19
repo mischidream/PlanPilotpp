@@ -238,6 +238,14 @@ def apply_user_command(service, t, command, global_implied_ids):
             activated.append(command)
             parsed_facet = parse_facet_output(clean_cmd, command)
             add_facet_to_timestep(service.timeline, t, "selected", parsed_facet)
+
+            errors.extend(fetch_and_add_implied_facets(
+                            service,
+                            service.timeline,
+                            global_implied_ids,
+                            clean_cmd,
+                            service.horizon
+                        ))
         except Exception as e:
             errors.append({"command-error": command, "error": str(e)})
     return activated, errors
