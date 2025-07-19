@@ -136,10 +136,12 @@ function updateArrows() {
     const from = fromEl.getBoundingClientRect();
     const to = toEl.getBoundingClientRect();
 
+    const arrowYOffset = 12;
+
     const startX = from.right - wrapperRect.left;
-    const startY = from.top + from.height / 2 - wrapperRect.top;
+    const startY = from.top + from.height / 2 - wrapperRect.top + arrowYOffset;
     const endX = to.left - wrapperRect.left;
-    const endY = to.top + to.height / 2 - wrapperRect.top;
+    const endY = to.top + to.height / 2 - wrapperRect.top + arrowYOffset;
 
     if (Math.abs(from.top - to.top) < 10) {
       // Same line
