@@ -220,6 +220,7 @@ def prepare_timeline_for_update(service, changed_timestep):
 
 
 def apply_user_command(service, t, command, global_implied_ids):
+    # TODO: now there is two times minus -> fix it
     errors = []
     activated = []
     clean_cmd = command.lstrip("+- ").strip()
@@ -237,6 +238,7 @@ def apply_user_command(service, t, command, global_implied_ids):
             service.send_command(command, no_Output=True)
             activated.append(command)
             parsed_facet = parse_facet_output(clean_cmd, command)
+            # TODO: if it is + ~ -> it does not add it right now correctly to the timeline in the frontend, need to fix this
             add_facet_to_timestep(service.timeline, t, "selected", parsed_facet)
 
             errors.extend(fetch_and_add_implied_facets(

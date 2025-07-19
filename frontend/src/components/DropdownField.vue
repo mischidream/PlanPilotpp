@@ -151,22 +151,26 @@ const selectedValuesMap = computed(() => {
 });
 
 const setState = (option: string | number, state: 'add' | 'remove') => {
+  // Remove all MultiSelectState entries for the same option
   let updated = props.modelValue.filter(
     (entry): entry is string | number | MultiSelectState =>
       !isMultiSelectState(entry) || entry.option !== option
   );
-  if (state === 'add') {
+  // Additionally, if state is "add", remove any previous "add" state
+/*   if (state === 'add') {
     updated = updated.filter(
       (entry): entry is string | number | MultiSelectState =>
         !(isMultiSelectState(entry) && entry.state === 'add')
     );
-  }
+  } */
   if (selectedValuesMap.value[option] === state) {
     emit('update:modelValue', updated);
   } else {
     updated.push({ option, state });
     emit('update:modelValue', updated);
   }
+/*   updated.push({ option, state });
+  emit('update:modelValue', updated); */
 };
 
 const toggleSelection = (option: string | number) => {
