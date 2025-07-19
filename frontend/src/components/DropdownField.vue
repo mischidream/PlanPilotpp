@@ -2,7 +2,7 @@
   <div class="input-wrapper" ref="dropdownRef">
     <label :for="inputId">{{ label }}</label>
 
-    <div class="dropdown-input" @click="toggleDropdown" :class="{ disabled: props.disabled }">
+    <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled: props.disabled }]">
       <span>
         {{ selectedItemsPreview }}
       </span>
@@ -100,6 +100,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  highlight: {
+    type: String as PropType<'blue' | 'purple' | 'green' | null>,
+    default: null,
+  }
 });
 
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -270,6 +274,19 @@ onUnmounted(() => {
   pointer-events: none;
   border-color: var(--divider-light-1);
 }
+
+.green {
+  background-color: var(--teal-green-transparent);
+}
+
+.blue {
+  background-color: var(--light-blue-transparent);
+}
+
+.purple {
+  background-color: var(--soft-purple-transparent);
+}
+
 
 .checkbox-dropdown {
   position: absolute;

@@ -12,7 +12,8 @@
         :options="getOptions(value.facets)"
         :isMultiple="true"
         :isMultiStatus="true"
-        :disabled="value.facets.find(f => f.type === TimelineStepType.implied) !== undefined"
+        :highlight="getHighlightType(value.facets)"
+        :disabled="isDisabled(value.facets)"
         @update:modelValue="val => emitUpdate(index, val)"
       />
     </div>
@@ -72,6 +73,19 @@ const emit = defineEmits(['update:selectedValues']);
 const dropdownRefs = ref<(HTMLElement | null)[]>([]);
 const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
+
+const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
+  if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
+  if (facets.some(f => f.type === TimelineStepType.plan)) return 'purple';
+  return null;
+};
+
+const isDisabled = (facets: TimelineFacet[]): boolean => {
+  const hasImplied = facets.some(f => f.type === TimelineStepType.implied);
+  const hasPlan = facets.some(f => f.type === TimelineStepType.plan);
+  const hasSelected = facets.some(f => f.type === TimelineStepType.selected);
+  return hasImplied && !hasPlan && !hasSelected;
+};
 
 function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
   if (
