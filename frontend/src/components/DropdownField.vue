@@ -287,7 +287,6 @@ onUnmounted(() => {
   background-color: var(--soft-purple-transparent);
 }
 
-
 .checkbox-dropdown {
   position: absolute;
   top: 100%;

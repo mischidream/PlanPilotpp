@@ -165,6 +165,10 @@ class PlanpilotService:
         global_implied_ids = set()
         activated_plan_ids = set()
 
+        errors.append(fetch_and_add_implied_facets(
+                    self, timeline, global_implied_ids, 'plan', self.horizon
+                ))
+
         for t in range(1, self.horizon + 1):
             step = timeline[t - 1]["facets"]
 
@@ -185,11 +189,9 @@ class PlanpilotService:
                     except Exception as e:
                         errors.append({"action": cmd_str, "error": str(e)})
 
-                err = fetch_and_add_implied_facets(
-                    self, timeline, global_implied_ids, activated_plan_ids, facet_id, self.horizon
-                )
-                if err:
-                    errors.append(err)
+                errors.append(fetch_and_add_implied_facets(
+                    self, timeline, global_implied_ids, facet_id, self.horizon
+                ))
 
             if not any(f["type"] in ("plan", "implied") for f in step):
                 errors.extend(fetch_and_add_empty_facets(self, timeline, t))
@@ -226,25 +228,33 @@ class PlanpilotService:
                 })
 
             # Clear timeline steps
-            clear_timeline_from_timestep(self.timeline, changed_timestep)
+            clear_all_but_implied_from_timestep(self.timeline, changed_timestep)
 
             global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(self.timeline)
 
             # Undo all existing facet activations
-            errors.extend(undo_facets(self, reversed(saved_steps)))
+            errors.extend(undo_facets(self, reversed(saved_steps), self.timeline))
 
-            # Apply new command at timestep
             t = changed_timestep
-            errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
-            try:
-                self.send_command(commands, no_Output=True)
-                activated.append(commands)
-                clean_cmd = commands.lstrip("+- ").strip()
-                activated_plan_ids.add(clean_cmd)
-                parsed_facet = parse_facet_output(clean_cmd, commands)
-                add_facet_to_timestep(self.timeline, t, "selected", parsed_facet)
-            except Exception as e:
-                errors.append({"command-error": commands, "error": str(e)})
+            clean_cmd = commands.lstrip("+- ").strip()
+
+            if commands.strip().startswith("-"):
+                try:
+                    self.send_command(commands, no_Output=True)
+                    activated.append(commands)
+                    errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
+
+                except Exception as e:
+                    errors.append({"command-error": commands, "error": str(e)})
+            else:
+                errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
+                try:
+                    self.send_command(commands, no_Output=True)
+                    activated.append(commands)
+                    parsed_facet = parse_facet_output(clean_cmd, commands)
+                    add_facet_to_timestep(self.timeline, t, "selected", parsed_facet)
+                except Exception as e:
+                    errors.append({"command-error": commands, "error": str(e)})
 
             for step_data in saved_steps[1:]:
                 t = step_data["timestep"]
@@ -271,7 +281,6 @@ class PlanpilotService:
                                     # TODO: check if + is correct or if it can be also -
                                     self.send_command(f"+ {facet_id}", no_Output=True)
                                     activated.append(f"+ {facet_id}")
-                                    activated_plan_ids.add(facet_id)
                                     reactivated_any = True
 
                                     # Also add facet back to timeline with original type
@@ -282,7 +291,6 @@ class PlanpilotService:
                                         self,
                                         self.timeline,
                                         global_implied_ids,
-                                        activated_plan_ids,
                                         facet_id,
                                         self.horizon
                                     ))

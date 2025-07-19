@@ -2,6 +2,14 @@ def clear_timeline_from_timestep(timeline, start_timestep):
     for t in range(start_timestep - 1, len(timeline)):
         timeline[t]["facets"] = []
 
+def clear_all_but_implied_from_timestep(timeline, start_timestep):
+    for t in range(start_timestep, len(timeline) + 1):
+        step = timeline[t - 1]
+        step["facets"] = [
+            block for block in step.get("facets", [])
+            if block.get("type") == "implied"
+        ]
+
 def add_facet_to_timestep(timeline, timestep, facet_type, facets, caused_by=None):
     entry = {"type": facet_type, "facets": facets}
     if caused_by:
@@ -57,7 +65,7 @@ def fetch_and_replace_empty_facets(service, timeline, timestep):
         return [{"type": "empty-fetch", "timestep": timestep, "error": str(e)}]
 
 
-def fetch_and_add_implied_facets(service, timeline, global_implied_ids, activated_plan_ids, base_facet_id, horizon):
+""" def fetch_and_add_implied_facets(service, timeline, global_implied_ids, activated_plan_ids, base_facet_id, horizon):
     errors = []
     try:
         implied = service.send_command("|= %")
@@ -89,10 +97,52 @@ def fetch_and_add_implied_facets(service, timeline, global_implied_ids, activate
     except Exception as e:
         errors.append({"type": "implied-fetch", "error": str(e)})
 
+    return errors """
+
+def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_facet_id, horizon):
+    errors = []
+    try:
+        implied = service.send_command("|= %")
+        print("implied ones", implied)
+        for f in implied:
+            implied_id = f["id"]
+            ts = f.get("timestep")
+
+            if ts is None or not (1 <= ts <= horizon):
+                # Invalid timestep, skip
+                continue
+
+            # Check if facet already present at the timestep
+            found = False
+            for item in timeline[ts - 1]["facets"]:
+                if item["type"] == "implied":
+                    existing_ids = {facet["id"] for facet in item["facets"]}
+                    if implied_id in existing_ids:
+                        # Append to impliedBy if not already present
+                        if base_facet_id not in item.get("impliedBy", []):
+                            item.setdefault("impliedBy", []).append(base_facet_id)
+                        found = True
+                        break
+
+            if not found:
+                # Add a new implied facet entry
+                timeline[ts - 1]["facets"].append({
+                    "type": "implied",
+                    "facets": [f],
+                    "impliedBy": [base_facet_id]
+                })
+
+            # Track it globally regardless of duplication or activation
+            global_implied_ids.add(implied_id)
+
+    except Exception as e:
+        errors.append({"type": "implied-fetch", "error": str(e)})
+
     return errors
 
-def undo_facets(service, step_data):
+def undo_facets(service, step_data, timeline):
     errors = []
+
     for step in step_data:
         for block in step.get("facets", []):
             if block.get("type") in ("selected", "plan"):
@@ -100,13 +150,33 @@ def undo_facets(service, step_data):
                     facet_id = facet.get("id")
                     if facet_id:
                         try:
+                            # Send command to undo the facet
                             service.send_command(f"- {facet_id}", no_Output=True)
+
+                            # Remove facet_id from all impliedBy lists in timeline
+                            for timestep in timeline:
+                                # We collect implied blocks to remove (with empty impliedBy) in a separate list
+                                blocks_to_remove = []
+                                for implied_block in timestep.get("facets", []):
+                                    if implied_block.get("type") == "implied":
+                                        if facet_id in implied_block.get("impliedBy", []):
+                                            implied_block["impliedBy"].remove(facet_id)
+
+                                            # If impliedBy is now empty, mark this block for removal
+                                            if not implied_block["impliedBy"]:
+                                                blocks_to_remove.append(implied_block)
+
+                                # Now actually remove the marked blocks
+                                for block_to_remove in blocks_to_remove:
+                                    timestep["facets"].remove(block_to_remove)
+
                         except Exception as e:
                             errors.append({
                                 "undo-error": f"- {facet_id}",
                                 "error": str(e),
                                 "timestep": step["timestep"]
                             })
+
     return errors
 
 
