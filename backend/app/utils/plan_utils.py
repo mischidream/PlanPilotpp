@@ -1,3 +1,6 @@
+from ..utils.parsing import parse_facet_output
+
+
 def clear_timeline_from_timestep(timeline, start_timestep):
     for t in range(start_timestep - 1, len(timeline)):
         timeline[t]["facets"] = []
@@ -103,7 +106,6 @@ def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_fac
     errors = []
     try:
         implied = service.send_command("|= %")
-        print("implied ones", implied)
         for f in implied:
             implied_id = f["id"]
             ts = f.get("timestep")
@@ -198,3 +200,75 @@ def getAllImpliedAndActivatedIds(timeline):
                 elif facet_type == "selected":
                     activated_plan_ids.add(facet_id)
     return global_implied_ids, activated_plan_ids
+
+def prepare_timeline_for_update(service, changed_timestep):
+    # Save current facets for every step from the change point onward
+    saved_steps = []
+    for t in range(changed_timestep, service.horizon + 1):
+        step = service.timeline[t - 1]
+        saved_steps.append({
+            "timestep": t,
+            "facets": step.get("facets", [])
+        })
+
+    # Clear timeline steps
+    clear_all_but_implied_from_timestep(service.timeline, changed_timestep)
+    global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(service.timeline)
+    # Undo all existing facet activations
+    errors = undo_facets(service, reversed(saved_steps), service.timeline)
+    return saved_steps, global_implied_ids, activated_plan_ids, errors
+
+
+def apply_user_command(service, t, command, global_implied_ids):
+    errors = []
+    activated = []
+    clean_cmd = command.lstrip("+- ").strip()
+
+    if command.strip().startswith("-"):
+        try:
+            service.send_command(command, no_Output=True)
+            activated.append(command)
+            errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
+        except Exception as e:
+            errors.append({"command-error": command, "error": str(e)})
+    else:
+        errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
+        try:
+            service.send_command(command, no_Output=True)
+            activated.append(command)
+            parsed_facet = parse_facet_output(clean_cmd, command)
+            add_facet_to_timestep(service.timeline, t, "selected", parsed_facet)
+        except Exception as e:
+            errors.append({"command-error": command, "error": str(e)})
+    return activated, errors
+
+def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied_ids):
+    activated = []
+    errors = []
+    reactivated_any = False
+
+    for block in step_data.get("facets", []):
+        if block.get("type") in ("selected", "plan"):  # Consider including "implied" if needed
+            for facet in block.get("facets", []):
+                facet_id = facet.get("id")
+                if facet_id and facet_id in optional_ids:
+                    try:
+                        self.send_command(f"+ {facet_id}", no_Output=True)
+                        activated.append(f"+ {facet_id}")
+                        reactivated_any = True
+
+                        add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
+
+                        # TODO: Maybe need to update all implied ones? Does not do it correctly right now
+                        errors.extend(fetch_and_add_implied_facets(
+                            self,
+                            self.timeline,
+                            global_implied_ids,
+                            facet_id,
+                            self.horizon
+                        ))
+                    except Exception as e:
+                        errors.append({"reactivate-error": f"{facet_id}", "error": str(e)})
+
+    return activated, errors, reactivated_any
+

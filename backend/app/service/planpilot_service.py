@@ -218,43 +218,12 @@ class PlanpilotService:
             commands = [commands]
 
         if isinstance(commands, list):
-            # Save current facets for every step from the change point onward
-            saved_steps = []
-            for t in range(changed_timestep, self.horizon + 1):
-                step = self.timeline[t - 1]
-                saved_steps.append({
-                    "timestep": t,
-                    "facets": step.get("facets", [])
-                })
-
-            # Clear timeline steps
-            clear_all_but_implied_from_timestep(self.timeline, changed_timestep)
-
-            global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(self.timeline)
-
-            # Undo all existing facet activations
-            errors.extend(undo_facets(self, reversed(saved_steps), self.timeline))
-
+            saved_steps, global_implied_ids, activated_plan_ids, error_prepare = prepare_timeline_for_update(self, changed_timestep)
+            errors.extend(error_prepare)
+            
             t = changed_timestep
-            clean_cmd = commands.lstrip("+- ").strip()
 
-            if commands.strip().startswith("-"):
-                try:
-                    self.send_command(commands, no_Output=True)
-                    activated.append(commands)
-                    errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
-
-                except Exception as e:
-                    errors.append({"command-error": commands, "error": str(e)})
-            else:
-                errors.extend(fetch_and_add_optional_facets(self, self.timeline, t))
-                try:
-                    self.send_command(commands, no_Output=True)
-                    activated.append(commands)
-                    parsed_facet = parse_facet_output(clean_cmd, commands)
-                    add_facet_to_timestep(self.timeline, t, "selected", parsed_facet)
-                except Exception as e:
-                    errors.append({"command-error": commands, "error": str(e)})
+            activated_user_commands, error_user_commands = apply_user_command(self, t, commands, global_implied_ids)
 
             for step_data in saved_steps[1:]:
                 t = step_data["timestep"]
@@ -269,34 +238,12 @@ class PlanpilotService:
 
                 optional_ids = {f.get("id") for f in optionals if "id" in f}
 
-                reactivated_any = False
-
                 # Use facets only from the current step_data
-                for block in step_data.get("facets", []):
-                    if block.get("type") in ("selected", "plan"):  # TODO: maybe add implied
-                        for facet in block.get("facets", []):
-                            facet_id = facet.get("id")
-                            if facet_id and facet_id in optional_ids:
-                                try:
-                                    # TODO: check if + is correct or if it can be also -
-                                    self.send_command(f"+ {facet_id}", no_Output=True)
-                                    activated.append(f"+ {facet_id}")
-                                    reactivated_any = True
-
-                                    # Also add facet back to timeline with original type
-                                    add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
-
-                                    # TODO: Maybe need to update all implied ones? Does not do it correctly right now
-                                    errors.extend(fetch_and_add_implied_facets(
-                                        self,
-                                        self.timeline,
-                                        global_implied_ids,
-                                        facet_id,
-                                        self.horizon
-                                    ))
-
-                                except Exception as e:
-                                    errors.append({"reactivate-error": f"{facet_id}", "error": str(e)})
+                activated_cmds, facet_errors, reactivated_any = reactivate_facets_from_step(
+                    self, t, step_data, optional_ids, global_implied_ids
+                )
+                activated.extend(activated_cmds)
+                errors.extend(facet_errors)
 
                 if not reactivated_any and optionals:
                     current_step = self.timeline[t - 1]
