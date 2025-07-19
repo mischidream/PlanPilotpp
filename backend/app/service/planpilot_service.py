@@ -217,9 +217,10 @@ class PlanpilotService:
         saved_steps, global_implied_ids, activated_plan_ids, error_prepare = prepare_timeline_for_update(self, changed_timestep)
         errors.extend(error_prepare)
         
+        command = commands[0]
         t = changed_timestep
 
-        activated_user_commands, error_user_commands = apply_user_command(self, t, commands, global_implied_ids)
+        activated_user_commands, error_user_commands = apply_user_command(self, t, command, global_implied_ids)
         activated.append(activated_user_commands)
         errors.append(error_user_commands)
 
