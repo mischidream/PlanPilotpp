@@ -67,41 +67,6 @@ def fetch_and_replace_empty_facets(service, timeline, timestep):
     except Exception as e:
         return [{"type": "empty-fetch", "timestep": timestep, "error": str(e)}]
 
-
-""" def fetch_and_add_implied_facets(service, timeline, global_implied_ids, activated_plan_ids, base_facet_id, horizon):
-    errors = []
-    try:
-        implied = service.send_command("|= %")
-        for f in implied:
-            implied_id = f["id"]
-            ts = f.get("timestep")
-
-            if implied_id in global_implied_ids:
-                # is this id already implied -> no need to add it twice
-                continue
-            if implied_id in activated_plan_ids:
-                # is this a plan that was initially activated -> if yes this should not be implied so that the user
-                # can change it
-                continue
-            if ts is None or not (1 <= ts <= horizon):
-                # if the implied facet has no time step -> no need to add it
-                # TODO: is this not an error case?
-                continue
-            if not (1 <= ts <= horizon):
-                # ts needs to lie inside 1 and the horizon, so the valid planning range
-                continue
-
-            global_implied_ids.add(implied_id)
-            timeline[ts - 1]["facets"].append({
-                "type": "implied",
-                "facets": [f],
-                "causedBy": base_facet_id
-            })
-    except Exception as e:
-        errors.append({"type": "implied-fetch", "error": str(e)})
-
-    return errors """
-
 def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_facet_id, horizon):
     errors = []
     try:
@@ -127,6 +92,7 @@ def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_fac
                         break
 
             if not found:
+                f["selectionState"] = "+"
                 # Add a new implied facet entry
                 timeline[ts - 1]["facets"].append({
                     "type": "implied",
@@ -150,10 +116,17 @@ def undo_facets(service, step_data, timeline):
             if block.get("type") in ("selected", "plan"):
                 for facet in block.get("facets", []):
                     facet_id = facet.get("id")
-                    if facet_id:
+                    selection_state = facet.get("selectionState", "Not selected")
+                    if facet_id and selection_state != "Not selected":
+                        if selection_state == "+":
+                            undo_cmd = f"- {facet_id}"
+                        elif selection_state == "-":
+                            undo_cmd = f"- ~{facet_id}"
+                        else:
+                            continue
                         try:
                             # Send command to undo the facet
-                            service.send_command(f"- {facet_id}", no_Output=True)
+                            service.send_command(undo_cmd, no_Output=True)
 
                             # Remove facet_id from all impliedBy lists in timeline
                             for timestep in timeline:
@@ -220,26 +193,39 @@ def prepare_timeline_for_update(service, changed_timestep):
 
 
 def apply_user_command(service, t, command, global_implied_ids):
-    # TODO: now there is two times minus -> fix it
     errors = []
     activated = []
-    clean_cmd = command.lstrip("+- ").strip()
+    stripped = command.strip()
+    is_remove = stripped.startswith("-")
+    is_negative_add = stripped.startswith("+ ~")
+    is_positive_add = stripped.startswith("+") and not is_negative_add
+    clean_cmd = stripped.lstrip("+-~ ").strip()
 
-    if command.strip().startswith("-"):
-        try:
-            service.send_command(command, no_Output=True)
-            activated.append(command)
-            errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
-        except Exception as e:
-            errors.append({"command-error": command, "error": str(e)})
+    if is_remove:
+        # Check if there are other facets remaining at this timestep
+        current_facets = service.timeline[t]["facets"]
+        non_removed_facets_exist = any(
+            f.get("facets") for f in current_facets if f.get("facets")
+        )
+
+        # Only fetch optionals if the timestep still has other facets
+        if non_removed_facets_exist:
+            try:
+                errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
+            except Exception as e:
+                errors.append({"command-error": command, "error": str(e)})
     else:
         errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
         try:
             service.send_command(command, no_Output=True)
             activated.append(command)
-            parsed_facet = parse_facet_output(clean_cmd, command)
-            # TODO: if it is + ~ -> it does not add it right now correctly to the timeline in the frontend, need to fix this
-            add_facet_to_timestep(service.timeline, t, "selected", parsed_facet)
+            parsed_facets = parse_facet_output(clean_cmd, command)
+            for facet in parsed_facets:
+                if is_negative_add:
+                    facet["selectionState"] = "-"
+                elif is_positive_add:
+                    facet["selectionState"] = "+"
+            add_facet_to_timestep(service.timeline, t, "selected", parsed_facets)
 
             errors.extend(fetch_and_add_implied_facets(
                             service,
@@ -261,10 +247,17 @@ def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied
         if block.get("type") in ("selected", "plan"):  # Consider including "implied" if needed
             for facet in block.get("facets", []):
                 facet_id = facet.get("id")
-                if facet_id and facet_id in optional_ids:
+                selection_state = facet.get("selectionState", "Not selected")
+                if facet_id and facet_id in optional_ids and selection_state != "Not selected":
+                    if selection_state == "+":
+                        cmd = f"+ {facet_id}"
+                    elif selection_state == "-":
+                        cmd = f"+ ~{facet_id}"
+                    else:
+                        continue
                     try:
-                        self.send_command(f"+ {facet_id}", no_Output=True)
-                        activated.append(f"+ {facet_id}")
+                        self.send_command(cmd, no_Output=True)
+                        activated.append(cmd)
                         reactivated_any = True
 
                         add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
