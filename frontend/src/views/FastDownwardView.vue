@@ -89,6 +89,7 @@ bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
 watch(
   selectedValues,
   async (newVal, oldVal) => {
+    // TODO: If I select more then one it does not do anything right now
     if (isUpdating.value) {
       isUpdating.value = false;
       return;

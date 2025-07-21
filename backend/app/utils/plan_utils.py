@@ -193,6 +193,7 @@ def prepare_timeline_for_update(service, changed_timestep):
 
 
 def apply_user_command(service, t, command, global_implied_ids):
+    # TODO: If is negative add and on the timestep then is a positive one implied -> add it there -> how to show exactly??
     errors = []
     activated = []
     stripped = command.strip()
@@ -207,6 +208,8 @@ def apply_user_command(service, t, command, global_implied_ids):
         non_removed_facets_exist = any(
             f.get("facets") for f in current_facets if f.get("facets")
         )
+
+        # TODO: Now does later not fetch anymore the empty ones, need to fix this
 
         # Only fetch optionals if the timestep still has other facets
         if non_removed_facets_exist:

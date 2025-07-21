@@ -154,6 +154,7 @@ class PlanpilotService:
             raise FileNotFoundError("sas_plan file not found in expected location.")
 
         # Extract actions from plan
+        # TODO: How to behave if there are more best plans?
         parsed_facets = extract_plan_actions(plan_file_path)
         facets_by_timestep = {}
         for facet in parsed_facets:
