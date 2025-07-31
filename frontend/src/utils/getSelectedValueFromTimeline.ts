@@ -5,37 +5,33 @@ import type { MultiSelectState } from '@/models/MultiSelectState';
 import { SelectionState } from '@/models/SelectionState';
 
 export function getSelectedValueFromTimeline(
-  value: TimelineFacet[],
+  facets: TimelineFacet[],
   index: number
 ): MultiSelectState[] | undefined {
-  const selected = value.find(
-    v =>
-      v.type === TimelineStepType.plan ||
-      v.type === TimelineStepType.implied ||
-      v.type === TimelineStepType.selected
-  );
-  const firstFacet = selected?.facets?.[0];
-  const selectionState = firstFacet?.selectionState as SelectionState;
-  if (firstFacet) {
-    let state: 'add' | 'remove' | 'none';
-    switch (selectionState) {
-      case SelectionState.Positive:
-        state = 'add';
-        break;
-      case SelectionState.Negative:
-        state = 'remove';
-        break;
-      case SelectionState.NotSelected:
-      default:
-        return undefined;
-    }
+  const validTypes = new Set([
+    TimelineStepType.selected,
+    TimelineStepType.implied,
+    TimelineStepType.plan
+  ]);
 
-    return [
-      {
-        option: formatFacetOption(firstFacet),
-        state,
-      }
-    ]
+  const result: MultiSelectState[] = [];
+
+  const seenOptions = new Set<string>();
+
+  for (const group of facets) {
+    if (!validTypes.has(group.type)) continue;
+
+    for (const facet of group.facets ?? []) {
+      if (facet.selectionState !== SelectionState.Positive && facet.selectionState !== SelectionState.Negative) continue;
+
+      const option = formatFacetOption(facet);
+      if (seenOptions.has(option)) continue;
+
+      const state = facet.selectionState === SelectionState.Positive ? "add" : "remove";
+      result.push({ option, state });
+      seenOptions.add(option);
+    }
   }
-  return undefined;
+
+  return result.length > 0 ? result : undefined;
 }
