@@ -14,7 +14,8 @@ export async function handleSelectedValuesChange(
   selectedValues: Ref<(MultiSelectState[] | null)[]>,
   timeline: Ref<TimelineStep[]>,
   loading: Ref<boolean>,
-  isUpdating: Ref<boolean>
+  isUpdating: Ref<boolean>,
+  facetCount: Ref<number>
 ): Promise<void> {
   if (!oldVal || oldVal.every(v => v == null)) return;
 
@@ -36,6 +37,8 @@ export async function handleSelectedValuesChange(
       const oldOpt = oldSelection?.option?.toString() ?? '';
       const newState = newSelection?.state;
 
+      console.log("newSelection, oldSelection, newOpt, oldOpt: ", newSelection, oldSelection, newOpt, oldOpt);
+
       const step = timeline.value[i];
       if (!step) continue;
 
@@ -45,6 +48,7 @@ export async function handleSelectedValuesChange(
 
       // CASE 1: Deletion
       if (!newSelection && oldSelection) {
+        console.log("deletion case")
         const matchingFacet = findMatchingFacet(step, oldOpt);
         if (matchingFacet) batchedCommands.push(`- ${matchingFacet.id}`);
         continue;
@@ -52,6 +56,7 @@ export async function handleSelectedValuesChange(
 
       // CASE 2: Value changed
       if (newOpt !== oldOpt) {
+        console.log("value changed case");
         const matchingFacet = findMatchingFacet(step, newOpt);
         if (!matchingFacet) continue;
 
@@ -74,6 +79,9 @@ export async function handleSelectedValuesChange(
         (step: TimelineStep, index: number) =>
           getSelectedValueFromTimeline(step.facets, index) ?? null
       );
+    }
+    if (result?.facetCount) {
+      facetCount.value = result?.facetCount;
     }
   } finally {
     loading.value = false;

@@ -22,6 +22,10 @@
     />
     <Button label="Start" type="submit" @click="start"></Button>
   </div>
+  <div v-if="!loading && facetCount" class="text">
+    <p v-if="facetCount">Number of facets to choose from: {{ facetCount }}</p>
+    <ColorLegend></ColorLegend>
+  </div>
   <SkeletonFacetRow class="skeleton" v-if="loading" v-for="i in 3" :key="i" viewMode="facets" />
   <DropdownFlow
     v-else
@@ -52,6 +56,7 @@ import type { TimelineStep } from '@/models/TimelineStep';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
 import { handleSelectedValuesChange } from '@/composables/useSelectedValuesHandler';
+import ColorLegend from '@/components/ColorLegend.vue';
 
 // Store
 const planStore = usePlanStore();
@@ -79,6 +84,7 @@ const loading = ref(false);
 
 const isFirstRun = ref(true);
 let isUpdating = ref(false);
+const facetCount = ref<number | null>(null);
 
 // Sync with store
 bindWatch(horizon, planStore.setHorizon);
@@ -95,7 +101,7 @@ watch(
       return;
     }
 
-    await handleSelectedValuesChange(newVal, oldVal, selectedValues, timeline, loading, isUpdating);
+    await handleSelectedValuesChange(newVal, oldVal, selectedValues, timeline, loading, isUpdating, facetCount);
   },
   { deep: true }
 );
@@ -129,6 +135,9 @@ const start = async () => {
         (step, index) => getSelectedValueFromTimeline(step.facets, index) ?? null
       );
     }
+    if (result?.facetCount) {
+      facetCount.value = result?.facetCount;
+    }
   } catch (error) {
     console.error('Error running PlanPilot:', error);
   } finally {
@@ -143,11 +152,17 @@ const start = async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 1.25rem;
-  margin-bottom: 1.25rem;
 }
 
 .input-fields .button {
   align-self: flex-end;
+}
+
+.text {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .skeleton {

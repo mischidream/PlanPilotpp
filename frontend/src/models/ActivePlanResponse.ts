@@ -6,4 +6,5 @@ export interface ActivatePlanResponse {
   errors: { action: string; error: string }[];
   bestPlan?: Solution;
   timeline: TimelineStep[];
+  facetCount: number;
 }

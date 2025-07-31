@@ -202,11 +202,14 @@ class PlanpilotService:
 
         final_output = self.send_command("!")
 
+        facetCount = self.send_command("#?")
+
         return {
             "activated": activated,
             "errors": errors,
             "bestPlan": final_output[0] if final_output else None,
             "timeline": timeline,
+            "facetCount": facetCount,
         }
 
     def update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
@@ -262,8 +265,15 @@ class PlanpilotService:
                 if "id" in f
             }
             errors.extend(fetch_and_add_empty_facets(self, self.timeline, t, used_ids))
+        
+        facetCount = self.send_command("#?")
 
-        return {"timeline": self.timeline, "activated": activated, "errors": errors}
+        return {
+            "timeline": self.timeline,
+            "activated": activated,
+            "errors": errors,
+            "facetCount": facetCount,
+        }
 
     def stop_fasb(self):
         if self.process:
