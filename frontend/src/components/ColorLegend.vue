@@ -2,7 +2,7 @@
 <div class="legend">
   <div class="legend-item">
     <span class="legend-swatch purple"></span>
-    <span>Preselection (best plan)</span>
+    <span>Preselection*</span>
   </div>
   <div class="legend-item">
     <span class="legend-swatch blue"></span>

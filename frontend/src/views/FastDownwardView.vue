@@ -25,6 +25,7 @@
   <div v-if="!loading && facetCount" class="text">
     <p v-if="facetCount">Number of facets to choose from: {{ facetCount }}</p>
     <ColorLegend></ColorLegend>
+    <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
   </div>
   <SkeletonFacetRow class="skeleton" v-if="loading" v-for="i in 3" :key="i" viewMode="facets" />
   <DropdownFlow
@@ -162,7 +163,11 @@ const start = async () => {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+
+.text-small {
+  font-size: smaller;
 }
 
 .skeleton {

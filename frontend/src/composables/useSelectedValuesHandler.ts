@@ -15,7 +15,7 @@ export async function handleSelectedValuesChange(
   timeline: Ref<TimelineStep[]>,
   loading: Ref<boolean>,
   isUpdating: Ref<boolean>,
-  facetCount: Ref<number>
+  facetCount: Ref<number | null>
 ): Promise<void> {
   if (!oldVal || oldVal.every(v => v == null)) return;
 
