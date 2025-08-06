@@ -10,12 +10,12 @@
     <div class="sidebar-content">
       <span class="sidebar-content-header">Implied Actions</span>
       <FacetTable
-        :key="landmarks.map(f => f.id).join('-')"
+        :key="safeLandmarks.map(f => f.id).join('-')"
         :headers="['Action', 'Objects', 'Timestep']"
-        :facets="landmarks"
+        :facets="safeLandmarks"
         :viewMode="'landmarks'"
         :loading="loadingLandmarks"
-        :itemsPerPage="landmarks.length"
+        :itemsPerPage="safeLandmarks.length"
         class="landmark-table"
       />
     </div>
@@ -23,14 +23,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import FacetTable from './FacetTable.vue';
 
 const props = defineProps<{
   enabled: boolean;
-  landmarks: any[];
+  landmarks: any[] | null;
   loadingLandmarks: boolean;
 }>();
+
+const safeLandmarks = computed(() => props.landmarks ?? []);
 
 const isOpen = ref(true);
 
@@ -52,10 +54,11 @@ watch(
 .sidebar {
   display: flex;
   flex-direction: row;
-  width: 2.5rem;
+  width: 4rem;
   transition: width 0.3s ease;
   overflow: hidden;
   background-color: var(--white-soft);
+  min-height: 100vh;
 }
 
 .sidebar-toggle-button {
@@ -82,7 +85,7 @@ watch(
 }
 
 .sidebar.open {
-  width: 30%;
+  width: 60rem;
 }
 
 .sidebar.open .sidebar-content {

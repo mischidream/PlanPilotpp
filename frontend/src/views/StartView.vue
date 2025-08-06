@@ -40,6 +40,7 @@ const loading = ref(false);
 const response = ref<FastDownwardResponse | null>(null);
 
 async function submitFiles() {
+  planStore.reset();
   if (!instanceFile.value || !domainFile.value) {
     alert('Please select both files.');
     return;

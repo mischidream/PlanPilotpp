@@ -6,6 +6,7 @@ import type { SelectionState } from '@/models/SelectionState';
 import { TimeStepType } from '@/models/TimeStepType';
 import { defineStore } from 'pinia';
 import type { MultiSelectState } from '@/models/MultiSelectState';
+import type { TimelineStep } from '@/models/TimelineStep';
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
@@ -26,9 +27,10 @@ export const usePlanStore = defineStore('plan', {
     selectedObjects: [] as string[],
     selectedTimesteps: [] as string[],
     selectedSolution: null as Solution | null,
-    dropdownValues: [] as (MultiSelectState[] | null)[],
-    dropdownOptions: [] as string[],
-    bestPlan: null as Solution | null,
+    bestPlan: null as Facet[] | null,
+    timeline: [] as TimelineStep[],
+    selectedValues: [] as (MultiSelectState[] | null)[],
+    facetCount: null as number | null,
   }),
 
   actions: {
@@ -86,14 +88,32 @@ export const usePlanStore = defineStore('plan', {
     setSelectedSolution(val: Solution) {
       this.selectedSolution = val;
     },
-    setDropdownValues(values: (MultiSelectState[] | null)[]) {
-      this.dropdownValues = values;
-    },
-    setDropdownOptions(options: string[]) {
-      this.dropdownOptions = options;
-    },
-    setBestPlan(plan: Solution | null) {
+    setBestPlan(plan: Facet[] | null) {
       this.bestPlan = plan;
+    },
+    setTimeline(timeline: TimelineStep[]) {
+      this.timeline = timeline;
+    },
+    setSelectedValues(values: (MultiSelectState[] | null)[]) {
+      this.selectedValues = values;
+    },
+    setFacetCount(count: number | null) {
+      this.facetCount = count;
+    },
+    reset() {
+      this.facets = [];
+      this.facets = [];
+      this.landmarks = [];
+      this.solutions = [];
+      this.selectedFacetState = [];
+      this.selectedActionType = [];
+      this.selectedObjects = [];
+      this.selectedTimesteps = [];
+      this.selectedSolution = null;
+      this.bestPlan = null;
+      this.timeline = [];
+      this.selectedValues = [];
+      this.facetCount = null;
     },
   },
   persist: true,

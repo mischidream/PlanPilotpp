@@ -1,40 +1,57 @@
 <template>
-  <div class="input-fields">
-    <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
-    <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
-    <InputField
-      label="Horizon:"
-      v-model="horizon"
-      type="number"
-      :placeholder="minHorizon?.toString()"
+  <div class="main-layout">
+    <div class="main-content">
+      <div class="input-fields">
+        <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
+        <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
+        <InputField
+          label="Horizon:"
+          v-model="horizon"
+          type="number"
+          :placeholder="minHorizon?.toString()"
+        />
+        <DropdownField
+          label="Encoding:"
+          :options="Object.values(EncodingType)"
+          v-model="encoding"
+          :isMultiple="false"
+        />
+        <DropdownField
+          label="Time Steps:"
+          :options="Object.values(TimeStepType)"
+          v-model="timeStep"
+          :isMultiple="false"
+        />
+        <Button label="Start" type="submit" @click="start"></Button>
+      </div>
+
+      <div v-if="!loading && facetCount" class="text">
+        <p>Number of facets to choose from: {{ facetCount }}</p>
+        <ColorLegend />
+        <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
+      </div>
+
+      <SkeletonFacetRow
+        class="skeleton"
+        v-if="loading"
+        v-for="i in 3"
+        :key="i"
+        viewMode="facets"
+      />
+      <DropdownFlow
+        v-else
+        :timeline="timeline"
+        :selected-values="selectedValues"
+        @update:timeline="timeline = $event"
+        @update:selectedValues="selectedValues = $event"
+      />
+    </div>
+    <LandmarkSidebar
+      :landmarks="bestPlan"
+      :loadingLandmarks="false"
+      :enabled="sidebarEnabled"
     />
-    <DropdownField
-      label="Encoding:"
-      :options="Object.values(EncodingType)"
-      v-model="encoding"
-      :isMultiple="false"
-    />
-    <DropdownField
-      label="Time Steps:"
-      :options="Object.values(TimeStepType)"
-      v-model="timeStep"
-      :isMultiple="false"
-    />
-    <Button label="Start" type="submit" @click="start"></Button>
   </div>
-  <div v-if="!loading && facetCount" class="text">
-    <p v-if="facetCount">Number of facets to choose from: {{ facetCount }}</p>
-    <ColorLegend></ColorLegend>
-    <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
-  </div>
-  <SkeletonFacetRow class="skeleton" v-if="loading" v-for="i in 3" :key="i" viewMode="facets" />
-  <DropdownFlow
-    v-else
-    :timeline="timeline"
-    :selected-values="selectedValues"
-    @update:timeline="timeline = $event"
-    @update:selectedValues="selectedValues = $event"
-  />
 </template>
 
 <script setup lang="ts">
@@ -43,6 +60,7 @@ import InputField from '@/components/InputField.vue';
 import DropdownField from '@/components/DropdownField.vue';
 import SkeletonFacetRow from '@/components/SkeletonFacetRow.vue';
 import Button from '@/components/Button.vue';
+import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
 import { EncodingType } from '@/models/EncodingType';
 import { TimeStepType } from '@/models/TimeStepType';
 import {
@@ -58,6 +76,7 @@ import type { MultiSelectState } from '@/models/MultiSelectState';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
 import { handleSelectedValuesChange } from '@/composables/useSelectedValuesHandler';
 import ColorLegend from '@/components/ColorLegend.vue';
+import type { Facet } from '@/models/Facet';
 
 // Store
 const planStore = usePlanStore();
@@ -67,8 +86,9 @@ const sasFile = computed(() => planStore.sasFile);
 const horizon = ref<number>(planStore.horizon);
 
 const selectedValues = ref<(MultiSelectState[] | null)[]>([]);
-
+const facetCount = ref<number | null>(planStore.facetCount);
 const timeline = ref<TimelineStep[]>([]);
+const bestPlan = ref<Facet[] | null>(planStore.bestPlan);
 
 // Planning configuration
 const minHorizon = ref(horizon.value);
@@ -82,20 +102,24 @@ const lastUsedTimeStep = ref<TimeStepType | null>(null);
 
 // Loading states
 const loading = ref(false);
-
 const isFirstRun = ref(true);
 let isUpdating = ref(false);
-const facetCount = ref<number | null>(null);
+const sidebarEnabled = ref(false);
 
 // Sync with store
 bindWatch(horizon, planStore.setHorizon);
 bindWatch(minHorizon, planStore.setMinHorizon);
 bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
 bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
+bindWatch(timeline, planStore.setTimeline, { deep: true });
+bindWatch(selectedValues, planStore.setSelectedValues, { deep: true });
+bindWatch(facetCount, planStore.setFacetCount);
+bindWatch(bestPlan, planStore.setBestPlan);
 
 watch(
   selectedValues,
   async (newVal, oldVal) => {
+    console.log("newVal, oldVal: ", newVal, oldVal);
     // TODO: If I select more then one it does not do anything right now
     if (isUpdating.value) {
       isUpdating.value = false;
@@ -127,8 +151,11 @@ const start = async () => {
       lastUsedTimeStep.value = timeStep.value[0];
     }
     result = await activateBestPlan(planStore.planFile);
+
+    sidebarEnabled.value = true;
+
     if (result?.bestPlan) {
-      planStore.setBestPlan(result.bestPlan);
+      bestPlan.value = result.bestPlan;
     }
     if (result?.timeline) {
       timeline.value = result.timeline;
@@ -136,7 +163,7 @@ const start = async () => {
         (step, index) => getSelectedValueFromTimeline(step.facets, index) ?? null
       );
     }
-    if (result?.facetCount) {
+    if (result?.facetCount !== undefined) {
       facetCount.value = result?.facetCount;
     }
   } catch (error) {
@@ -148,6 +175,13 @@ const start = async () => {
 </script>
 
 <style scoped>
+
+.main-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
 .input-fields {
   padding: 1rem;
   display: flex;
