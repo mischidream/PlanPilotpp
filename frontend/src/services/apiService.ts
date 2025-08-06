@@ -50,8 +50,14 @@ export const activateBestPlan = async (
     const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/activate-plan`, {
       planFile,
     });
-    console.log('best plan data timeline: ', response.data.timeline);
-    return response.data;
+
+    const data = response.data;
+
+    if (data.bestPlan) {
+      data.bestPlan = parseFacetOutput(data.bestPlan as Facet[]);
+    }
+
+    return data;
   } catch (error) {
     handleError(error);
   }
@@ -66,7 +72,6 @@ export const updatePlan = async (
       changedTimestep,
       commands,
     });
-    console.log('timeline from plan update:', response.data.timeline);
     return response.data;
   } catch (error) {
     handleError(error);

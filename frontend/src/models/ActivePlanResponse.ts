@@ -1,10 +1,9 @@
-import type { Solution } from './Solution';
+import type { Facet } from './Facet';
 import type { TimelineStep } from './TimelineStep';
 
 export interface ActivatePlanResponse {
-  activated: string[];
   errors: { action: string; error: string }[];
-  bestPlan?: Solution;
+  bestPlan?: Facet[];
   timeline: TimelineStep[];
   facetCount: number;
 }
