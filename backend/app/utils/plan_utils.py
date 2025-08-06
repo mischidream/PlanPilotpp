@@ -195,7 +195,6 @@ def prepare_timeline_for_update(service, changed_timestep):
 def apply_user_command(service, t, command, global_implied_ids):
     # TODO: If is negative add and on the timestep then is a positive one implied -> add it there -> how to show exactly??
     errors = []
-    activated = []
     stripped = command.strip()
     is_remove = stripped.startswith("-")
     is_negative_add = stripped.startswith("+ ~")
@@ -221,7 +220,6 @@ def apply_user_command(service, t, command, global_implied_ids):
         errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
         try:
             service.send_command(command, no_Output=True)
-            activated.append(command)
             parsed_facets = parse_facet_output(clean_cmd, command)
             for facet in parsed_facets:
                 if is_negative_add:
@@ -239,10 +237,9 @@ def apply_user_command(service, t, command, global_implied_ids):
                         ))
         except Exception as e:
             errors.append({"command-error": command, "error": str(e)})
-    return activated, errors
+    return errors
 
 def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied_ids):
-    activated = []
     errors = []
     reactivated_any = False
 
@@ -260,7 +257,6 @@ def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied
                         continue
                     try:
                         self.send_command(cmd, no_Output=True)
-                        activated.append(cmd)
                         reactivated_any = True
 
                         add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
@@ -276,5 +272,5 @@ def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied
                     except Exception as e:
                         errors.append({"reactivate-error": f"{facet_id}", "error": str(e)})
 
-    return activated, errors, reactivated_any
+    return errors, reactivated_any
 

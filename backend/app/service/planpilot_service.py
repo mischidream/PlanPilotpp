@@ -154,14 +154,13 @@ class PlanpilotService:
             raise FileNotFoundError("sas_plan file not found in expected location.")
 
         # Extract actions from plan
-        # TODO: How to behave if there are more best plans?
         parsed_facets = extract_plan_actions(plan_file_path)
         facets_by_timestep = {}
         for facet in parsed_facets:
             ts = facet["timestep"]
             facets_by_timestep[ts] = facet
 
-        activated, errors, timeline = [], [], []
+        errors, timeline = [], []
         timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
         global_implied_ids = set()
         activated_plan_ids = set()
@@ -186,7 +185,6 @@ class PlanpilotService:
                     try:
                         cmd_str = "+ " + facet_id
                         self.send_command(cmd_str, no_Output=True)
-                        activated.append(cmd_str)
                         activated_plan_ids.add(facet_id)
                     except Exception as e:
                         errors.append({"action": cmd_str, "error": str(e)})
@@ -200,20 +198,16 @@ class PlanpilotService:
 
         self.timeline = timeline
 
-        final_output = self.send_command("!")
-
         facetCount = self.send_command("#?")
 
         return {
-            "activated": activated,
             "errors": errors,
-            "bestPlan": final_output[0] if final_output else None,
+            "bestPlan": parsed_facets,
             "timeline": timeline,
             "facetCount": facetCount,
         }
 
     def update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
-        activated = []
         errors = []
 
         if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
@@ -225,8 +219,7 @@ class PlanpilotService:
         command = commands[0]
         t = changed_timestep
 
-        activated_user_commands, error_user_commands = apply_user_command(self, t, command, global_implied_ids)
-        activated.append(activated_user_commands)
+        error_user_commands = apply_user_command(self, t, command, global_implied_ids)
         errors.append(error_user_commands)
 
         for step_data in saved_steps[1:]:
@@ -243,10 +236,9 @@ class PlanpilotService:
             optional_ids = {f.get("id") for f in optionals if "id" in f}
 
             # Use facets only from the current step_data
-            activated_cmds, facet_errors, reactivated_any = reactivate_facets_from_step(
+            facet_errors, reactivated_any = reactivate_facets_from_step(
                 self, t, step_data, optional_ids, global_implied_ids
             )
-            activated.extend(activated_cmds)
             errors.extend(facet_errors)
 
             if not reactivated_any and optionals:
@@ -270,7 +262,6 @@ class PlanpilotService:
 
         return {
             "timeline": self.timeline,
-            "activated": activated,
             "errors": errors,
             "facetCount": facetCount,
         }
