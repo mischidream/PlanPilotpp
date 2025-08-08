@@ -50,6 +50,7 @@
       :landmarks="bestPlan"
       :loadingLandmarks="false"
       :enabled="sidebarEnabled"
+      title="Preselected plan from fastdownward"
     />
   </div>
 </template>
@@ -179,7 +180,7 @@ const start = async () => {
 .main-layout {
   display: flex;
   flex-direction: row;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .input-fields {

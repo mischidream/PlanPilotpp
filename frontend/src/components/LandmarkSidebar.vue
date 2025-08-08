@@ -8,7 +8,7 @@
       </button>
     </div>
     <div class="sidebar-content">
-      <span class="sidebar-content-header">Implied Actions</span>
+      <span class="sidebar-content-header">{{ title }}</span>
       <FacetTable
         :key="safeLandmarks.map(f => f.id).join('-')"
         :headers="['Action', 'Objects', 'Timestep']"
@@ -30,6 +30,7 @@ const props = defineProps<{
   enabled: boolean;
   landmarks: any[] | null;
   loadingLandmarks: boolean;
+  title: String;
 }>();
 
 const safeLandmarks = computed(() => props.landmarks ?? []);
@@ -85,7 +86,7 @@ watch(
 }
 
 .sidebar.open {
-  width: 60rem;
+  width: 80rem;
 }
 
 .sidebar.open .sidebar-content {

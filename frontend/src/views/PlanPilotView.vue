@@ -82,6 +82,7 @@
       :landmarks="landmarks"
       :loadingLandmarks="loadingLandmarks"
       :enabled="sidebarEnabled"
+      title="Implied Actions"
     />
   </div>
 </template>
