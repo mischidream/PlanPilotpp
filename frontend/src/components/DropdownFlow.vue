@@ -6,14 +6,10 @@
       class="dropdown"
       :ref="el => setRef(el, index)"
     >
-      <DropdownField
-        :label="`Timestep: ${index + 1}`"
+      <DropdownFlowField
+        :id="index"
         :modelValue="props.selectedValues[index] ?? undefined"
-        :options="getOptions(value.facets)"
-        :isMultiple="true"
-        :isMultiStatus="true"
-        :highlight="getHighlightType(value.facets)"
-        :disabled="isDisabled(value.facets)"
+        :facets="value.facets"
         @update:modelValue="val => emitUpdate(index, val)"
       />
     </div>
@@ -48,7 +44,7 @@ import {
   type ComponentPublicInstance,
   type PropType,
 } from 'vue';
-import DropdownField from './DropdownField.vue';
+import DropdownFlowField from './DropdownFlowField.vue';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import type { TimelineStep } from '@/models/TimelineStep';
 import type { TimelineFacet } from '@/models/TimelineFacet';
