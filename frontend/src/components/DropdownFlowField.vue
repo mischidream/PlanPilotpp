@@ -58,7 +58,7 @@ const props = defineProps({
     type: Number,
   },
   modelValue: {
-    type: Array as PropType<(string | number | MultiSelectState)[]>,
+    type: Array as PropType<MultiSelectState[]>,
     default: () => [],
   },
   facets: {
@@ -120,40 +120,26 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
 }
 const options: (string | number)[] | undefined = computed(() => getOptions(props.facets));
 
-
-const isMultiSelectState = (entry: unknown): entry is MultiSelectState => {
-  return (
-    (typeof entry === 'object' &&
-      entry !== null &&
-      'option' in entry &&
-      'state' in entry &&
-      (entry as any).state === 'add') ||
-    (entry as any).state === 'remove'
-  );
-};
-
 const selectedValuesMap = computed(() => {
   const map: Record<string | number, 'add' | 'remove' | null> = {};
   options.value?.forEach(option => {
     const match = props.modelValue.find(
-      (entry): entry is MultiSelectState => isMultiSelectState(entry) && entry.option === option
+      (entry: MultiSelectState) => entry.option === option
     );
     map[option] = match?.state ?? null;
   });
   return map;
 });
 
-const setState = (option: string | number, state: 'add' | 'remove') => {
+const setState = (option: string, state: 'add' | 'remove') => {
   // Remove all MultiSelectState entries for the same option
   let updated = props.modelValue.filter(
-    (entry): entry is string | number | MultiSelectState =>
-      !isMultiSelectState(entry) || entry.option !== option
+    (entry: MultiSelectState) => entry.option !== option
   );
   // Additionally, if state is "add", remove any previous "add" state
 /*   if (state === 'add') {
     updated = updated.filter(
-      (entry): entry is string | number | MultiSelectState =>
-        !(isMultiSelectState(entry) && entry.state === 'add')
+      (entry: MultiSelectState) => entry.state === 'add')
     );
   } */
   if (selectedValuesMap.value[option] === state) {
@@ -187,13 +173,7 @@ const filteredOptions = computed(() => {
   const selectedSet = new Set<string | number>();
 
   for (const entry of props.modelValue) {
-    if (isMultiSelectState(entry)) {
-      // Multi-status entry
-      selectedSet.add(entry.option);
-    } else {
-      // Regular string/number entry
-      selectedSet.add(entry);
-    }
+    selectedSet.add(entry.option);
   }
 
   // Separate selected and unselected options
@@ -204,8 +184,8 @@ const filteredOptions = computed(() => {
 });
 
 const selectedItemsPreview = computed(() => {
-  const added = props.modelValue.filter(isMultiSelectState).filter(e => e.state === 'add');
-  const removed = props.modelValue.filter(isMultiSelectState).filter(e => e.state === 'remove');
+  const added = props.modelValue.filter(e => e.state === 'add');
+  const removed = props.modelValue.filter(e => e.state === 'remove');
 
   const previewParts: string[] = [];
   if (added.length > 0) previewParts.push(`+ ${added.map(e => e.option).join(', ')}`);
