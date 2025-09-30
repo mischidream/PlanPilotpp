@@ -1,6 +1,6 @@
 <template>
   <div class="input-wrapper" ref="dropdownRef">
-    <label>Timestep: {{ props.id + 1 }}</label>
+    <label v-if="props.id !== undefined">Timestep: {{ props.id + 1 }}</label>
 
     <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled:
       disabled }]">
@@ -26,14 +26,14 @@
           <span
             class="material-icons state-icon"
             :class="{ active: selectedValuesMap[option] === 'add' }"
-            @click="setState(option, 'add')"
+            @click="setState(String(option), 'add')"
           >
             add_box
           </span>
           <span
             class="material-icons state-icon"
             :class="{ active: selectedValuesMap[option] === 'remove' }"
-            @click="setState(option, 'remove')"
+            @click="setState(String(option), 'remove')"
           >
             indeterminate_check_box
           </span>
@@ -45,12 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue';
+import { ref, computed, type PropType, onMounted, onUnmounted, type ComputedRef } from 'vue';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import type { TimelineFacet } from '@/models/TimelineFacet';
 import type { TimelineStep } from '@/models/TimelineStep';
 import { TimelineStepType } from '@/models/TimelineStepType';
 import { formatFacetOption } from '@/utils/formatFacetOption';
+import type { Facet } from '@/models/Facet';
 
 const props = defineProps({
   id: {
@@ -76,24 +77,26 @@ const isOpen = ref(false);
 const searchQuery = ref('');
 
 const toggleDropdown = () => {
-  if (disabled.value) return;
+  if (disabled) return;
   isOpen.value = !isOpen.value;
   if (!isOpen.value) {
     searchQuery.value = '';
   }
 };
 
-const selectedValues = computed({
+/* const selectedValues = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val),
-});
+}); */
 
 const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
   if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
   if (facets.some(f => f.type === TimelineStepType.plan)) return 'purple';
   return null;
 };
-const highlight: 'purple' | 'blue' | null = computed(() => getHighlightType(props.facets));
+const highlight: ComputedRef<'purple' | 'blue' | null> = computed(() =>
+  getHighlightType(props.facets ?? [])
+)
 
 const isDisabled = (facets: TimelineFacet[]): boolean => {
   const hasImplied = facets.some(f => f.type === TimelineStepType.implied);
@@ -101,7 +104,9 @@ const isDisabled = (facets: TimelineFacet[]): boolean => {
   const hasSelected = facets.some(f => f.type === TimelineStepType.selected);
   return hasImplied && !hasPlan && !hasSelected;
 };
-const disabled: boolean = computed(() => isDisabled(props.facets));
+const disabled: ComputedRef<boolean> = computed(() =>
+  isDisabled(props.facets ?? [])
+)
 
 function getOptions(value: TimelineFacet[]): (string | number)[] {
   if (
@@ -120,7 +125,9 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
   }
   return [];
 }
-const options: (string | number)[] | undefined = computed(() => getOptions(props.facets));
+const options: ComputedRef<(string | number)[] | undefined> = computed(() =>
+  getOptions(props.facets ?? [])
+)
 
 const selectedValuesMap = computed(() => {
   const map: Record<string | number, 'add' | 'remove' | null> = {};
@@ -143,18 +150,18 @@ function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[])
     ...(selectedFacets?.facets ?? []),
     ...(plannedFacets?.facets ?? [])
   ];
-  for (const facet: Facet of allFacets) {
+  for (const facet of allFacets) {
     if (facetName === formatFacetOption(facet)) {
       if (facet.selectionState) {
         if (facet.selectionState === '+') return 'add';
         else if (facet.selectionState === '-') return 'remove';
-        else return 'no';
+        else return 'none';
       } else {
         console.error("No selection state for an facet");
       }
     }
   }
-  return 'no';
+  return 'none';
 }
 
 // gets the facet id for this facet
@@ -166,19 +173,19 @@ function getFacetId(facetName: String, timelineFacets: TimelineFacet[]): string 
     ...(emptyFacets?.facets ?? []),
     ...(optionalFacets?.facets ?? [])
   ];
-  for (const facet: Facet of allFacets) {
+  for (const facet of allFacets) {
     if (facetName === formatFacetOption(facet)) {
       return facet.id;
     }
   }
-  throw error("No facet with this facet name.");
+  throw Error("No facet with this facet name.");
 }
 
 const setState = (option: string, state: 'add' | 'remove') => {
-  const selectedStatus = checkSelectedStatus(option, props.facets);
+  const selectedStatus = checkSelectedStatus(option, props.facets ?? []);
   // selectedStatus: what it was before; state: what was pressed now
   const emits: string[] = [];
-  const facetId: string = getFacetId(option, props.facets);
+  const facetId: string = getFacetId(option, props.facets ?? []);
   if (selectedStatus === 'add') {
     if (state === 'add') { // was already added so the add should now be unselected
       emits.push(`- ${facetId}`);
@@ -203,7 +210,7 @@ const setState = (option: string, state: 'add' | 'remove') => {
   emit('update', emits);
 };
 
-const toggleSelection = (option: string | number) => {
+/* const toggleSelection = (option: string | number) => {
   if (disabled.value) return;
   const index = selectedValues.value.indexOf(option);
   if (index === -1) {
@@ -211,7 +218,7 @@ const toggleSelection = (option: string | number) => {
   } else {
     selectedValues.value.splice(index, 1);
   }
-};
+}; */
 
 
 const filteredOptions = computed(() => {
@@ -220,7 +227,7 @@ const filteredOptions = computed(() => {
   // Filter options by search query
   const filtered = options.value?.filter(option =>
     String(option).toLowerCase().includes(lowerSearch)
-  );
+  ) ?? [];
 
   const selectedSet = new Set<string | number>();
 

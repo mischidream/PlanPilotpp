@@ -73,7 +73,7 @@ const dropdownRefs = ref<(HTMLElement | null)[]>([]);
 const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
 
-function emitUpdate(commands: String[], timestepNumber: number) {
+function emitUpdate(commands: string[], timestepNumber: number) {
   emit('update:commands', { commands, timestepNumber });
 }
 
