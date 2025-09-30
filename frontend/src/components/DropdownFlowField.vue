@@ -77,7 +77,7 @@ const isOpen = ref(false);
 const searchQuery = ref('');
 
 const toggleDropdown = () => {
-  if (disabled) return;
+  if (disabled.value) return;
   isOpen.value = !isOpen.value;
   if (!isOpen.value) {
     searchQuery.value = '';
