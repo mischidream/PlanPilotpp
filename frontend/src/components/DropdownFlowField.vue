@@ -46,7 +46,6 @@
 
 <script setup lang="ts">
 import { ref, computed, type PropType, onMounted, onUnmounted } from 'vue';
-import { nanoid } from 'nanoid';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import type { TimelineFacet } from '@/models/TimelineFacet';
 import type { TimelineStep } from '@/models/TimelineStep';
@@ -120,6 +119,18 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
 }
 const options: (string | number)[] | undefined = computed(() => getOptions(props.facets));
 
+/*
+interface Option {
+  text: String,
+  state: '+' | '-' | 'none';
+};
+function parseOptions(facets: TimelineFacet[]): Option[] {
+  for (const facet of facets) {
+  }
+}
+*/
+
+
 const selectedValuesMap = computed(() => {
   const map: Record<string | number, 'add' | 'remove' | null> = {};
   options.value?.forEach(option => {
@@ -131,7 +142,63 @@ const selectedValuesMap = computed(() => {
   return map;
 });
 
+// checks if facet is either selected or planned (which both means that it was activated
+// and on click should be deactivated
+function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[]):
+'add' | 'remove' | 'none' {
+  const selectedFacets = timelineFacets.find(f => f.type === TimelineStepType.selected);
+  const plannedFacets = timelineFacets.find(f => f.type === TimelineStepType.plan);
+  const allFacets: Facet[] = [
+    ...(selectedFacets?.facets ?? []),
+    ...(plannedFacets?.facets ?? [])
+  ];
+  for (const facet: Facet of allFacets) {
+    if (facetName === formatFacetOption(facet)) {
+      if (facet.selectionState) {
+        if (facet.selectionState === '+') return 'add';
+        else if (facet.selectionState === '-') return 'remove';
+        else return 'no';
+      } else {
+        console.error("No selection state for an facet");
+      }
+    }
+  }
+  return 'no';
+}
+
 const setState = (option: string, state: 'add' | 'remove') => {
+  console.log(option, " with state: ", state);
+  console.log(props.facets);
+  console.log(props.facets[0].facets[0]);
+  console.log(formatFacetOption(props.facets[0].facets[0]));
+  const selectedStatus = checkSelectedStatus(option, props.facets);
+  console.log(selectedStatus);
+  // selectedStatus: what it was before; state: what was pressed now
+  if (selectedStatus === 'add') {
+    if (state === 'add') { // was already added so the add should now be unselected
+      console.warn(`- ${props.id}`);
+    } else {
+      console.warn(`- ${props.id}`);
+      console.warn(`+ ~${props.id}`);
+    }
+  } else if (selectedStatus === 'remove') {
+    if (state === 'remove') {
+      console.warn(`- ~${props.id}`); // this is maybe "- ~id"
+    } else {
+      console.warn(`- ~${props.id}`);
+      console.warn(`+ ${props.id}`);
+    }
+  } else { // not selected at all
+    if (state === 'add') {
+      console.warn(`+ ${props.id}`);
+    } else {
+      console.warn(`+ ~${props.id}`);
+    }
+  }
+  console.error("TODO -> CHECK WHAT BE ALREADY CHECKS HERE (so that unselecting is not happening twice)");
+  // if there are only two options -> when I click - on one, the other should be + (this should be
+  // however, only done by the FE and not send to the BE
+  return;
   // Remove all MultiSelectState entries for the same option
   let updated = props.modelValue.filter(
     (entry: MultiSelectState) => entry.option !== option
@@ -161,6 +228,7 @@ const toggleSelection = (option: string | number) => {
     selectedValues.value.splice(index, 1);
   }
 };
+
 
 const filteredOptions = computed(() => {
   const lowerSearch = searchQuery.value.toLowerCase();
