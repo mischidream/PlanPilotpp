@@ -42,6 +42,7 @@
         v-else
         :timeline="timeline"
         :selected-values="selectedValues"
+        @update:commands="payload => handleDropdownFlowChanges(payload)"
         @update:timeline="timeline = $event"
         @update:selectedValues="selectedValues = $event"
       />
@@ -78,6 +79,7 @@ import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeli
 import { handleSelectedValuesChange } from '@/composables/useSelectedValuesHandler';
 import ColorLegend from '@/components/ColorLegend.vue';
 import type { Facet } from '@/models/Facet';
+import { updatePlan } from '@/services/apiService';
 
 // Store
 const planStore = usePlanStore();
@@ -116,6 +118,27 @@ bindWatch(timeline, planStore.setTimeline, { deep: true });
 bindWatch(selectedValues, planStore.setSelectedValues, { deep: true });
 bindWatch(facetCount, planStore.setFacetCount);
 bindWatch(bestPlan, planStore.setBestPlan);
+
+const handleDropdownFlowChanges = async (payload: { commands: string[], timestepNumber: number }) => {
+  console.log(payload);
+  loading.value = true;
+  const result = await updatePlan(payload.timestepNumber + 1, payload.commands);
+
+  if (result?.timeline) {
+    timeline.value = result.timeline;
+    console.log('timeline: ', timeline.value);
+    isUpdating.value = true;
+    selectedValues.value = result.timeline.map(
+      (step: TimelineStep, index: number) =>
+        getSelectedValueFromTimeline(step.facets, index) ?? null
+    );
+  }
+  if (result?.facetCount) {
+    facetCount.value = result?.facetCount;
+  }
+
+  loading.value = false;
+};
 
 watch(
   selectedValues,

@@ -10,7 +10,7 @@
         :id="index"
         :modelValue="props.selectedValues[index] ?? undefined"
         :facets="value.facets"
-        @update:modelValue="val => emitUpdate(index, val)"
+        @update="val => emitUpdate(val, index)"
       />
     </div>
 
@@ -63,12 +63,20 @@ const props = defineProps({
     default: () => [],
   },
 });
-const emit = defineEmits(['update:selectedValues']);
+
+const emit = defineEmits<{
+  (e: "update:commands", payload: { commands: string[], timestepNumber: number}): void
+}>()
 
 // Refs
 const dropdownRefs = ref<(HTMLElement | null)[]>([]);
 const wrapper = ref<HTMLElement | null>(null);
 const arrowPaths = ref<string[]>([]);
+
+function emitUpdate(commands: String[], timestepNumber: number) {
+  emit('update:commands', { commands, timestepNumber });
+}
+
 
 const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
   if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
@@ -100,12 +108,6 @@ function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
   }
 
   return undefined;
-}
-
-function emitUpdate(index: number, value: MultiSelectState[]) {
-  const updated = [...props.selectedValues];
-  updated[index] = value.length === 0 ? null : value;
-  emit('update:selectedValues', updated);
 }
 
 function setRef(el: Element | ComponentPublicInstance | null, index: number) {

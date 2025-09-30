@@ -3,7 +3,7 @@
     <label>Timestep: {{ props.id + 1 }}</label>
 
     <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled:
-      disabled.value }]">
+      disabled }]">
       <span>
         {{ selectedItemsPreview }}
       </span>
@@ -67,7 +67,10 @@ const props = defineProps({
 
 const dropdownRef = ref<HTMLElement | null>(null);
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: "update", value: string[]): void
+}>()
+
 
 const isOpen = ref(false);
 const searchQuery = ref('');
@@ -119,18 +122,6 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
 }
 const options: (string | number)[] | undefined = computed(() => getOptions(props.facets));
 
-/*
-interface Option {
-  text: String,
-  state: '+' | '-' | 'none';
-};
-function parseOptions(facets: TimelineFacet[]): Option[] {
-  for (const facet of facets) {
-  }
-}
-*/
-
-
 const selectedValuesMap = computed(() => {
   const map: Record<string | number, 'add' | 'remove' | null> = {};
   options.value?.forEach(option => {
@@ -166,57 +157,50 @@ function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[])
   return 'no';
 }
 
+// gets the facet id for this facet
+function getFacetId(facetName: String, timelineFacets: TimelineFacet[]): string {
+  console.log(timelineFacets);
+  const optionalFacets = timelineFacets.find(f => f.type === TimelineStepType.optional);
+  const emptyFacets = timelineFacets.find(f => f.type === TimelineStepType.empty);
+  const allFacets: Facet[] = [
+    ...(emptyFacets?.facets ?? []),
+    ...(optionalFacets?.facets ?? [])
+  ];
+  for (const facet: Facet of allFacets) {
+    if (facetName === formatFacetOption(facet)) {
+      return facet.id;
+    }
+  }
+  throw error("No facet with this facet name.");
+}
+
 const setState = (option: string, state: 'add' | 'remove') => {
-  console.log(option, " with state: ", state);
-  console.log(props.facets);
-  console.log(props.facets[0].facets[0]);
-  console.log(formatFacetOption(props.facets[0].facets[0]));
   const selectedStatus = checkSelectedStatus(option, props.facets);
-  console.log(selectedStatus);
   // selectedStatus: what it was before; state: what was pressed now
+  const emits: string[] = [];
+  const facetId: string = getFacetId(option, props.facets);
   if (selectedStatus === 'add') {
     if (state === 'add') { // was already added so the add should now be unselected
-      console.warn(`- ${props.id}`);
+      emits.push(`- ${facetId}`);
     } else {
-      console.warn(`- ${props.id}`);
-      console.warn(`+ ~${props.id}`);
+      // emits.push(`- ${facetId}`, `+ ~${facetId}`);
+      emits.push(`+ ~${facetId}`);
     }
   } else if (selectedStatus === 'remove') {
     if (state === 'remove') {
-      console.warn(`- ~${props.id}`); // this is maybe "- ~id"
+      emits.push(`- ~${facetId}`); // this is maybe "- ~id"
     } else {
-      console.warn(`- ~${props.id}`);
-      console.warn(`+ ${props.id}`);
+      // emits.push(`- ~${facetId}`, `+ ${facetId}`);
+      emits.push(`+ ${facetId}`);
     }
   } else { // not selected at all
     if (state === 'add') {
-      console.warn(`+ ${props.id}`);
+      emits.push(`+ ${facetId}`);
     } else {
-      console.warn(`+ ~${props.id}`);
+      emits.push(`+ ~${facetId}`);
     }
   }
-  console.error("TODO -> CHECK WHAT BE ALREADY CHECKS HERE (so that unselecting is not happening twice)");
-  // if there are only two options -> when I click - on one, the other should be + (this should be
-  // however, only done by the FE and not send to the BE
-  return;
-  // Remove all MultiSelectState entries for the same option
-  let updated = props.modelValue.filter(
-    (entry: MultiSelectState) => entry.option !== option
-  );
-  // Additionally, if state is "add", remove any previous "add" state
-/*   if (state === 'add') {
-    updated = updated.filter(
-      (entry: MultiSelectState) => entry.state === 'add')
-    );
-  } */
-  if (selectedValuesMap.value[option] === state) {
-    emit('update:modelValue', updated);
-  } else {
-    updated.push({ option, state });
-    emit('update:modelValue', updated);
-  }
-/*   updated.push({ option, state });
-  emit('update:modelValue', updated); */
+  emit('update', emits);
 };
 
 const toggleSelection = (option: string | number) => {
