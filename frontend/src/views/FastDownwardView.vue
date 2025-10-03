@@ -120,14 +120,11 @@ bindWatch(facetCount, planStore.setFacetCount);
 bindWatch(bestPlan, planStore.setBestPlan);
 
 const handleDropdownFlowChanges = async (payload: { commands: string[], timestepNumber: number }) => {
-  console.log(payload);
   loading.value = true;
   const result = await updatePlan(payload.timestepNumber + 1, payload.commands);
 
   if (result?.timeline) {
     timeline.value = result.timeline;
-    console.log('timeline: ', timeline.value);
-    isUpdating.value = true;
     selectedValues.value = result.timeline.map(
       (step: TimelineStep, index: number) =>
         getSelectedValueFromTimeline(step.facets, index) ?? null
@@ -139,7 +136,7 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
 
   loading.value = false;
 };
-
+/* 
 watch(
   selectedValues,
   async (newVal, oldVal) => {
@@ -153,7 +150,7 @@ watch(
     await handleSelectedValuesChange(newVal, oldVal, selectedValues, timeline, loading, isUpdating, facetCount);
   },
   { deep: true }
-);
+); */
 
 const start = async () => {
   loading.value = true;

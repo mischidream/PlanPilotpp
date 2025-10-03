@@ -48,7 +48,6 @@
 import { ref, computed, type PropType, onMounted, onUnmounted, type ComputedRef } from 'vue';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import type { TimelineFacet } from '@/models/TimelineFacet';
-import type { TimelineStep } from '@/models/TimelineStep';
 import { TimelineStepType } from '@/models/TimelineStepType';
 import { formatFacetOption } from '@/utils/formatFacetOption';
 import type { Facet } from '@/models/Facet';
@@ -144,9 +143,11 @@ const selectedValuesMap = computed(() => {
 // and on click should be deactivated
 function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[]):
 'add' | 'remove' | 'none' {
+  const impliedFacets = timelineFacets.find(f => f.type === TimelineStepType.implied);
   const selectedFacets = timelineFacets.find(f => f.type === TimelineStepType.selected);
   const plannedFacets = timelineFacets.find(f => f.type === TimelineStepType.plan);
   const allFacets: Facet[] = [
+    ...(impliedFacets?.facets ?? []),
     ...(selectedFacets?.facets ?? []),
     ...(plannedFacets?.facets ?? [])
   ];
@@ -166,7 +167,6 @@ function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[])
 
 // gets the facet id for this facet
 function getFacetId(facetName: String, timelineFacets: TimelineFacet[]): string {
-  console.log(timelineFacets);
   const optionalFacets = timelineFacets.find(f => f.type === TimelineStepType.optional);
   const emptyFacets = timelineFacets.find(f => f.type === TimelineStepType.empty);
   const allFacets: Facet[] = [
@@ -195,7 +195,7 @@ const setState = (option: string, state: 'add' | 'remove') => {
     }
   } else if (selectedStatus === 'remove') {
     if (state === 'remove') {
-      emits.push(`- ~${facetId}`); // this is maybe "- ~id"
+      emits.push(`- ~${facetId}`);
     } else {
       // emits.push(`- ~${facetId}`, `+ ${facetId}`);
       emits.push(`+ ${facetId}`);

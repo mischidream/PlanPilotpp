@@ -76,7 +76,7 @@ const arrowPaths = ref<string[]>([]);
 function emitUpdate(commands: string[], timestepNumber: number) {
   emit('update:commands', { commands, timestepNumber });
 }
-
+/* 
 
 const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
   if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
@@ -108,7 +108,7 @@ function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
   }
 
   return undefined;
-}
+} */
 
 function setRef(el: Element | ComponentPublicInstance | null, index: number) {
   dropdownRefs.value[index] =
