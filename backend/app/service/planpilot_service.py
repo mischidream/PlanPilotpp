@@ -123,7 +123,7 @@ class PlanpilotService:
                 new_output = self.output_buffer[prev_len:]
                 output_str = "".join(new_output)
 
-                if command.startswith(("?", "#??", "#!!", "|= %")):
+                if command.startswith(("?", "#??", "#!!", "|= %", "|=")):
                     return parse_facet_output(output_str, command)
 
                 if re.match(r"!\s*\d*$", command.strip()):
@@ -195,6 +195,22 @@ class PlanpilotService:
 
             if not any(f["type"] in ("plan", "implied") for f in step):
                 errors.extend(fetch_and_add_empty_facets(self, timeline, t))
+            
+            # If the step contains only implied facets, add them again as optional (since fast_update_plan does not update it anymore)
+            elif all(f["type"] == "implied" for f in step):
+                try:
+                    # collect all implied facet entries into a single list
+                    implied_facets = []
+                    for implied_block in step:
+                        implied_facets.extend(implied_block.get("facets", []))
+
+                    if implied_facets:
+                        # re-add them as optional facets directly
+                        add_facet_to_timestep(timeline, t, "optional", implied_facets)
+                    else:
+                        errors.extend(fetch_and_add_empty_facets(self, timeline, t))
+                except Exception as e:
+                    errors.append({"type": "readd-implied-as-optional", "timestep": t, "error": str(e)})
 
         self.timeline = timeline
 
@@ -204,6 +220,46 @@ class PlanpilotService:
             "errors": errors,
             "bestPlan": parsed_facets,
             "timeline": timeline,
+            "facetCount": facetCount,
+        }
+
+    def fast_update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
+        # TODO: if there is an implied and deselected and there is no optional, add it pls there, maybe also already at activate plan
+        errors = []
+
+        if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
+            raise RuntimeError("Timeline or horizon not initialized.")
+
+        command = commands[0].strip()
+        t = changed_timestep
+
+        # Apply user command
+        fast_apply_user_command(self, command, t, errors)
+
+        # Fetch changes
+        implied_facets = fetch_implied_facets(self, errors)
+        removed_facets = fetch_removed_facets(self, errors)
+
+        # Update timeline
+        # TODO: if remove, we dont need to check for implied facets, we maybe need to check for undone facets
+        """ if not command.startswith("-"): 
+            add_implied_facets(self, implied_facets, command, errors)
+            remove_facets_from_timeline(self, removed_facets, t, errors) """
+
+        # TODO: Check if we need to refresh timesteps optionals and empties
+        # TODO: We definetly need to refresh it
+
+        # Get updated facet count
+        try:
+            facetCount = self.send_command("#?")
+        except Exception as e:
+            errors.append({"type": "facetcount-fetch", "error": str(e)})
+            facetCount = None
+
+        # Return result
+        return {
+            "timeline": self.timeline,
+            "errors": errors,
             "facetCount": facetCount,
         }
 
@@ -244,8 +300,12 @@ class PlanpilotService:
             if not reactivated_any and optionals:
                 current_step = self.timeline[t - 1]
                 # Remove all facets with type 'optional'
-                current_step["facets"] = [f for f in current_step.get("facets", []) if f.get("type") != "optional"]
-                
+                current_step["facets"] = [
+                    f
+                    for f in current_step.get("facets", [])
+                    if f.get("type") != "optional"
+                ]
+
                 add_facet_to_timestep(self.timeline, t, "empty", optionals)
 
         # Finally update empty facets for all steps from changed timestep to horizon

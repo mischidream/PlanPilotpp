@@ -108,10 +108,10 @@ const disabled: ComputedRef<boolean> = computed(() =>
 )
 
 function getOptions(value: TimelineFacet[]): (string | number)[] {
-  if (
-    value.some(f => f.type === TimelineStepType.plan) ||
-    value.some(f => f.type === TimelineStepType.selected)
-  ) {
+  if (value.some(f => 
+    [TimelineStepType.plan, TimelineStepType.selected, TimelineStepType.optional, TimelineStepType.empty]
+    .includes(f.type)
+  )){
     const optional = value.find(f => f.type === TimelineStepType.optional);
     if (Array.isArray(optional?.facets)) {
       return optional.facets.map(formatFacetOption);

@@ -7,6 +7,7 @@ import { TimeStepType } from '@/models/TimeStepType';
 import { defineStore } from 'pinia';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import type { TimelineStep } from '@/models/TimelineStep';
+import { toRaw } from 'vue';
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
@@ -92,10 +93,10 @@ export const usePlanStore = defineStore('plan', {
       this.bestPlan = plan;
     },
     setTimeline(timeline: TimelineStep[]) {
-      this.timeline = timeline;
+      this.timeline = structuredClone(toRaw(timeline));
     },
     setSelectedValues(values: (MultiSelectState[] | null)[]) {
-      this.selectedValues = values;
+      this.selectedValues = structuredClone(toRaw(values));
     },
     setFacetCount(count: number | null) {
       this.facetCount = count;

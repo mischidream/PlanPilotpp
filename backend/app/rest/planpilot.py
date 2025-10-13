@@ -49,7 +49,7 @@ def update_plan():
         return jsonify({"error": "changedTimestep and commands are required"}), 400
 
     try:
-        result = planpilot_service.update_plan_from_timestep(changed_timestep, commands)
+        result = planpilot_service.fast_update_plan_from_timestep(changed_timestep, commands)
 
         return jsonify(result), 200
     except Exception as e:

@@ -274,3 +274,217 @@ def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied
 
     return errors, reactivated_any
 
+
+
+###########################################################################################################
+
+def fast_apply_user_command(self, command: str, t: int, errors: list):
+    stripped = command.strip()
+    is_remove = stripped.startswith("-")
+    is_negative_add = stripped.startswith("+ ~")
+    is_positive_add = stripped.startswith("+") and not is_negative_add
+
+    # Extract clean id
+    clean_id = stripped.lstrip("+-~ ").strip()
+
+    # Case 1: Remove
+    if is_remove:
+        handle_remove_command(self, command, t, clean_id, errors)
+        return
+    
+    # Case 2: Add (+ or +~)
+    new_state = "-" if is_negative_add else "+"
+
+    if is_positive_add:
+        handle_existing_positive_selection(self, t, clean_id, errors)
+
+    # Detect conflict: same id but different sign in this timestep
+    handle_conflicting_selection(self, t, clean_id, new_state, errors)
+
+    # Apply the new command
+    try:
+        self.send_command(command, no_Output=True)
+    except Exception as e:
+        errors.append({"command-error": command, "error": str(e)})
+
+    # TODO: delete it?
+    # Add new facet info to timeline
+    try:
+        parsed_facets = parse_facet_output(clean_id, command)
+        for f in parsed_facets:
+            f["selectionState"] = new_state
+        add_facet_to_timestep(self.timeline, t, "selected", parsed_facets)
+    except Exception as e:
+        errors.append({"parse-error": command, "error": str(e)})
+
+def handle_remove_command(self, command: str, t: int, clean_id: str, errors: list):
+    try:
+        self.send_command(command, no_Output=True)
+    except Exception as e:
+        errors.append({"command-error": command, "error": str(e)})
+        return
+
+    # Remove from current timestep
+    step = self.timeline[t - 1]
+    for block in list(step.get("facets", [])):
+        if block.get("type") not in ("selected", "plan"):
+            continue
+
+        block["facets"] = [
+            f for f in block.get("facets", []) if f.get("id") != clean_id
+        ]
+        if not block["facets"]:
+            step["facets"].remove(block)
+
+    # Remove implieds caused by this facet
+    cleanup_implied_by(self, clean_id)
+
+def handle_conflicting_selection(self, t: int, clean_id: str, new_state: str, errors: list):
+    # If the same facet id already exists in the current timestep with a different selectionState,
+    # undo it before applying the new command
+    step = self.timeline[t - 1]
+
+    for block in step.get("facets", []):
+        if block.get("type") not in ("selected", "plan"):
+            continue
+
+        for facet in list(block.get("facets", [])):
+            if facet.get("id") == clean_id:
+                old_state = facet["selectionState"]
+
+                # Only act if it’s actually different
+                if old_state != new_state:
+                    undo_cmd = f"- {clean_id}" if old_state == "+" else f"- ~{clean_id}"
+                    try:
+                        self.send_command(undo_cmd, no_Output=True)
+                        block["facets"].remove(facet)
+                        if not block["facets"]:
+                            step["facets"].remove(block)
+                    except Exception as e:
+                        errors.append({
+                            "undo-error": undo_cmd,
+                            "error": str(e),
+                            "timestep": t
+                        })
+                return
+            
+def handle_existing_positive_selection(self, t: int, new_id: str, errors: list):
+    # If a '+' facet already exists in timestep t, undo it and remove it locally
+    # This allows replacing the old '+' with a new '+' in one step
+    step = self.timeline[t - 1]
+
+    for block in list(step.get("facets", [])):
+        if block.get("type") not in ("selected", "plan"):
+            continue
+
+        for facet in list(block.get("facets", [])):
+            if facet.get("selectionState") == "+":
+                old_id = facet.get("id")
+                if old_id == new_id:
+                    # It's the same + facet, nothing to undo
+                    return
+
+                undo_cmd = f"- {old_id}"
+                try:
+                    self.send_command(undo_cmd, no_Output=True)
+                    block["facets"].remove(facet)
+                    if not block["facets"]:
+                        step["facets"].remove(block)
+                    cleanup_implied_by(self, old_id)
+                except Exception as e:
+                    errors.append({
+                        "undo-error": undo_cmd,
+                        "error": str(e),
+                        "timestep": t
+                    })
+
+                # Only one '+' allowed, so we stop after removing it
+                return
+
+def cleanup_implied_by(self, facet_id: str):
+    for step in self.timeline:
+        for block in list(step.get("facets", [])):
+            if block.get("type") == "implied":
+                implied_by = block.get("impliedBy", [])
+                if facet_id in implied_by:
+                    implied_by.remove(facet_id)
+                    if not implied_by:
+                        step["facets"].remove(block)
+
+
+def fetch_implied_facets(self, errors: list):
+    # Get implied facets using '|= %'
+    try:
+        return self.send_command("|= %")
+    except Exception as e:
+        errors.append({"type": "implied-fetch", "error": str(e)})
+        return []
+
+
+def fetch_removed_facets(self, errors: list):
+    # Get facets that are no longer valid using '|= %%'
+    try:
+        return self.send_command("|= %% occurs")
+    except Exception as e:
+        errors.append({"type": "removed-fetch", "error": str(e)})
+        return []
+
+def add_implied_facets(self, implied_facets, base_facet_id: str, errors: list):
+    # Add new implied facets to the timeline
+    # Avoid duplicates and maintain impliedBy
+    # TODO: Remove implieds if there are not anymore there
+    # TODO: Implied should be all in the same
+    for f in implied_facets:
+        implied_id = f.get("id")
+        ts = f.get("timestep")
+        if not implied_id or not ts or ts < 1 or ts > self.horizon:
+            continue
+
+        step = self.timeline[ts - 1]
+        found = False
+
+        # Check if this implied facet is already present
+        for block in step.get("facets", []):
+            if block.get("type") == "implied":
+                existing_ids = {facet.get("id") for facet in block.get("facets", [])}
+                if implied_id in existing_ids:
+                    # Update impliedBy if needed
+                    if base_facet_id not in block.get("impliedBy", []):
+                        block.setdefault("impliedBy", []).append(base_facet_id)
+                    found = True
+                    break
+
+        if not found:
+            # Add new implied facet
+            f["selectionState"] = "+"
+            step["facets"].append({
+                "type": "implied",
+                "facets": [f],
+                "impliedBy": [base_facet_id]
+            })
+
+def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: list):
+    # Remove facets that are no longer selectable by iterating timeline from changed_timestep onward
+    # This is more efficient than looping over the huge removed_facets list
+    
+    # Build a set of removed ids for quick lookup
+    removed_ids = {f.get("id") for f in removed_facets if f.get("id")}
+
+    for t in range(changed_timestep, self.horizon + 1):
+        step = self.timeline[t - 1]
+
+        for block in list(step.get("facets", [])):
+            # Only consider blocks that could be removed (optional, selected, plan)
+            if block.get("type") != "optional":
+                continue
+
+            old_len = len(block.get("facets", []))
+            block["facets"] = [f for f in block.get("facets", []) if f.get("id") not in removed_ids]
+
+            if not block["facets"]:
+                step["facets"].remove(block)
+
+            if len(block.get("facets", [])) < old_len:
+                # Log which facets were removed
+                for f in removed_ids:
+                    errors.append({"removed": f, "timestep": t})
