@@ -3,6 +3,7 @@ import PlanPilotView from '@/views/PlanPilotView.vue';
 import StartView from '@/views/StartView.vue';
 import VisualizationView from '@/views/VisualizationView.vue';
 import FastDownwardView from '@/views/FastDownwardView.vue';
+import TreeView from '@/views/TreeView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/fastdownward',
       name: 'fastdownward',
       component: FastDownwardView,
+    },
+    {
+      path: '/tree',
+      name: 'tree',
+      component: TreeView,
     },
   ],
 });

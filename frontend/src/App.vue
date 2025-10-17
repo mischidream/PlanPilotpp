@@ -10,6 +10,8 @@
         <RouterLink to="/planpilot" class="nav-link">PlanPilot</RouterLink>
         <div class="divider"></div>
         <RouterLink to="/visualization" class="nav-link">Visualization</RouterLink>
+        <div class="divider"></div>
+        <RouterLink to="/tree" class="nav-link">Tree</RouterLink>
       </nav>
     </div>
     <main class="main-content">
