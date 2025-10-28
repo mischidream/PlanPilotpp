@@ -478,13 +478,27 @@ def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: 
             if block.get("type") != "optional":
                 continue
 
-            old_len = len(block.get("facets", []))
-            block["facets"] = [f for f in block.get("facets", []) if f.get("id") not in removed_ids]
+            old_facets = block.get("facets", [])
+            # Only remove facets that are not present in selected or plan
+            selected_ids = {
+                f.get("id")
+                for b in step.get("facets", [])
+                if b.get("type") in ("selected", "plan")
+                for f in b.get("facets", [])
+                if f.get("id")
+            }
+
+            new_facets = [
+                f for f in old_facets
+                if f.get("id") not in removed_ids or f.get("id") in selected_ids
+            ]
+
+            if len(new_facets) < len(old_facets):
+                removed_now = [f.get("id") for f in old_facets if f.get("id") not in selected_ids and f.get("id") in removed_ids]
+                for f_id in removed_now:
+                    errors.append({"removed": f_id, "timestep": t})
+
+            block["facets"] = new_facets
 
             if not block["facets"]:
                 step["facets"].remove(block)
-
-            if len(block.get("facets", [])) < old_len:
-                # Log which facets were removed
-                for f in removed_ids:
-                    errors.append({"removed": f, "timestep": t})
