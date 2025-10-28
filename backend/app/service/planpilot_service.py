@@ -224,13 +224,13 @@ class PlanpilotService:
         }
 
     def fast_update_plan_from_timestep(self, changed_timestep: int, commands) -> Dict:
-        # TODO: if there is an implied and deselected and there is no optional, add it pls there, maybe also already at activate plan
         errors = []
 
         if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
             raise RuntimeError("Timeline or horizon not initialized.")
 
         command = commands[0].strip()
+        clean_id = command.lstrip("+-~ ").strip()
         t = changed_timestep
 
         # Apply user command
@@ -241,13 +241,11 @@ class PlanpilotService:
         removed_facets = fetch_removed_facets(self, errors)
 
         # Update timeline
-        # TODO: if remove, we dont need to check for implied facets, we maybe need to check for undone facets
-        """ if not command.startswith("-"): 
-            add_implied_facets(self, implied_facets, command, errors)
-            remove_facets_from_timeline(self, removed_facets, t, errors) """
+        if not command.startswith("-"):
+            add_implied_facets(self, implied_facets, clean_id, errors)
+            remove_facets_from_timeline(self, removed_facets, t, errors)
 
-        # TODO: Check if we need to refresh timesteps optionals and empties
-        # TODO: We definetly need to refresh it
+        # TODO: Launch background thread to calculate new timeline with changes
 
         # Get updated facet count
         try:
@@ -325,6 +323,10 @@ class PlanpilotService:
             "errors": errors,
             "facetCount": facetCount,
         }
+    
+    def get_refreshed_timeline(self):
+        # TODO: Implement refresh logic
+        print("Refresh")
 
     def stop_fasb(self):
         if self.process:

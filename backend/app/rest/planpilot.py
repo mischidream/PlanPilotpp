@@ -55,6 +55,14 @@ def update_plan():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@planpilot_bp.route("/refresh-timeline", methods=["GET"])
+def refresh_timeline():
+    try:
+        result = planpilot_service.get_refreshed_timeline()
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():
     data = request.json

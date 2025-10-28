@@ -78,6 +78,15 @@ export const updatePlan = async (
   }
 };
 
+export const refreshTimeline = async (): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.get<ActivatePlanResponse>(`${hostUrl}/refresh-timeline`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 export const sendPlanPilotCommand = async (
   command: string
 ): Promise<Facet[] | Solution[] | string | undefined> => {

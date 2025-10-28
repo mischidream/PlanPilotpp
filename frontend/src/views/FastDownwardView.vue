@@ -27,7 +27,10 @@
 
       <div v-if="!loading && facetCount" class="text">
         <p>Number of facets to choose from: {{ facetCount }}</p>
-        <ColorLegend />
+        <div class="legend-refresh-container">
+          <ColorLegend />
+          <Button label="Reload Timeline" @click="refresh"></Button>
+        </div>
         <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
       </div>
 
@@ -68,6 +71,7 @@ import { TimeStepType } from '@/models/TimeStepType';
 import {
   activateBestPlan,
   runPlanPilot,
+  refreshTimeline,
 } from '@/services/apiService';
 import { usePlanStore } from '@/stores/planStore';
 import { bindWatch } from '@/utils/bindWatch';
@@ -193,6 +197,34 @@ const start = async () => {
     loading.value = false;
   }
 };
+
+const refresh = async () => {
+  loading.value = true;
+  try {
+    const result = await refreshTimeline();
+
+    if (!result) return;
+
+    // Update timeline
+    if (result.timeline) {
+      timeline.value = result.timeline;
+      selectedValues.value = result.timeline.map(
+        (step, index) => getSelectedValueFromTimeline(step.facets, index) ?? null
+      );
+    }
+
+    // Update facet count
+    if (result.facetCount !== undefined) {
+      facetCount.value = result.facetCount;
+    }
+
+  } catch (err) {
+    console.error('Error refreshing timeline:', err);
+  } finally {
+    loading.value = false;
+  }
+};
+
 </script>
 
 <style scoped>
@@ -227,5 +259,11 @@ const start = async () => {
 
 .skeleton {
   padding: 1rem;
+}
+
+.legend-refresh-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>
