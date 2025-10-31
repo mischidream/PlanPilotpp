@@ -341,7 +341,6 @@ class PlanpilotService:
         }
     
     def get_refreshed_timeline(self):
-        # TODO: Implement refresh logic
         print("Refresh")
 
         errors, facet_count = refresh_optionals_and_empties(self)
@@ -351,7 +350,23 @@ class PlanpilotService:
             "errors": errors,
             "facetCount": facet_count,
         }
+    
+    def get_refreshed_optional_facet(self, timestep_number: int):
+        command = f"? {timestep_number}"  # query actions at this timestep
+        try:
+            facets = self.send_command(command)
 
+            timeline_facet = {
+                "type": "optional",
+                "facets": facets,
+                "causedBy": None,
+            }
+
+            return timeline_facet
+
+        except Exception as e:
+            print(f"Error refreshing optional facet for timestep {timestep_number}: {e}")
+            return None
 
     def restart_FASB(self):
         print("Starting FASB temp with cached parameters...")

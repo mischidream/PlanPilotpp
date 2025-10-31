@@ -62,6 +62,26 @@ def refresh_timeline():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@planpilot_bp.route("/refresh-optional-facet", methods=["GET"])
+def refresh_optional_facet():
+    try:
+        timestep_param = request.args.get("timestep")
+        if timestep_param is None:
+            return jsonify({"error": "Missing 'timestep' parameter"}), 400
+
+        try:
+            timestep_number = int(timestep_param)
+        except ValueError:
+            return jsonify({"error": "'timestep' must be an integer"}), 400
+
+        refreshed_facet = planpilot_service.get_refreshed_optional_facet(timestep_number)
+        if not refreshed_facet:
+            return jsonify({"error": "No optional facet found for this timestep"}), 404
+
+        return jsonify(refreshed_facet), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():
