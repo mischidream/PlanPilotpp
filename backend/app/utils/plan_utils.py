@@ -1,3 +1,4 @@
+import copy
 from ..utils.parsing import parse_facet_output
 
 
@@ -502,3 +503,107 @@ def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: 
 
             if not block["facets"]:
                 step["facets"].remove(block)
+
+# ========================================================================
+
+
+def refresh_optionals_and_empties(self):
+    try:
+        # Take snapshot of the current timeline (not mutated)
+        old_timeline = copy.deepcopy(self.timeline)
+
+        temp_process = self.restart_FASB()
+
+        errors, new_timeline = rebuild_timeline_from_solver(self, old_timeline)
+
+        facet_count = self.send_command("#?")
+
+        # Update the main timeline and related data directly
+        self.timeline = new_timeline
+
+        print("Timeline refresh complete and ready.")
+
+        return errors, facet_count
+
+    except Exception as e:
+        print(f"Timeline refresh failed: {e}")
+        if getattr(self, "process", None):
+            try:
+                self._terminate_process(self.process)
+                self.process = None
+            except Exception:
+                pass
+
+def rebuild_timeline_from_solver(self, old_timeline):
+    # TODO: does always add twice the facets, does not work correctly for implied at beginning, shows plan ones as selected
+    new_timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
+    global_implied_ids = set()
+    activated_plan_ids = set()
+    errors = []
+
+    # First collect global implied facets from plan root context
+    errors.append(
+        fetch_and_add_implied_facets(
+            self, new_timeline, global_implied_ids, "plan", self.horizon
+        )
+    )
+
+    for t in range(1, self.horizon + 1):
+
+        step = new_timeline[t - 1]["facets"]
+
+        errors.append(
+            fetch_and_add_optional_facets(self, new_timeline, t)
+        )
+
+        old_step = old_timeline[t - 1]["facets"]
+        for block in old_step:
+            if block.get("type") not in ("plan", "selected"):
+                continue
+
+            for facet in block.get("facets", []):
+                fid = facet.get("id")
+                if not fid or fid in activated_plan_ids:
+                    continue
+
+                # Determine command and type
+                if block.get("type") == "plan":
+                    facet_type = "plan"
+                    cmd_str = f"+ {fid}"
+                elif block.get("type") == "selected":
+                    facet_type = "selected"
+                    state = facet.get("selectionState")
+                    cmd_str = f"+ {fid}" if state == "+" else f"+ ~{fid}"
+
+                # Send command and add facet
+                try:
+                    self.send_command(cmd_str, no_Output=True)
+                    add_facet_to_timestep(new_timeline, t, facet_type, [facet])
+                    activated_plan_ids.add(fid)
+                except Exception as e:
+                    errors.append({"action": cmd_str, "timestep": t, "error": str(e)})
+
+                # Recalculate implied facets for this facet
+                errors.append(fetch_and_add_implied_facets(
+                    self, new_timeline, global_implied_ids, fid, self.horizon
+                ))
+        
+        # Fill empty facets if no plan or implied facets exist
+        if not any(f["type"] in ("plan", "selected", "implied") for f in step):
+            errors.extend(fetch_and_add_empty_facets(self, new_timeline, t))
+
+        # If the step contains only implied facets, re-add them as optional
+        elif all(f["type"] == "implied" for f in step):
+            try:
+                implied_facets = []
+                for implied_block in step:
+                    implied_facets.extend(implied_block.get("facets", []))
+                if implied_facets:
+                    add_facet_to_timestep(new_timeline, t, "optional", implied_facets)
+                else:
+                    errors.extend(fetch_and_add_empty_facets(self, new_timeline, t))
+            except Exception as e:
+                errors.append({"type": "readd-implied-as-optional", "timestep": t, "error": str(e)})
+
+    return errors, new_timeline
+

@@ -22,6 +22,11 @@ class PlanpilotService:
         self.horizon = 0
         self.timeline = None
 
+        self.last_sas_file_path = None
+        self.last_hash_value = None
+        self.last_encoding = None
+        self.last_abs_steps = None
+
     def run_planpilot_service(
         self, sas_file: str, horizon: int, encoding: str, abstract_time_steps: bool
     ) -> List[Dict]:
@@ -56,6 +61,12 @@ class PlanpilotService:
             is_pddl_instance=False,
         )
 
+        # Kill old process if exists
+        if self.process:
+            self._terminate_process(self.process)
+            self.process = None
+            self.output_buffer = []
+
         # Start FASB subprocess
         fasb_binary = os.path.join(
             current_directory,
@@ -88,6 +99,11 @@ class PlanpilotService:
             self.reader_thread.start()
 
         self.horizon = horizon
+
+        self.last_sas_file_path = sas_file_path
+        self.last_hash_value = hash_value
+        self.last_encoding = encoding
+        self.last_abs_steps = abstract_time_steps
 
         self._wait_for_fasb_ready()
         output = self.send_command("?")
@@ -328,6 +344,80 @@ class PlanpilotService:
         # TODO: Implement refresh logic
         print("Refresh")
 
+        errors, facet_count = refresh_optionals_and_empties(self)
+
+        return {
+            "timeline": self.timeline,
+            "errors": errors,
+            "facetCount": facet_count,
+        }
+
+
+    def restart_FASB(self):
+        print("Starting FASB temp with cached parameters...")
+
+        if (
+            self.last_sas_file_path is None
+            or self.last_hash_value is None
+            or self.last_encoding is None
+            or self.last_abs_steps is None
+            or self.horizon is None
+        ):
+            raise RuntimeError("Cannot restart solver: missing cached metadata.")
+
+        current_directory = os.getcwd()
+        lp_file_path = os.path.join(current_directory, "temp", self.last_hash_value, "output.lp")
+        os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
+
+        self._generate_lp_with_plasp(
+            sas_or_pddl_path=self.last_sas_file_path,
+            lp_output_path=lp_file_path,
+            encoding_type=self.last_encoding,
+            abstract_time_steps=self.last_abs_steps,
+            is_pddl_instance=False,
+        )
+
+         # Kill old process if it exists
+        if self.process:
+            self._terminate_process(self.process)
+            self.process = None
+            self.output_buffer = []
+
+
+        fasb_binary = os.path.join(
+            current_directory,
+            "lib",
+            "planpilot",
+            "bin",
+            "fasb-x86_64-unknown-linux-gnu",
+            "fasb",
+        )
+
+        fasb_command = [
+            "stdbuf", "-oL",
+            fasb_binary,
+            lp_file_path,
+            "-c", f"horizon={self.horizon}",
+            "0",
+        ]
+
+        with self.lock:
+            self.process = subprocess.Popen(
+                fasb_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            self.reader_thread = threading.Thread(target=self._read_stdout, daemon=True)
+            self.reader_thread.start()
+
+        self._wait_for_fasb_ready()
+
+        print("FASB restarted.")
+        return self.process
+
     def stop_fasb(self):
         if self.process:
             self.process.terminate()
@@ -402,3 +492,15 @@ class PlanpilotService:
 
         if result.returncode != 0:
             raise RuntimeError(f"plasp failed:\n{result.stderr}")
+
+    def _terminate_process(self, proc: subprocess.Popen):
+        if proc.poll() is None:  # process is still running
+            try:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)  # wait for graceful exit
+                except subprocess.TimeoutExpired:
+                    proc.kill()  # force kill if it doesn’t exit
+                    proc.wait()
+            except Exception as e:
+                print(f"Failed to terminate process: {e}")
