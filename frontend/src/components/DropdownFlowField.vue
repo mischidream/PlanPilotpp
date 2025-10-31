@@ -1,6 +1,17 @@
 <template>
   <div class="input-wrapper" ref="dropdownRef">
-    <label v-if="props.id !== undefined">Timestep: {{ props.id + 1 }}</label>
+    <label v-if="props.id !== undefined" class="label-with-icon">
+      Timestep: {{ props.id + 1 }}
+      <div class="tooltip-wrapper">
+        <span
+          class="material-icons refresh-icon"
+          @click.stop="handleRefresh"
+        >
+          refresh
+        </span>
+        <span class="tooltip-text">Refresh timestep</span>
+      </div>
+    </label>
 
     <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled:
       disabled }]">
@@ -93,6 +104,7 @@ const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => 
   if (facets.some(f => f.type === TimelineStepType.plan)) return 'purple';
   return null;
 };
+
 const highlight: ComputedRef<'purple' | 'blue' | null> = computed(() =>
   getHighlightType(props.facets ?? [])
 )
@@ -124,6 +136,7 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
   }
   return [];
 }
+
 const options: ComputedRef<(string | number)[] | undefined> = computed(() =>
   getOptions(props.facets ?? [])
 )
@@ -260,6 +273,10 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+const handleRefresh = () => {
+  console.log("refresh timestep");
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
 });
@@ -385,5 +402,57 @@ onUnmounted(() => {
   margin-left: 0.5rem;
   flex: 1;
 }
+
+.label-with-icon {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.refresh-icon {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  vertical-align: middle;
+  color: var(--black-mute);
+}
+
+.refresh-icon:hover {
+  opacity: 1;
+  transform: rotate(90deg);
+  color: var(--light-blue);
+}
+
+/* Tooltip styling */
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--black-mute);
+  color: var(--white);
+  text-align: center;
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  z-index: 200;
+  bottom: 110%; /* show above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
 </style>
 
