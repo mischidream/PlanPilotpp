@@ -48,6 +48,7 @@
         @update:commands="payload => handleDropdownFlowChanges(payload)"
         @update:timeline="timeline = $event"
         @update:selectedValues="selectedValues = $event"
+        @refresh="handleRefresh"
       />
     </div>
     <LandmarkSidebar
@@ -72,6 +73,7 @@ import {
   activateBestPlan,
   runPlanPilot,
   refreshTimeline,
+  refreshTimestep,
 } from '@/services/apiService';
 import { usePlanStore } from '@/stores/planStore';
 import { bindWatch } from '@/utils/bindWatch';
@@ -84,6 +86,7 @@ import { handleSelectedValuesChange } from '@/composables/useSelectedValuesHandl
 import ColorLegend from '@/components/ColorLegend.vue';
 import type { Facet } from '@/models/Facet';
 import { updatePlan } from '@/services/apiService';
+import { updateOptionalFacet } from '@/utils/updateOptionalFacet';
 
 // Store
 const planStore = usePlanStore();
@@ -140,6 +143,17 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
 
   loading.value = false;
 };
+
+const handleRefresh = async (timestepNumber: number)  => {
+  console.log("Refresh clicked for timestep:", timestepNumber + 1);
+
+  const refreshedFacet = await refreshTimestep(timestepNumber + 1);
+  if (!refreshedFacet) return;
+
+  // Update the optional facet in the reactive timeline
+  updateOptionalFacet(timeline.value, timestepNumber, refreshedFacet);
+}
+
 /* 
 watch(
   selectedValues,

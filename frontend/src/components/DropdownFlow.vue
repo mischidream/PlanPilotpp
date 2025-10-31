@@ -11,6 +11,7 @@
         :modelValue="props.selectedValues[index] ?? undefined"
         :facets="value.facets"
         @update="val => emitUpdate(val, index)"
+        @refresh="emitRefresh"
       />
     </div>
 
@@ -65,7 +66,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  (e: "update:commands", payload: { commands: string[], timestepNumber: number}): void
+  (e: "update:commands", payload: { commands: string[], timestepNumber: number}): void;
+  (e: "refresh", timestepNumber: number): void;
 }>()
 
 // Refs
@@ -76,6 +78,13 @@ const arrowPaths = ref<string[]>([]);
 function emitUpdate(commands: string[], timestepNumber: number) {
   emit('update:commands', { commands, timestepNumber });
 }
+
+function emitRefresh(timestepNumber?: number) {
+  if (timestepNumber === undefined) return;
+  emit('refresh', timestepNumber);
+}
+
+
 /* 
 
 const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {

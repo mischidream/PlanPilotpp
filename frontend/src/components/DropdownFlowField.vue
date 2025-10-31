@@ -80,6 +80,7 @@ const dropdownRef = ref<HTMLElement | null>(null);
 
 const emit = defineEmits<{
   (e: "update", value: string[]): void
+  (e: "refresh", timestep?: number): void
 }>()
 
 
@@ -274,7 +275,7 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 const handleRefresh = () => {
-  console.log("refresh timestep");
+  emit('refresh', props.id);
 };
 
 onMounted(() => {
