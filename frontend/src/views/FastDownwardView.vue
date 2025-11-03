@@ -25,7 +25,7 @@
         <Button label="Start" type="submit" @click="start"></Button>
       </div>
 
-      <div v-if="!loading && facetCount" class="text">
+      <div v-if="!loading && facetCount !== undefined" class="text">
         <p>Number of facets to choose from: {{ facetCount }}</p>
         <div class="legend-refresh-container">
           <ColorLegend />
@@ -137,7 +137,8 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
         getSelectedValueFromTimeline(step.facets, index) ?? null
     );
   }
-  if (result?.facetCount) {
+
+  if (result?.facetCount !== undefined) {
     facetCount.value = result?.facetCount;
   }
 
@@ -147,12 +148,19 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
 const handleRefresh = async (timestepNumber: number)  => {
   loading.value = true;
 
-  const refreshedFacet = await refreshTimestep(timestepNumber + 1);
+  const result = await refreshTimestep(timestepNumber + 1);
   loading.value = false;
-  if (!refreshedFacet) return;
+  if (!result) return;
+
+  const { refreshedFacet, facetCount: newFacetCount } = result;
 
   // Update the optional facet in the reactive timeline
   updateOptionalFacet(timeline.value, timestepNumber, refreshedFacet);
+
+  // Update facet count if available
+  if (newFacetCount !== undefined) {
+    facetCount.value = newFacetCount;
+  }
 }
 
 /* 

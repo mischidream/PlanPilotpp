@@ -504,6 +504,30 @@ def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: 
             if not block["facets"]:
                 step["facets"].remove(block)
 
+def calculate_facet_count(self):
+    if not hasattr(self, "timeline") or self.timeline is None:
+        return 0
+
+    count = 0
+    for timestep in self.timeline:
+        facets = timestep.get("facets", [])
+
+        # Separate types
+        optional_facets = [f for f in facets if f.get("type") == "optional"]
+        empty_facets = [f for f in facets if f.get("type") == "empty"]
+
+        # Count 'optional' only if it's the only outer facet
+        if len(facets) == 1 and optional_facets:
+            count += len(optional_facets[0].get("facets", [])) * 2
+            print("added optional: ", timestep)
+
+        # Count all inner facets of 'empty' facets
+        for f in empty_facets:
+            count += len(f.get("facets", [])) * 2
+            print("added empty: ", timestep)
+
+    return count
+
 # ========================================================================
 
 
@@ -606,4 +630,5 @@ def rebuild_timeline_from_solver(self, old_timeline):
                 errors.append({"type": "readd-implied-as-optional", "timestep": t, "error": str(e)})
 
     return errors, new_timeline
+
 

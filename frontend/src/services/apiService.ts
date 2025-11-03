@@ -7,7 +7,7 @@ import type { SasPlanInput } from '@/models/SasPlanInput';
 import type { PlanPilotInput } from '@/models/PlanPilotInput';
 import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
 import type { ActivatePlanResponse } from '@/models/ActivePlanResponse';
-import type { TimelineFacet } from '@/models/TimelineFacet';
+import type { RefreshOptionalFacetResponse } from '@/models/RefreshOptionalFacetResponse';
 
 let hostUrl = 'http://localhost:5000/api';
 
@@ -90,9 +90,9 @@ export const refreshTimeline = async (): Promise<ActivatePlanResponse | undefine
 
 export const refreshTimestep = async (
   timestepNumber: number
-): Promise<TimelineFacet | undefined> => {
+): Promise<RefreshOptionalFacetResponse | undefined> => {
   try {
-    const response = await axios.get<TimelineFacet>(
+    const response = await axios.get<RefreshOptionalFacetResponse>(
       `${hostUrl}/refresh-optional-facet`,
       { params: { timestep: timestepNumber } } // send timestep as query param
     );

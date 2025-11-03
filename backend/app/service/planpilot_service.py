@@ -252,23 +252,20 @@ class PlanpilotService:
         # Apply user command
         fast_apply_user_command(self, command, t, errors)
 
-        # Fetch changes
-        implied_facets = fetch_implied_facets(self, errors)
-        removed_facets = fetch_removed_facets(self, errors)
-
         # Update timeline
         if not command.startswith("-"):
+            # Fetch changes
+            implied_facets = fetch_implied_facets(self, errors)
+            removed_facets = fetch_removed_facets(self, errors)
+
             add_implied_facets(self, implied_facets, clean_id, errors)
             remove_facets_from_timeline(self, removed_facets, t, errors)
 
         # TODO: Launch background thread to calculate new timeline with changes
 
         # Get updated facet count
-        try:
-            facetCount = self.send_command("#?")
-        except Exception as e:
-            errors.append({"type": "facetcount-fetch", "error": str(e)})
-            facetCount = None
+        facetCount = calculate_facet_count(self)
+        print("new facet count: ", facetCount)
 
         # Return result
         return {
@@ -390,7 +387,15 @@ class PlanpilotService:
             timestep_facets['facets'].append(refreshed_facet)
             self.timeline[timestep_number - 1] = timestep_facets
 
-        return refreshed_facet
+            # Calculate facet count
+            facet_count = calculate_facet_count(self)
+
+            refreshed_answer = {
+                "refreshedFacet": refreshed_facet,
+                "facetCount": facet_count,
+            }
+
+        return refreshed_answer
 
     def restart_FASB(self):
         print("Starting FASB temp with cached parameters...")
