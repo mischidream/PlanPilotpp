@@ -121,21 +121,27 @@ const disabled: ComputedRef<boolean> = computed(() =>
 )
 
 function getOptions(value: TimelineFacet[]): (string | number)[] {
-  if (value.some(f => 
-    [TimelineStepType.plan, TimelineStepType.selected, TimelineStepType.optional, TimelineStepType.empty]
-    .includes(f.type)
-  )){
-    const optional = value.find(f => f.type === TimelineStepType.optional);
-    if (Array.isArray(optional?.facets)) {
-      return optional.facets.map(formatFacetOption);
-    }
-  } else if (value.some(f => f.type === TimelineStepType.empty)) {
-    const empty = value.find(f => f.type === TimelineStepType.empty);
-    if (Array.isArray(empty?.facets)) {
-      return empty.facets.map(formatFacetOption);
-    }
-  }
-  return [];
+  const optionsSet = new Set<string | number>();
+
+  // Add all optional or empty facets (the base list)
+  const optional = value.find(f => f.type === TimelineStepType.optional);
+  const empty = value.find(f => f.type === TimelineStepType.empty);
+  const baseFacets = [
+    ...(optional?.facets ?? []),
+    ...(empty?.facets ?? []),
+  ];
+  baseFacets.forEach(f => optionsSet.add(formatFacetOption(f)));
+
+  // Also include selected and planned facets — even if not in optional
+  const selected = value.find(f => f.type === TimelineStepType.selected);
+  const planned = value.find(f => f.type === TimelineStepType.plan);
+  const activeFacets = [
+    ...(selected?.facets ?? []),
+    ...(planned?.facets ?? []),
+  ];
+  activeFacets.forEach(f => optionsSet.add(formatFacetOption(f)));
+
+  return Array.from(optionsSet);
 }
 
 const options: ComputedRef<(string | number)[] | undefined> = computed(() =>

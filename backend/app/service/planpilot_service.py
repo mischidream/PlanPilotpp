@@ -341,8 +341,6 @@ class PlanpilotService:
         }
     
     def get_refreshed_timeline(self):
-        print("Refresh")
-
         errors, facet_count = refresh_optionals_and_empties(self)
 
         return {
@@ -367,6 +365,32 @@ class PlanpilotService:
         except Exception as e:
             print(f"Error refreshing optional facet for timestep {timestep_number}: {e}")
             return None
+        
+    
+    def refresh_timestep_optional_facet(self, timestep_number: int):
+        # Refreshes the 'optional' facet for the given timestep and updates it in the timeline.
+        refreshed_facet = self.get_refreshed_optional_facet(timestep_number)
+        if refreshed_facet is None:
+            print(f"Failed to refresh optional facet for timestep {timestep_number}")
+            return None
+
+        with self.lock:
+            if self.timeline is None:
+                print("Timeline not initialized — cannot update optional facet.")
+                return None
+
+            timestep_facets = self.timeline[timestep_number - 1]
+
+            # Remove old optional facet from the list of facets
+            timestep_facets['facets'] = [
+                f for f in timestep_facets['facets'] if f.get("type") != "optional"
+            ]
+
+            # Add new optional facet
+            timestep_facets['facets'].append(refreshed_facet)
+            self.timeline[timestep_number - 1] = timestep_facets
+
+        return refreshed_facet
 
     def restart_FASB(self):
         print("Starting FASB temp with cached parameters...")

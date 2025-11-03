@@ -145,9 +145,10 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
 };
 
 const handleRefresh = async (timestepNumber: number)  => {
-  console.log("Refresh clicked for timestep:", timestepNumber + 1);
+  loading.value = true;
 
   const refreshedFacet = await refreshTimestep(timestepNumber + 1);
+  loading.value = false;
   if (!refreshedFacet) return;
 
   // Update the optional facet in the reactive timeline

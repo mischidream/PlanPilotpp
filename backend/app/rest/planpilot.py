@@ -75,7 +75,7 @@ def refresh_optional_facet():
         except ValueError:
             return jsonify({"error": "'timestep' must be an integer"}), 400
 
-        refreshed_facet = planpilot_service.get_refreshed_optional_facet(timestep_number)
+        refreshed_facet = planpilot_service.refresh_timestep_optional_facet(timestep_number)
         if not refreshed_facet:
             return jsonify({"error": "No optional facet found for this timestep"}), 404
 
