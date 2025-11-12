@@ -265,7 +265,6 @@ class PlanpilotService:
 
         # Get updated facet count
         facetCount = calculate_facet_count(self)
-        print("new facet count: ", facetCount)
 
         # Return result
         return {

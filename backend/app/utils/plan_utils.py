@@ -519,12 +519,10 @@ def calculate_facet_count(self):
         # Count 'optional' only if it's the only outer facet
         if len(facets) == 1 and optional_facets:
             count += len(optional_facets[0].get("facets", [])) * 2
-            print("added optional: ", timestep)
 
         # Count all inner facets of 'empty' facets
         for f in empty_facets:
             count += len(f.get("facets", [])) * 2
-            print("added empty: ", timestep)
 
     return count
 
