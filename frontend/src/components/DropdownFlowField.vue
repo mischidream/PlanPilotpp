@@ -3,18 +3,16 @@
     <label v-if="props.id !== undefined" class="label-with-icon">
       Timestep: {{ props.id + 1 }}
       <div class="tooltip-wrapper">
-        <span
-          class="material-icons refresh-icon"
-          @click.stop="handleRefresh"
-        >
-          refresh
-        </span>
+        <span class="material-icons refresh-icon" @click.stop="handleRefresh"> refresh </span>
         <span class="tooltip-text">Refresh timestep</span>
       </div>
     </label>
 
-    <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled:
-      disabled }]">
+    <div
+      class="dropdown-input"
+      @click="toggleDropdown"
+      :class="[highlight, { disabled: disabled }]"
+    >
       <span>
         {{ selectedItemsPreview }}
       </span>
@@ -79,10 +77,9 @@ const props = defineProps({
 const dropdownRef = ref<HTMLElement | null>(null);
 
 const emit = defineEmits<{
-  (e: "update", value: string[]): void
-  (e: "refresh", timestep?: number): void
-}>()
-
+  (e: 'update', value: string[]): void;
+  (e: 'refresh', timestep?: number): void;
+}>();
 
 const isOpen = ref(false);
 const searchQuery = ref('');
@@ -95,11 +92,6 @@ const toggleDropdown = () => {
   }
 };
 
-/* const selectedValues = computed({
-  get: () => props.modelValue,
-  set: val => emit('update:modelValue', val),
-}); */
-
 const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
   if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
   if (facets.some(f => f.type === TimelineStepType.plan)) return 'purple';
@@ -108,7 +100,7 @@ const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => 
 
 const highlight: ComputedRef<'purple' | 'blue' | null> = computed(() =>
   getHighlightType(props.facets ?? [])
-)
+);
 
 const isDisabled = (facets: TimelineFacet[]): boolean => {
   const hasImplied = facets.some(f => f.type === TimelineStepType.implied);
@@ -116,9 +108,7 @@ const isDisabled = (facets: TimelineFacet[]): boolean => {
   const hasSelected = facets.some(f => f.type === TimelineStepType.selected);
   return hasImplied && !hasPlan && !hasSelected;
 };
-const disabled: ComputedRef<boolean> = computed(() =>
-  isDisabled(props.facets ?? [])
-)
+const disabled: ComputedRef<boolean> = computed(() => isDisabled(props.facets ?? []));
 
 function getOptions(value: TimelineFacet[]): (string | number)[] {
   const optionsSet = new Set<string | number>();
@@ -126,19 +116,13 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
   // Add all optional or empty facets (the base list)
   const optional = value.find(f => f.type === TimelineStepType.optional);
   const empty = value.find(f => f.type === TimelineStepType.empty);
-  const baseFacets = [
-    ...(optional?.facets ?? []),
-    ...(empty?.facets ?? []),
-  ];
+  const baseFacets = [...(optional?.facets ?? []), ...(empty?.facets ?? [])];
   baseFacets.forEach(f => optionsSet.add(formatFacetOption(f)));
 
   // Also include selected and planned facets — even if not in optional
   const selected = value.find(f => f.type === TimelineStepType.selected);
   const planned = value.find(f => f.type === TimelineStepType.plan);
-  const activeFacets = [
-    ...(selected?.facets ?? []),
-    ...(planned?.facets ?? []),
-  ];
+  const activeFacets = [...(selected?.facets ?? []), ...(planned?.facets ?? [])];
   activeFacets.forEach(f => optionsSet.add(formatFacetOption(f)));
 
   return Array.from(optionsSet);
@@ -146,14 +130,12 @@ function getOptions(value: TimelineFacet[]): (string | number)[] {
 
 const options: ComputedRef<(string | number)[] | undefined> = computed(() =>
   getOptions(props.facets ?? [])
-)
+);
 
 const selectedValuesMap = computed(() => {
   const map: Record<string | number, 'add' | 'remove' | null> = {};
   options.value?.forEach(option => {
-    const match = props.modelValue.find(
-      (entry: MultiSelectState) => entry.option === option
-    );
+    const match = props.modelValue.find((entry: MultiSelectState) => entry.option === option);
     map[option] = match?.state ?? null;
   });
   return map;
@@ -161,15 +143,17 @@ const selectedValuesMap = computed(() => {
 
 // checks if facet is either selected or planned (which both means that it was activated
 // and on click should be deactivated
-function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[]):
-'add' | 'remove' | 'none' {
+function checkSelectedStatus(
+  facetName: String,
+  timelineFacets: TimelineFacet[]
+): 'add' | 'remove' | 'none' {
   const impliedFacets = timelineFacets.find(f => f.type === TimelineStepType.implied);
   const selectedFacets = timelineFacets.find(f => f.type === TimelineStepType.selected);
   const plannedFacets = timelineFacets.find(f => f.type === TimelineStepType.plan);
   const allFacets: Facet[] = [
     ...(impliedFacets?.facets ?? []),
     ...(selectedFacets?.facets ?? []),
-    ...(plannedFacets?.facets ?? [])
+    ...(plannedFacets?.facets ?? []),
   ];
   for (const facet of allFacets) {
     if (facetName === formatFacetOption(facet)) {
@@ -178,7 +162,7 @@ function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[])
         else if (facet.selectionState === '-') return 'remove';
         else return 'none';
       } else {
-        console.error("No selection state for an facet");
+        console.error('No selection state for an facet');
       }
     }
   }
@@ -189,16 +173,13 @@ function checkSelectedStatus(facetName: String, timelineFacets: TimelineFacet[])
 function getFacetId(facetName: String, timelineFacets: TimelineFacet[]): string {
   const optionalFacets = timelineFacets.find(f => f.type === TimelineStepType.optional);
   const emptyFacets = timelineFacets.find(f => f.type === TimelineStepType.empty);
-  const allFacets: Facet[] = [
-    ...(emptyFacets?.facets ?? []),
-    ...(optionalFacets?.facets ?? [])
-  ];
+  const allFacets: Facet[] = [...(emptyFacets?.facets ?? []), ...(optionalFacets?.facets ?? [])];
   for (const facet of allFacets) {
     if (facetName === formatFacetOption(facet)) {
       return facet.id;
     }
   }
-  throw Error("No facet with this facet name.");
+  throw Error('No facet with this facet name.');
 }
 
 const setState = (option: string, state: 'add' | 'remove') => {
@@ -207,7 +188,8 @@ const setState = (option: string, state: 'add' | 'remove') => {
   const emits: string[] = [];
   const facetId: string = getFacetId(option, props.facets ?? []);
   if (selectedStatus === 'add') {
-    if (state === 'add') { // was already added so the add should now be unselected
+    if (state === 'add') {
+      // was already added so the add should now be unselected
       emits.push(`- ${facetId}`);
     } else {
       // emits.push(`- ${facetId}`, `+ ~${facetId}`);
@@ -220,7 +202,8 @@ const setState = (option: string, state: 'add' | 'remove') => {
       // emits.push(`- ~${facetId}`, `+ ${facetId}`);
       emits.push(`+ ${facetId}`);
     }
-  } else { // not selected at all
+  } else {
+    // not selected at all
     if (state === 'add') {
       emits.push(`+ ${facetId}`);
     } else {
@@ -230,24 +213,12 @@ const setState = (option: string, state: 'add' | 'remove') => {
   emit('update', emits);
 };
 
-/* const toggleSelection = (option: string | number) => {
-  if (disabled.value) return;
-  const index = selectedValues.value.indexOf(option);
-  if (index === -1) {
-    selectedValues.value.push(option);
-  } else {
-    selectedValues.value.splice(index, 1);
-  }
-}; */
-
-
 const filteredOptions = computed(() => {
   const lowerSearch = searchQuery.value.toLowerCase();
 
   // Filter options by search query
-  const filtered = options.value?.filter(option =>
-    String(option).toLowerCase().includes(lowerSearch)
-  ) ?? [];
+  const filtered =
+    options.value?.filter(option => String(option).toLowerCase().includes(lowerSearch)) ?? [];
 
   const selectedSet = new Set<string | number>();
 
@@ -425,7 +396,9 @@ onUnmounted(() => {
   font-size: 0.9rem;
   opacity: 0.7;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   vertical-align: middle;
   color: var(--black-mute);
 }
@@ -460,6 +433,4 @@ onUnmounted(() => {
   visibility: visible;
   opacity: 1;
 }
-
 </style>
-

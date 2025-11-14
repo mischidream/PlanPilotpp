@@ -11,7 +11,7 @@ export function getSelectedValueFromTimeline(
   const validTypes = new Set([
     TimelineStepType.selected,
     TimelineStepType.implied,
-    TimelineStepType.plan
+    TimelineStepType.plan,
   ]);
 
   const result: MultiSelectState[] = [];
@@ -22,12 +22,16 @@ export function getSelectedValueFromTimeline(
     if (!validTypes.has(group.type)) continue;
 
     for (const facet of group.facets ?? []) {
-      if (facet.selectionState !== SelectionState.Positive && facet.selectionState !== SelectionState.Negative) continue;
+      if (
+        facet.selectionState !== SelectionState.Positive &&
+        facet.selectionState !== SelectionState.Negative
+      )
+        continue;
 
       const option = formatFacetOption(facet);
       if (seenOptions.has(option)) continue;
 
-      const state = facet.selectionState === SelectionState.Positive ? "add" : "remove";
+      const state = facet.selectionState === SelectionState.Positive ? 'add' : 'remove';
       result.push({ option, state });
       seenOptions.add(option);
     }

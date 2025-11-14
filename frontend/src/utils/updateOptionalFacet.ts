@@ -1,5 +1,5 @@
-import type { TimelineFacet } from "@/models/TimelineFacet";
-import type { TimelineStep } from "@/models/TimelineStep";
+import type { TimelineFacet } from '@/models/TimelineFacet';
+import type { TimelineStep } from '@/models/TimelineStep';
 
 export function updateOptionalFacet(
   timeline: TimelineStep[],

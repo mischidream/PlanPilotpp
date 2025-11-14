@@ -66,9 +66,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  (e: "update:commands", payload: { commands: string[], timestepNumber: number}): void;
-  (e: "refresh", timestepNumber: number): void;
-}>()
+  (e: 'update:commands', payload: { commands: string[]; timestepNumber: number }): void;
+  (e: 'refresh', timestepNumber: number): void;
+}>();
 
 // Refs
 const dropdownRefs = ref<(HTMLElement | null)[]>([]);
@@ -83,41 +83,6 @@ function emitRefresh(timestepNumber?: number) {
   if (timestepNumber === undefined) return;
   emit('refresh', timestepNumber);
 }
-
-
-/* 
-
-const getHighlightType = (facets: TimelineFacet[]): 'purple' | 'blue' | null => {
-  if (facets.some(f => f.type === TimelineStepType.selected)) return 'blue';
-  if (facets.some(f => f.type === TimelineStepType.plan)) return 'purple';
-  return null;
-};
-
-const isDisabled = (facets: TimelineFacet[]): boolean => {
-  const hasImplied = facets.some(f => f.type === TimelineStepType.implied);
-  const hasPlan = facets.some(f => f.type === TimelineStepType.plan);
-  const hasSelected = facets.some(f => f.type === TimelineStepType.selected);
-  return hasImplied && !hasPlan && !hasSelected;
-};
-
-function getOptions(value: TimelineFacet[]): (string | number)[] | undefined {
-  if (
-    value.some(f => f.type === TimelineStepType.plan) ||
-    value.some(f => f.type === TimelineStepType.selected)
-  ) {
-    const optional = value.find(f => f.type === TimelineStepType.optional);
-    if (Array.isArray(optional?.facets)) {
-      return optional.facets.map(formatFacetOption);
-    }
-  } else if (value.some(f => f.type === TimelineStepType.empty)) {
-    const empty = value.find(f => f.type === TimelineStepType.empty);
-    if (Array.isArray(empty?.facets)) {
-      return empty.facets.map(formatFacetOption);
-    }
-  }
-
-  return undefined;
-} */
 
 function setRef(el: Element | ComponentPublicInstance | null, index: number) {
   dropdownRefs.value[index] =

@@ -3,7 +3,12 @@
     <div class="layout-main">
       <div class="main-content">
         <div class="input-fields">
-          <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
+          <InputField
+            label="Problem file:"
+            :modelValue="instanceFile"
+            type="file"
+            :disabled="true"
+          />
           <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
           <InputField
             label="Horizon:"
@@ -32,7 +37,11 @@
           </div>
           <Button label="Number of Solutions" type="button" @click="countSolutions"></Button>
           <Button label="Number of Facets" type="button" @click="countFacets"></Button>
-          <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
+          <Button
+            label="Query Remaining Facets"
+            type="button"
+            @click="queryRemainingFacets"
+          ></Button>
           <Button
             label="Query Remaining Solutions"
             type="button"

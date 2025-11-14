@@ -2,7 +2,11 @@
   <div class="input-wrapper" ref="dropdownRef">
     <label :for="inputId">{{ label }}</label>
 
-    <div class="dropdown-input" @click="toggleDropdown" :class="[highlight, { disabled: props.disabled }]">
+    <div
+      class="dropdown-input"
+      @click="toggleDropdown"
+      :class="[highlight, { disabled: props.disabled }]"
+    >
       <span>
         {{ selectedItemsPreview }}
       </span>
@@ -103,7 +107,7 @@ const props = defineProps({
   highlight: {
     type: String as PropType<'blue' | 'purple' | 'green' | null>,
     default: null,
-  }
+  },
 });
 
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -157,7 +161,7 @@ const setState = (option: string | number, state: 'add' | 'remove') => {
       !isMultiSelectState(entry) || entry.option !== option
   );
   // Additionally, if state is "add", remove any previous "add" state
-/*   if (state === 'add') {
+  /*   if (state === 'add') {
     updated = updated.filter(
       (entry): entry is string | number | MultiSelectState =>
         !(isMultiSelectState(entry) && entry.state === 'add')
@@ -169,7 +173,7 @@ const setState = (option: string | number, state: 'add' | 'remove') => {
     updated.push({ option, state });
     emit('update:modelValue', updated);
   }
-/*   updated.push({ option, state });
+  /*   updated.push({ option, state });
   emit('update:modelValue', updated); */
 };
 

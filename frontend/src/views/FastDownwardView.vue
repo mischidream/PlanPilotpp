@@ -34,13 +34,7 @@
         <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
       </div>
 
-      <SkeletonFacetRow
-        class="skeleton"
-        v-if="loading"
-        v-for="i in 3"
-        :key="i"
-        viewMode="facets"
-      />
+      <SkeletonFacetRow class="skeleton" v-if="loading" v-for="i in 3" :key="i" viewMode="facets" />
       <DropdownFlow
         v-else
         :timeline="timeline"
@@ -82,7 +76,6 @@ import { computed, ref, watch } from 'vue';
 import type { TimelineStep } from '@/models/TimelineStep';
 import type { MultiSelectState } from '@/models/MultiSelectState';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
-import { handleSelectedValuesChange } from '@/composables/useSelectedValuesHandler';
 import ColorLegend from '@/components/ColorLegend.vue';
 import type { Facet } from '@/models/Facet';
 import { updatePlan } from '@/services/apiService';
@@ -126,7 +119,10 @@ bindWatch(selectedValues, planStore.setSelectedValues, { deep: true });
 bindWatch(facetCount, planStore.setFacetCount);
 bindWatch(bestPlan, planStore.setBestPlan);
 
-const handleDropdownFlowChanges = async (payload: { commands: string[], timestepNumber: number }) => {
+const handleDropdownFlowChanges = async (payload: {
+  commands: string[];
+  timestepNumber: number;
+}) => {
   loading.value = true;
   const result = await updatePlan(payload.timestepNumber + 1, payload.commands);
 
@@ -145,7 +141,7 @@ const handleDropdownFlowChanges = async (payload: { commands: string[], timestep
   loading.value = false;
 };
 
-const handleRefresh = async (timestepNumber: number)  => {
+const handleRefresh = async (timestepNumber: number) => {
   loading.value = true;
 
   const result = await refreshTimestep(timestepNumber + 1);
@@ -161,23 +157,7 @@ const handleRefresh = async (timestepNumber: number)  => {
   if (newFacetCount !== undefined) {
     facetCount.value = newFacetCount;
   }
-}
-
-/* 
-watch(
-  selectedValues,
-  async (newVal, oldVal) => {
-    console.log("newVal, oldVal: ", newVal, oldVal);
-    // TODO: If I select more then one it does not do anything right now
-    if (isUpdating.value) {
-      isUpdating.value = false;
-      return;
-    }
-
-    await handleSelectedValuesChange(newVal, oldVal, selectedValues, timeline, loading, isUpdating, facetCount);
-  },
-  { deep: true }
-); */
+};
 
 const start = async () => {
   loading.value = true;
@@ -240,18 +220,15 @@ const refresh = async () => {
     if (result.facetCount !== undefined) {
       facetCount.value = result.facetCount;
     }
-
   } catch (err) {
     console.error('Error refreshing timeline:', err);
   } finally {
     loading.value = false;
   }
 };
-
 </script>
 
 <style scoped>
-
 .main-layout {
   display: flex;
   flex-direction: row;

@@ -1,27 +1,25 @@
 <template>
-<div class="legend">
-  <div class="legend-item">
-    <span class="legend-swatch purple"></span>
-    <span>Preselection*</span>
+  <div class="legend">
+    <div class="legend-item">
+      <span class="legend-swatch purple"></span>
+      <span>Preselection*</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch blue"></span>
+      <span>Self selected</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch white"></span>
+      <span>Empty (To select)</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-swatch gray"></span>
+      <span>Implied (disabled)</span>
+    </div>
   </div>
-  <div class="legend-item">
-    <span class="legend-swatch blue"></span>
-    <span>Self selected</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-swatch white"></span>
-    <span>Empty (To select)</span>
-  </div>
-  <div class="legend-item">
-    <span class="legend-swatch gray"></span>
-    <span>Implied (disabled)</span>
-  </div>
-</div>
 </template>
 
-<script setup lang="ts">
-
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
 .legend {
