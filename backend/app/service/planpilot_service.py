@@ -181,9 +181,11 @@ class PlanpilotService:
         global_implied_ids = set()
         activated_plan_ids = set()
 
-        errors.append(fetch_and_add_implied_facets(
-                    self, timeline, global_implied_ids, 'plan', self.horizon
-                ))
+        errors.append(
+            fetch_and_add_implied_facets(
+                self, timeline, global_implied_ids, "plan", self.horizon
+            )
+        )
 
         for t in range(1, self.horizon + 1):
             step = timeline[t - 1]["facets"]
@@ -205,13 +207,15 @@ class PlanpilotService:
                     except Exception as e:
                         errors.append({"action": cmd_str, "error": str(e)})
 
-                errors.append(fetch_and_add_implied_facets(
-                    self, timeline, global_implied_ids, facet_id, self.horizon
-                ))
+                errors.append(
+                    fetch_and_add_implied_facets(
+                        self, timeline, global_implied_ids, facet_id, self.horizon
+                    )
+                )
 
             if not any(f["type"] in ("plan", "implied") for f in step):
                 errors.extend(fetch_and_add_empty_facets(self, timeline, t))
-            
+
             # If the step contains only implied facets, add them again as optional (since fast_update_plan does not update it anymore)
             elif all(f["type"] == "implied" for f in step):
                 try:
@@ -226,7 +230,13 @@ class PlanpilotService:
                     else:
                         errors.extend(fetch_and_add_empty_facets(self, timeline, t))
                 except Exception as e:
-                    errors.append({"type": "readd-implied-as-optional", "timestep": t, "error": str(e)})
+                    errors.append(
+                        {
+                            "type": "readd-implied-as-optional",
+                            "timestep": t,
+                            "error": str(e),
+                        }
+                    )
 
         self.timeline = timeline
 
@@ -278,10 +288,12 @@ class PlanpilotService:
 
         if not hasattr(self, "timeline") or not hasattr(self, "horizon"):
             raise RuntimeError("Timeline or horizon not initialized in service.")
-        
-        saved_steps, global_implied_ids, activated_plan_ids, error_prepare = prepare_timeline_for_update(self, changed_timestep)
+
+        saved_steps, global_implied_ids, activated_plan_ids, error_prepare = (
+            prepare_timeline_for_update(self, changed_timestep)
+        )
         errors.extend(error_prepare)
-        
+
         command = commands[0]
         t = changed_timestep
 
@@ -327,7 +339,7 @@ class PlanpilotService:
                 if "id" in f
             }
             errors.extend(fetch_and_add_empty_facets(self, self.timeline, t, used_ids))
-        
+
         facetCount = self.send_command("#?")
 
         return {
@@ -335,7 +347,7 @@ class PlanpilotService:
             "errors": errors,
             "facetCount": facetCount,
         }
-    
+
     def get_refreshed_timeline(self):
         errors, facet_count = refresh_optionals_and_empties(self)
 
@@ -344,7 +356,7 @@ class PlanpilotService:
             "errors": errors,
             "facetCount": facet_count,
         }
-    
+
     def get_refreshed_optional_facet(self, timestep_number: int):
         command = f"? {timestep_number}"  # query actions at this timestep
         try:
@@ -359,10 +371,11 @@ class PlanpilotService:
             return timeline_facet
 
         except Exception as e:
-            print(f"Error refreshing optional facet for timestep {timestep_number}: {e}")
+            print(
+                f"Error refreshing optional facet for timestep {timestep_number}: {e}"
+            )
             return None
-        
-    
+
     def refresh_timestep_optional_facet(self, timestep_number: int):
         # Refreshes the 'optional' facet for the given timestep and updates it in the timeline.
         refreshed_facet = self.get_refreshed_optional_facet(timestep_number)
@@ -378,12 +391,12 @@ class PlanpilotService:
             timestep_facets = self.timeline[timestep_number - 1]
 
             # Remove old optional facet from the list of facets
-            timestep_facets['facets'] = [
-                f for f in timestep_facets['facets'] if f.get("type") != "optional"
+            timestep_facets["facets"] = [
+                f for f in timestep_facets["facets"] if f.get("type") != "optional"
             ]
 
             # Add new optional facet
-            timestep_facets['facets'].append(refreshed_facet)
+            timestep_facets["facets"].append(refreshed_facet)
             self.timeline[timestep_number - 1] = timestep_facets
 
             # Calculate facet count
@@ -409,7 +422,9 @@ class PlanpilotService:
             raise RuntimeError("Cannot restart solver: missing cached metadata.")
 
         current_directory = os.getcwd()
-        lp_file_path = os.path.join(current_directory, "temp", self.last_hash_value, "output.lp")
+        lp_file_path = os.path.join(
+            current_directory, "temp", self.last_hash_value, "output.lp"
+        )
         os.makedirs(os.path.dirname(lp_file_path), exist_ok=True)
 
         self._generate_lp_with_plasp(
@@ -420,12 +435,11 @@ class PlanpilotService:
             is_pddl_instance=False,
         )
 
-         # Kill old process if it exists
+        # Kill old process if it exists
         if self.process:
             self._terminate_process(self.process)
             self.process = None
             self.output_buffer = []
-
 
         fasb_binary = os.path.join(
             current_directory,
@@ -437,10 +451,12 @@ class PlanpilotService:
         )
 
         fasb_command = [
-            "stdbuf", "-oL",
+            "stdbuf",
+            "-oL",
             fasb_binary,
             lp_file_path,
-            "-c", f"horizon={self.horizon}",
+            "-c",
+            f"horizon={self.horizon}",
             "0",
         ]
 

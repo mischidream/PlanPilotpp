@@ -22,7 +22,7 @@ def parse_facet_output(output: str, command: str) -> List[Dict]:
             "selectionState": "Not selected",
         }
 
-    if command.startswith(("?","|= %", "+", "-")):
+    if command.startswith(("?", "|= %", "+", "-")):
         facets = []
         pattern = r"(occurs(?:_sometime)?\(action\(\(([^)]+)\)\)(?:,(\d+))?\))"
         matches = re.findall(pattern, output)
@@ -105,6 +105,7 @@ def parse_solution_output(output: str) -> List[Dict]:
 
     return solutions
 
+
 def extract_plan_actions(plan_file_path: str) -> List[Dict]:
     actions = []
     timestep = 1
@@ -115,7 +116,7 @@ def extract_plan_actions(plan_file_path: str) -> List[Dict]:
                 if line.startswith("(") and line.endswith(")"):
                     parts = line[1:-1].lower().split()
                     action_str = ",".join(f'"{p}"' for p in parts)
-                    formatted = f'occurs(action(({action_str})),{timestep})'
+                    formatted = f"occurs(action(({action_str})),{timestep})"
                     actions.append(formatted)
                     timestep += 1
     return parse_facet_output(" ".join(actions).strip(), "?")

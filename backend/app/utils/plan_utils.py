@@ -6,19 +6,21 @@ def clear_timeline_from_timestep(timeline, start_timestep):
     for t in range(start_timestep - 1, len(timeline)):
         timeline[t]["facets"] = []
 
+
 def clear_all_but_implied_from_timestep(timeline, start_timestep):
     for t in range(start_timestep, len(timeline) + 1):
         step = timeline[t - 1]
         step["facets"] = [
-            block for block in step.get("facets", [])
-            if block.get("type") == "implied"
+            block for block in step.get("facets", []) if block.get("type") == "implied"
         ]
+
 
 def add_facet_to_timestep(timeline, timestep, facet_type, facets, caused_by=None):
     entry = {"type": facet_type, "facets": facets}
     if caused_by:
         entry["causedBy"] = caused_by
     timeline[timestep - 1]["facets"].append(entry)
+
 
 def fetch_and_add_optional_facets(service, timeline, timestep):
     try:
@@ -28,6 +30,7 @@ def fetch_and_add_optional_facets(service, timeline, timestep):
         return []
     except Exception as e:
         return [{"type": "optional-fetch", "timestep": timestep, "error": str(e)}]
+
 
 def fetch_and_add_empty_facets(service, timeline, timestep, used_facet_ids=None):
     try:
@@ -40,11 +43,14 @@ def fetch_and_add_empty_facets(service, timeline, timestep, used_facet_ids=None)
         return []
     except Exception as e:
         return [{"type": "open-fetch", "timestep": timestep, "error": str(e)}]
-    
+
+
 def fetch_and_replace_empty_facets(service, timeline, timestep):
     step = timeline[timestep - 1]
 
-    if any(f.get("type") in ("plan", "implied", "selected") for f in step.get("facets", [])):
+    if any(
+        f.get("type") in ("plan", "implied", "selected") for f in step.get("facets", [])
+    ):
         return []
 
     try:
@@ -68,7 +74,10 @@ def fetch_and_replace_empty_facets(service, timeline, timestep):
     except Exception as e:
         return [{"type": "empty-fetch", "timestep": timestep, "error": str(e)}]
 
-def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_facet_id, horizon):
+
+def fetch_and_add_implied_facets(
+    service, timeline, global_implied_ids, base_facet_id, horizon
+):
     errors = []
     try:
         implied = service.send_command("|= %")
@@ -95,11 +104,9 @@ def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_fac
             if not found:
                 f["selectionState"] = "+"
                 # Add a new implied facet entry
-                timeline[ts - 1]["facets"].append({
-                    "type": "implied",
-                    "facets": [f],
-                    "impliedBy": [base_facet_id]
-                })
+                timeline[ts - 1]["facets"].append(
+                    {"type": "implied", "facets": [f], "impliedBy": [base_facet_id]}
+                )
 
             # Track it globally regardless of duplication or activation
             global_implied_ids.add(implied_id)
@@ -108,6 +115,7 @@ def fetch_and_add_implied_facets(service, timeline, global_implied_ids, base_fac
         errors.append({"type": "implied-fetch", "error": str(e)})
 
     return errors
+
 
 def undo_facets(service, step_data, timeline):
     errors = []
@@ -135,7 +143,9 @@ def undo_facets(service, step_data, timeline):
                                 blocks_to_remove = []
                                 for implied_block in timestep.get("facets", []):
                                     if implied_block.get("type") == "implied":
-                                        if facet_id in implied_block.get("impliedBy", []):
+                                        if facet_id in implied_block.get(
+                                            "impliedBy", []
+                                        ):
                                             implied_block["impliedBy"].remove(facet_id)
 
                                             # If impliedBy is now empty, mark this block for removal
@@ -147,11 +157,13 @@ def undo_facets(service, step_data, timeline):
                                     timestep["facets"].remove(block_to_remove)
 
                         except Exception as e:
-                            errors.append({
-                                "undo-error": f"- {facet_id}",
-                                "error": str(e),
-                                "timestep": step["timestep"]
-                            })
+                            errors.append(
+                                {
+                                    "undo-error": f"- {facet_id}",
+                                    "error": str(e),
+                                    "timestep": step["timestep"],
+                                }
+                            )
 
     return errors
 
@@ -175,19 +187,19 @@ def getAllImpliedAndActivatedIds(timeline):
                     activated_plan_ids.add(facet_id)
     return global_implied_ids, activated_plan_ids
 
+
 def prepare_timeline_for_update(service, changed_timestep):
     # Save current facets for every step from the change point onward
     saved_steps = []
     for t in range(changed_timestep, service.horizon + 1):
         step = service.timeline[t - 1]
-        saved_steps.append({
-            "timestep": t,
-            "facets": step.get("facets", [])
-        })
+        saved_steps.append({"timestep": t, "facets": step.get("facets", [])})
 
     # Clear timeline steps
     clear_all_but_implied_from_timestep(service.timeline, changed_timestep)
-    global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(service.timeline)
+    global_implied_ids, activated_plan_ids = getAllImpliedAndActivatedIds(
+        service.timeline
+    )
     # Undo all existing facet activations
     errors = undo_facets(service, reversed(saved_steps), service.timeline)
     return saved_steps, global_implied_ids, activated_plan_ids, errors
@@ -214,7 +226,9 @@ def apply_user_command(service, t, command, global_implied_ids):
         # Only fetch optionals if the timestep still has other facets
         if non_removed_facets_exist:
             try:
-                errors.extend(fetch_and_add_optional_facets(service, service.timeline, t))
+                errors.extend(
+                    fetch_and_add_optional_facets(service, service.timeline, t)
+                )
             except Exception as e:
                 errors.append({"command-error": command, "error": str(e)})
     else:
@@ -229,27 +243,37 @@ def apply_user_command(service, t, command, global_implied_ids):
                     facet["selectionState"] = "+"
             add_facet_to_timestep(service.timeline, t, "selected", parsed_facets)
 
-            errors.extend(fetch_and_add_implied_facets(
-                            service,
-                            service.timeline,
-                            global_implied_ids,
-                            clean_cmd,
-                            service.horizon
-                        ))
+            errors.extend(
+                fetch_and_add_implied_facets(
+                    service,
+                    service.timeline,
+                    global_implied_ids,
+                    clean_cmd,
+                    service.horizon,
+                )
+            )
         except Exception as e:
             errors.append({"command-error": command, "error": str(e)})
     return errors
+
 
 def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied_ids):
     errors = []
     reactivated_any = False
 
     for block in step_data.get("facets", []):
-        if block.get("type") in ("selected", "plan"):  # Consider including "implied" if needed
+        if block.get("type") in (
+            "selected",
+            "plan",
+        ):  # Consider including "implied" if needed
             for facet in block.get("facets", []):
                 facet_id = facet.get("id")
                 selection_state = facet.get("selectionState", "Not selected")
-                if facet_id and facet_id in optional_ids and selection_state != "Not selected":
+                if (
+                    facet_id
+                    and facet_id in optional_ids
+                    and selection_state != "Not selected"
+                ):
                     if selection_state == "+":
                         cmd = f"+ {facet_id}"
                     elif selection_state == "-":
@@ -260,24 +284,30 @@ def reactivate_facets_from_step(self, t, step_data, optional_ids, global_implied
                         self.send_command(cmd, no_Output=True)
                         reactivated_any = True
 
-                        add_facet_to_timestep(self.timeline, t, block.get("type"), [facet])
+                        add_facet_to_timestep(
+                            self.timeline, t, block.get("type"), [facet]
+                        )
 
                         # TODO: Maybe need to update all implied ones? Does not do it correctly right now
-                        errors.extend(fetch_and_add_implied_facets(
-                            self,
-                            self.timeline,
-                            global_implied_ids,
-                            facet_id,
-                            self.horizon
-                        ))
+                        errors.extend(
+                            fetch_and_add_implied_facets(
+                                self,
+                                self.timeline,
+                                global_implied_ids,
+                                facet_id,
+                                self.horizon,
+                            )
+                        )
                     except Exception as e:
-                        errors.append({"reactivate-error": f"{facet_id}", "error": str(e)})
+                        errors.append(
+                            {"reactivate-error": f"{facet_id}", "error": str(e)}
+                        )
 
     return errors, reactivated_any
 
 
-
 ###########################################################################################################
+
 
 def fast_apply_user_command(self, command: str, t: int, errors: list):
     stripped = command.strip()
@@ -292,7 +322,7 @@ def fast_apply_user_command(self, command: str, t: int, errors: list):
     if is_remove:
         handle_remove_command(self, command, t, clean_id, errors)
         return
-    
+
     # Case 2: Add (+ or +~)
     new_state = "-" if is_negative_add else "+"
 
@@ -318,6 +348,7 @@ def fast_apply_user_command(self, command: str, t: int, errors: list):
     except Exception as e:
         errors.append({"parse-error": command, "error": str(e)})
 
+
 def handle_remove_command(self, command: str, t: int, clean_id: str, errors: list):
     try:
         self.send_command(command, no_Output=True)
@@ -340,7 +371,10 @@ def handle_remove_command(self, command: str, t: int, clean_id: str, errors: lis
     # Remove implieds caused by this facet
     cleanup_implied_by(self, clean_id)
 
-def handle_conflicting_selection(self, t: int, clean_id: str, new_state: str, errors: list):
+
+def handle_conflicting_selection(
+    self, t: int, clean_id: str, new_state: str, errors: list
+):
     # If the same facet id already exists in the current timestep with a different selectionState,
     # undo it before applying the new command
     step = self.timeline[t - 1]
@@ -362,13 +396,12 @@ def handle_conflicting_selection(self, t: int, clean_id: str, new_state: str, er
                         if not block["facets"]:
                             step["facets"].remove(block)
                     except Exception as e:
-                        errors.append({
-                            "undo-error": undo_cmd,
-                            "error": str(e),
-                            "timestep": t
-                        })
+                        errors.append(
+                            {"undo-error": undo_cmd, "error": str(e), "timestep": t}
+                        )
                 return
-            
+
+
 def handle_existing_positive_selection(self, t: int, new_id: str, errors: list):
     # If a '+' facet already exists in timestep t, undo it and remove it locally
     # This allows replacing the old '+' with a new '+' in one step
@@ -393,14 +426,13 @@ def handle_existing_positive_selection(self, t: int, new_id: str, errors: list):
                         step["facets"].remove(block)
                     cleanup_implied_by(self, old_id)
                 except Exception as e:
-                    errors.append({
-                        "undo-error": undo_cmd,
-                        "error": str(e),
-                        "timestep": t
-                    })
+                    errors.append(
+                        {"undo-error": undo_cmd, "error": str(e), "timestep": t}
+                    )
 
                 # Only one '+' allowed, so we stop after removing it
                 return
+
 
 def cleanup_implied_by(self, facet_id: str):
     for step in self.timeline:
@@ -430,6 +462,7 @@ def fetch_removed_facets(self, errors: list):
         errors.append({"type": "removed-fetch", "error": str(e)})
         return []
 
+
 def add_implied_facets(self, implied_facets, base_facet_id: str, errors: list):
     # Add new implied facets to the timeline
     # Avoid duplicates and maintain impliedBy
@@ -458,16 +491,15 @@ def add_implied_facets(self, implied_facets, base_facet_id: str, errors: list):
         if not found:
             # Add new implied facet
             f["selectionState"] = "+"
-            step["facets"].append({
-                "type": "implied",
-                "facets": [f],
-                "impliedBy": [base_facet_id]
-            })
+            step["facets"].append(
+                {"type": "implied", "facets": [f], "impliedBy": [base_facet_id]}
+            )
+
 
 def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: list):
     # Remove facets that are no longer selectable by iterating timeline from changed_timestep onward
     # This is more efficient than looping over the huge removed_facets list
-    
+
     # Build a set of removed ids for quick lookup
     removed_ids = {f.get("id") for f in removed_facets if f.get("id")}
 
@@ -490,12 +522,17 @@ def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: 
             }
 
             new_facets = [
-                f for f in old_facets
+                f
+                for f in old_facets
                 if f.get("id") not in removed_ids or f.get("id") in selected_ids
             ]
 
             if len(new_facets) < len(old_facets):
-                removed_now = [f.get("id") for f in old_facets if f.get("id") not in selected_ids and f.get("id") in removed_ids]
+                removed_now = [
+                    f.get("id")
+                    for f in old_facets
+                    if f.get("id") not in selected_ids and f.get("id") in removed_ids
+                ]
                 for f_id in removed_now:
                     errors.append({"removed": f_id, "timestep": t})
 
@@ -503,6 +540,7 @@ def remove_facets_from_timeline(self, removed_facets, changed_timestep, errors: 
 
             if not block["facets"]:
                 step["facets"].remove(block)
+
 
 def calculate_facet_count(self):
     if not hasattr(self, "timeline") or self.timeline is None:
@@ -525,6 +563,7 @@ def calculate_facet_count(self):
             count += len(f.get("facets", [])) * 2
 
     return count
+
 
 # ========================================================================
 
@@ -556,6 +595,7 @@ def refresh_optionals_and_empties(self):
             except Exception:
                 pass
 
+
 def rebuild_timeline_from_solver(self, old_timeline):
     # TODO: does always add twice the facets, does not work correctly for implied at beginning, shows plan ones as selected
     new_timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
@@ -574,9 +614,7 @@ def rebuild_timeline_from_solver(self, old_timeline):
 
         step = new_timeline[t - 1]["facets"]
 
-        errors.append(
-            fetch_and_add_optional_facets(self, new_timeline, t)
-        )
+        errors.append(fetch_and_add_optional_facets(self, new_timeline, t))
 
         old_step = old_timeline[t - 1]["facets"]
         for block in old_step:
@@ -606,10 +644,12 @@ def rebuild_timeline_from_solver(self, old_timeline):
                     errors.append({"action": cmd_str, "timestep": t, "error": str(e)})
 
                 # Recalculate implied facets for this facet
-                errors.append(fetch_and_add_implied_facets(
-                    self, new_timeline, global_implied_ids, fid, self.horizon
-                ))
-        
+                errors.append(
+                    fetch_and_add_implied_facets(
+                        self, new_timeline, global_implied_ids, fid, self.horizon
+                    )
+                )
+
         # Fill empty facets if no plan or implied facets exist
         if not any(f["type"] in ("plan", "selected", "implied") for f in step):
             errors.extend(fetch_and_add_empty_facets(self, new_timeline, t))
@@ -625,8 +665,12 @@ def rebuild_timeline_from_solver(self, old_timeline):
                 else:
                     errors.extend(fetch_and_add_empty_facets(self, new_timeline, t))
             except Exception as e:
-                errors.append({"type": "readd-implied-as-optional", "timestep": t, "error": str(e)})
+                errors.append(
+                    {
+                        "type": "readd-implied-as-optional",
+                        "timestep": t,
+                        "error": str(e),
+                    }
+                )
 
     return errors, new_timeline
-
-

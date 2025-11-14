@@ -24,7 +24,8 @@ def run_planpilot():
         return jsonify({"output": facets}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 @planpilot_bp.route("/activate-plan", methods=["POST"])
 def activate_plan():
     data = request.json
@@ -38,7 +39,8 @@ def activate_plan():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 @planpilot_bp.route("/update-plan", methods=["POST"])
 def update_plan():
     data = request.json
@@ -49,11 +51,14 @@ def update_plan():
         return jsonify({"error": "changedTimestep and commands are required"}), 400
 
     try:
-        result = planpilot_service.fast_update_plan_from_timestep(changed_timestep, commands)
+        result = planpilot_service.fast_update_plan_from_timestep(
+            changed_timestep, commands
+        )
 
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @planpilot_bp.route("/refresh-timeline", methods=["GET"])
 def refresh_timeline():
@@ -62,7 +67,8 @@ def refresh_timeline():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 @planpilot_bp.route("/refresh-optional-facet", methods=["GET"])
 def refresh_optional_facet():
     try:
@@ -75,13 +81,16 @@ def refresh_optional_facet():
         except ValueError:
             return jsonify({"error": "'timestep' must be an integer"}), 400
 
-        refreshed_answer = planpilot_service.refresh_timestep_optional_facet(timestep_number)
+        refreshed_answer = planpilot_service.refresh_timestep_optional_facet(
+            timestep_number
+        )
         if not refreshed_answer:
             return jsonify({"error": "No optional facet found for this timestep"}), 404
 
         return jsonify(refreshed_answer), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @planpilot_bp.route("/send-planpilot-command", methods=["POST"])
 def send_command():
