@@ -43,6 +43,11 @@
   --text: var(--text-dark-1); /* Dark text for normal content */
 
   --section-gap: 160px;
+
+  --light-blue-transparent: rgba(30, 136, 229, 0.4);
+  --deep-blue-transparent: rgba(21, 101, 192, 0.4);
+  --soft-purple-transparent: rgba(156, 39, 176, 0.4);
+  --teal-green-transparent: rgba(0, 121, 107, 0.4);
 }
 
 *,

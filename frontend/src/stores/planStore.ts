@@ -5,6 +5,9 @@ import type { Facet } from '@/models/Facet';
 import type { SelectionState } from '@/models/SelectionState';
 import { TimeStepType } from '@/models/TimeStepType';
 import { defineStore } from 'pinia';
+import type { MultiSelectState } from '@/models/MultiSelectState';
+import type { TimelineStep } from '@/models/TimelineStep';
+import { toRaw } from 'vue';
 
 export const usePlanStore = defineStore('plan', {
   state: () => ({
@@ -25,6 +28,10 @@ export const usePlanStore = defineStore('plan', {
     selectedObjects: [] as string[],
     selectedTimesteps: [] as string[],
     selectedSolution: null as Solution | null,
+    bestPlan: null as Facet[] | null,
+    timeline: [] as TimelineStep[],
+    selectedValues: [] as (MultiSelectState[] | null)[],
+    facetCount: null as number | null,
   }),
 
   actions: {
@@ -81,6 +88,33 @@ export const usePlanStore = defineStore('plan', {
     },
     setSelectedSolution(val: Solution) {
       this.selectedSolution = val;
+    },
+    setBestPlan(plan: Facet[] | null) {
+      this.bestPlan = plan;
+    },
+    setTimeline(timeline: TimelineStep[]) {
+      this.timeline = structuredClone(toRaw(timeline));
+    },
+    setSelectedValues(values: (MultiSelectState[] | null)[]) {
+      this.selectedValues = structuredClone(toRaw(values));
+    },
+    setFacetCount(count: number | null) {
+      this.facetCount = count;
+    },
+    reset() {
+      this.facets = [];
+      this.facets = [];
+      this.landmarks = [];
+      this.solutions = [];
+      this.selectedFacetState = [];
+      this.selectedActionType = [];
+      this.selectedObjects = [];
+      this.selectedTimesteps = [];
+      this.selectedSolution = null;
+      this.bestPlan = null;
+      this.timeline = [];
+      this.selectedValues = [];
+      this.facetCount = null;
     },
   },
   persist: true,

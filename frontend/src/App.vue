@@ -5,6 +5,8 @@
       <nav class="nav">
         <RouterLink to="/start" class="nav-link">Start</RouterLink>
         <div class="divider"></div>
+        <RouterLink to="/fastdownward" class="nav-link">Fast Downward</RouterLink>
+        <div class="divider"></div>
         <RouterLink to="/planpilot" class="nav-link">PlanPilot</RouterLink>
         <div class="divider"></div>
         <RouterLink to="/visualization" class="nav-link">Visualization</RouterLink>
@@ -62,6 +64,11 @@ import Header from './components/Header.vue';
 .nav-link:hover {
   color: var(--deep-blue);
   font-weight: bold;
+}
+
+.nav-link.router-link-active {
+  font-weight: bold;
+  color: var(--deep-blue);
 }
 
 .divider {

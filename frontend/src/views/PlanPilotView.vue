@@ -1,85 +1,97 @@
 <template>
   <div class="layout">
-    <div class="main-content">
-      <div class="input-fields">
-        <InputField label="Problem file:" :modelValue="instanceFile" type="file" :disabled="true" />
-        <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
-        <InputField
-          label="Horizon:"
-          v-model="horizon"
-          type="number"
-          :placeholder="minHorizon?.toString()"
-        />
-        <DropdownField
-          label="Encoding:"
-          :options="Object.values(EncodingType)"
-          v-model="encoding"
-          :isMultiple="false"
-        />
-        <DropdownField
-          label="Time Steps:"
-          :options="Object.values(TimeStepType)"
-          v-model="timeStep"
-          :isMultiple="false"
-        />
-        <Button label="List Facets" type="submit" @click="listFacets"></Button>
-      </div>
-      <div class="button-input">
-        <div class="button-input-group">
-          <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
-          <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
+    <div class="layout-main">
+      <div class="main-content">
+        <div class="input-fields">
+          <InputField
+            label="Problem file:"
+            :modelValue="instanceFile"
+            type="file"
+            :disabled="true"
+          />
+          <InputField label="Domain file:" :modelValue="domainFile" type="file" :disabled="true" />
+          <InputField
+            label="Horizon:"
+            v-model="horizon"
+            type="number"
+            :placeholder="minHorizon?.toString()"
+          />
+          <DropdownField
+            label="Encoding:"
+            :options="Object.values(EncodingType)"
+            v-model="encoding"
+            :isMultiple="false"
+          />
+          <DropdownField
+            label="Time Steps:"
+            :options="Object.values(TimeStepType)"
+            v-model="timeStep"
+            :isMultiple="false"
+          />
+          <Button label="List Facets" type="submit" @click="listFacets"></Button>
         </div>
-        <Button label="Number of Solutions" type="button" @click="countSolutions"></Button>
-        <Button label="Number of Facets" type="button" @click="countFacets"></Button>
-        <Button label="Query Remaining Facets" type="button" @click="queryRemainingFacets"></Button>
-        <Button
-          label="Query Remaining Solutions"
-          type="button"
-          @click="queryRemainingSolutions"
-        ></Button>
-        <div class="button-input-group">
-          <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
-          <InputField label="Restricted To:" v-model="landmarkAction" type="text" />
+        <div class="button-input">
+          <div class="button-input-group">
+            <Button label="List Solutions" type="submit" @click="listSolutions"></Button>
+            <InputField label="Restricted To:" v-model="numberOfSolutions" type="number" />
+          </div>
+          <Button label="Number of Solutions" type="button" @click="countSolutions"></Button>
+          <Button label="Number of Facets" type="button" @click="countFacets"></Button>
+          <Button
+            label="Query Remaining Facets"
+            type="button"
+            @click="queryRemainingFacets"
+          ></Button>
+          <Button
+            label="Query Remaining Solutions"
+            type="button"
+            @click="queryRemainingSolutions"
+          ></Button>
+          <div class="button-input-group">
+            <Button label="Implied Actions" type="submit" @click="listLandmarks"></Button>
+            <InputField label="Restricted To:" v-model="landmarkAction" type="text" />
+          </div>
         </div>
-      </div>
-      <FacetCountDisplay
-        :loadingSolutionCount="loadingSolutionCount"
-        :loadingFacetCount="loadingFacetCount"
-        :solutionCount="solutionCount"
-        :facetCount="facetCount"
-      />
-      <Divider />
-      <div v-if="viewMode === 'facets' || viewMode === 'query'">
-        <FacetFilterPanel
-          :selectedFacetState="selectedFacetState"
-          :selectedActionType="selectedActionType"
-          :selectedObjects="selectedObjects"
-          :selectedTimesteps="selectedTimesteps"
-          :allObjects="allObjects"
-          :allTimesteps="allTimesteps"
-          @update:selectedFacetState="val => (selectedFacetState = val)"
-          @update:selectedActionType="val => (selectedActionType = val)"
-          @update:selectedObjects="val => (selectedObjects = val)"
-          @update:selectedTimesteps="val => (selectedTimesteps = val)"
+        <FacetCountDisplay
+          :loadingSolutionCount="loadingSolutionCount"
+          :loadingFacetCount="loadingFacetCount"
+          :solutionCount="solutionCount"
+          :facetCount="facetCount"
         />
         <Divider />
+        <div v-if="viewMode === 'facets' || viewMode === 'query'">
+          <FacetFilterPanel
+            :selectedFacetState="selectedFacetState"
+            :selectedActionType="selectedActionType"
+            :selectedObjects="selectedObjects"
+            :selectedTimesteps="selectedTimesteps"
+            :allObjects="allObjects"
+            :allTimesteps="allTimesteps"
+            @update:selectedFacetState="val => (selectedFacetState = val)"
+            @update:selectedActionType="val => (selectedActionType = val)"
+            @update:selectedObjects="val => (selectedObjects = val)"
+            @update:selectedTimesteps="val => (selectedTimesteps = val)"
+          />
+          <Divider />
+        </div>
+        <FacetTableView
+          :headers="columns"
+          :facets="filteredFacets"
+          :solutions="solutions"
+          :viewMode="viewMode"
+          :loading="loading"
+          :itemsPerPage="itemsPerPage"
+          :currentPage="currentPage"
+          @update:currentPage="handlePageUpdate"
+          @selectFacet="updateFacetSelectionState"
+        />
       </div>
-      <FacetTableView
-        :headers="columns"
-        :facets="filteredFacets"
-        :solutions="solutions"
-        :viewMode="viewMode"
-        :loading="loading"
-        :itemsPerPage="itemsPerPage"
-        :currentPage="currentPage"
-        @update:currentPage="handlePageUpdate"
-        @selectFacet="updateFacetSelectionState"
-      />
     </div>
     <LandmarkSidebar
       :landmarks="landmarks"
       :loadingLandmarks="loadingLandmarks"
       :enabled="sidebarEnabled"
+      title="Implied Actions"
     />
   </div>
 </template>

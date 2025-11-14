@@ -6,6 +6,8 @@ import type { Solution } from '@/models/Solution';
 import type { SasPlanInput } from '@/models/SasPlanInput';
 import type { PlanPilotInput } from '@/models/PlanPilotInput';
 import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
+import type { ActivatePlanResponse } from '@/models/ActivePlanResponse';
+import type { RefreshOptionalFacetResponse } from '@/models/RefreshOptionalFacetResponse';
 
 let hostUrl = 'http://localhost:5000/api';
 
@@ -37,6 +39,65 @@ export const runPlanPilot = async (input: PlanPilotInput): Promise<Facet[] | und
   try {
     const response = await axios.post<{ output: Facet[] }>(`${hostUrl}/run-planpilot`, input);
     return parseFacetOutput(response.data.output as Facet[]);
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const activateBestPlan = async (
+  planFile: string
+): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/activate-plan`, {
+      planFile,
+    });
+
+    const data = response.data;
+
+    if (data.bestPlan) {
+      data.bestPlan = parseFacetOutput(data.bestPlan as Facet[]);
+    }
+
+    return data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const updatePlan = async (
+  changedTimestep: number,
+  commands: string | string[]
+): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/update-plan`, {
+      changedTimestep,
+      commands,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const refreshTimeline = async (): Promise<ActivatePlanResponse | undefined> => {
+  try {
+    const response = await axios.get<ActivatePlanResponse>(`${hostUrl}/refresh-timeline`);
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export const refreshTimestep = async (
+  timestepNumber: number
+): Promise<RefreshOptionalFacetResponse | undefined> => {
+  try {
+    const response = await axios.get<RefreshOptionalFacetResponse>(
+      `${hostUrl}/refresh-optional-facet`,
+      { params: { timestep: timestepNumber } } // send timestep as query param
+    );
+
+    return response.data;
   } catch (error) {
     handleError(error);
   }
