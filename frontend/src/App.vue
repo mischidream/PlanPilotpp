@@ -5,11 +5,9 @@
       <nav class="nav">
         <RouterLink to="/start" class="nav-link">Start</RouterLink>
         <div class="divider"></div>
-        <RouterLink to="/fastdownward" class="nav-link">Fast Downward</RouterLink>
+        <RouterLink to="/plan-modification" class="nav-link">Plan Modification</RouterLink>
         <div class="divider"></div>
-        <RouterLink to="/planpilot" class="nav-link">PlanPilot</RouterLink>
-        <div class="divider"></div>
-        <RouterLink to="/visualization" class="nav-link">Visualization</RouterLink>
+        <RouterLink to="/plan-space-navigation" class="nav-link">Plan-Space Navigation</RouterLink>
       </nav>
     </div>
     <main class="main-content">
