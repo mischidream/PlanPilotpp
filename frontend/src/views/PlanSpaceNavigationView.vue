@@ -104,7 +104,6 @@ import { ActionType } from '@/models/ActionType';
 import { EncodingType } from '@/models/EncodingType';
 import { SelectionState } from '@/models/SelectionState';
 import { TimeStepType } from '@/models/TimeStepType';
-import { usePlanStore } from '@/stores/planStore';
 import { runPlanPilot, sendPlanPilotCommand, updateSelectionState } from '@/services/apiService';
 import Button from '@/components/Button.vue';
 import Divider from '@/components/Divider.vue';
@@ -122,16 +121,21 @@ import { transformToFacets } from '@/utils/transformFacets';
 import { useFacetFilters } from '@/composables/useFacetFilters';
 import testData from '@/testdata/example_facets.json';
 import testDataSolution from '@/testdata/example_answer_sets.json';
+import { usePlanSpaceNavigationStore } from '@/stores/planSpaceNavigationStore';
 
 // Store
-const planStore = usePlanStore();
-const instanceFile = computed(() => planStore.instanceFile);
-const domainFile = computed(() => planStore.domainFile);
-const sasFile = computed(() => planStore.sasFile);
-const horizon = ref<number>(planStore.horizon);
+const store = usePlanSpaceNavigationStore();
+
+// Files from startStore
+const instanceFile = computed(() => store.currentInstanceFile);
+const domainFile = computed(() => store.currentDomainFile);
+const sasFile = computed(() => store.currentSas);
+
+// Horizon: start with minHorizon, user can overwrite it
+const horizon = ref<number>(store.minHorizon);
 
 // Planning configuration
-const minHorizon = ref(horizon.value);
+const minHorizon = ref<number>(store.minHorizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 const numberOfSolutions = ref<number | undefined>(undefined);
@@ -174,21 +178,22 @@ const currentPage = ref(1);
 const itemsPerPage = 4;
 
 // Sync with store
-bindWatch(horizon, planStore.setHorizon);
-bindWatch(minHorizon, planStore.setMinHorizon);
-bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
-bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
+bindWatch(horizon, store.setHorizon);
+bindWatch(encoding, ([val]) => val && store.setEncoding(val));
+bindWatch(timeStep, ([val]) => val && store.setTimeStep(val));
 
-bindWatch(facets, planStore.setFacets);
-bindWatch(landmarks, planStore.setLandmarks);
-bindWatch(solutions, planStore.setSolutions);
+bindWatch(facets, store.setFacets);
+bindWatch(landmarks, store.setLandmarks);
+bindWatch(solutions, store.setSolutions);
 
-bindWatch(viewMode, planStore.setViewMode);
+bindWatch(viewMode, store.setViewMode);
 
-bindWatch(selectedFacetState, planStore.setSelectedFacetState, { deep: true });
-bindWatch(selectedActionType, planStore.setSelectedActionType, { deep: true });
-bindWatch(selectedObjects, planStore.setSelectedObjects, { deep: true });
-bindWatch(selectedTimesteps, planStore.setSelectedTimesteps, { deep: true });
+bindWatch(selectedFacetState, store.setSelectedFacetState, { deep: true });
+bindWatch(selectedActionType, store.setSelectedActionType, { deep: true });
+bindWatch(selectedObjects, store.setSelectedObjects, { deep: true });
+bindWatch(selectedTimesteps, store.setSelectedTimesteps, { deep: true });
+
+bindWatch(sidebarEnabled, store.setSidebarEnabled);
 
 function handlePageUpdate(val: number) {
   currentPage.value = val;
@@ -228,7 +233,8 @@ async function updateFacetSelectionState(facet: Facet, newState: SelectionState)
     landmarks.value = [];
     sidebarEnabled.value = false;
 
-    const output = await updateSelectionState({
+    const output = await updateSelectionState(store.pageId,
+    {
       facet,
       newState,
     });
@@ -272,7 +278,8 @@ const listFacets = async () => {
       sidebarEnabled.value = false;
       selectedFacets.value = [];
       result = await runPlanPilot({
-        sasFile: sasFile.value,
+        pageId: store.pageId,
+        sasFile: sasFile.value ?? '',
         horizon: horizon.value,
         encoding: encoding.value[0],
         abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete,
@@ -282,7 +289,7 @@ const listFacets = async () => {
       lastUsedEncoding.value = encoding.value[0];
       lastUsedTimeStep.value = timeStep.value[0];
     } else {
-      result = await sendPlanPilotCommand('?');
+      result = await sendPlanPilotCommand(store.pageId, '?');
     }
     if (result) {
       facets.value = result as Facet[];
@@ -302,7 +309,7 @@ const listSolutions = async () => {
     solutionCount.value = null;
     facetCount.value = null;
     const command = numberOfSolutions.value ? `! ${numberOfSolutions.value}` : '!';
-    const output = await sendPlanPilotCommand(command);
+    const output = await sendPlanPilotCommand(store.pageId, command);
     if (Array.isArray(output)) {
       solutions.value = output as Solution[];
       currentPage.value = 1;
@@ -319,7 +326,7 @@ const listSolutions = async () => {
 const countSolutions = async () => {
   loadingSolutionCount.value = true;
   try {
-    const output = await sendPlanPilotCommand('#!');
+    const output = await sendPlanPilotCommand(store.pageId, '#!');
     solutionCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
@@ -331,7 +338,7 @@ const countSolutions = async () => {
 const countFacets = async () => {
   loadingFacetCount.value = true;
   try {
-    const output = await sendPlanPilotCommand('#?');
+    const output = await sendPlanPilotCommand(store.pageId, '#?');
     facetCount.value = typeof output === 'string' ? output : null;
   } catch (error) {
     console.error('Error:', error);
@@ -344,7 +351,7 @@ const queryRemainingFacets = async () => {
   loading.value = true;
   try {
     viewMode.value = 'query';
-    const updatedFacets = await sendPlanPilotCommand('#??');
+    const updatedFacets = await sendPlanPilotCommand(store.pageId, '#??');
 
     if (Array.isArray(updatedFacets)) {
       facets.value = updatedFacets as Facet[];
@@ -363,7 +370,7 @@ const queryRemainingSolutions = async () => {
   loading.value = true;
   try {
     viewMode.value = 'query';
-    const updatedFacets = await sendPlanPilotCommand('#!!');
+    const updatedFacets = await sendPlanPilotCommand(store.pageId, '#!!');
 
     if (Array.isArray(updatedFacets)) {
       facets.value = updatedFacets as Facet[];
@@ -384,7 +391,7 @@ const listLandmarks = async () => {
   console.log(landmarkAction.value);
   try {
     const command = landmarkAction.value ? `|= % ${landmarkAction.value}` : '|= %';
-    const output = await sendPlanPilotCommand(command);
+    const output = await sendPlanPilotCommand(store.pageId, command);
     if (Array.isArray(output)) {
       landmarks.value = (output as Facet[]).sort((a, b) => {
         if (a.timestep === 0 && b.timestep !== 0) return 1;

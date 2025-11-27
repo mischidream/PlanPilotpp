@@ -19,19 +19,24 @@ import InputField from '@/components/InputField.vue';
 import Button from '@/components/Button.vue';
 import { computed, ref } from 'vue';
 import { getSasPlan } from '@/services/apiService';
-import { usePlanStore } from '@/stores/planStore';
+import { useStartStore } from '@/stores/startStore';
 import type { FastDownwardResponse } from '@/models/FastDownwardResponse';
 import SkeletonCount from '@/components/SkeletonCount.vue';
+import { usePlanModificationStore } from '@/stores/planModificationStore';
+import { usePlanSpaceNavigationStore } from '@/stores/planSpaceNavigationStore';
 
-const planStore = usePlanStore();
+const startStore = useStartStore();
+const planModificationStore = usePlanModificationStore();
+const planSpaceNavigationStore = usePlanSpaceNavigationStore();
 
 const instanceFile = computed({
-  get: () => planStore.instanceFile,
-  set: (val: File | null) => planStore.setInstanceFile(val),
+  get: () => startStore.instanceFile,
+  set: v => startStore.setInstanceFile(v),
 });
+
 const domainFile = computed({
-  get: () => planStore.domainFile,
-  set: (val: File | null) => planStore.setDomainFile(val),
+  get: () => startStore.domainFile,
+  set: v => startStore.setDomainFile(v),
 });
 
 const loading = ref(false);
@@ -40,7 +45,6 @@ const loading = ref(false);
 const response = ref<FastDownwardResponse | null>(null);
 
 async function submitFiles() {
-  planStore.reset();
   if (!instanceFile.value || !domainFile.value) {
     alert('Please select both files.');
     return;
@@ -56,7 +60,9 @@ async function submitFiles() {
       throw new Error('No response received from planner.');
     }
     response.value = result;
-    planStore.setFastDownwardResponse(result.horizon, result.sasFile, result.planFile);
+    startStore.setStartResponse(result.sasFile, result.planFile, result.horizon);
+    planModificationStore.reset();
+    planSpaceNavigationStore.reset();
   } catch (error) {
     alert((error as Error).message);
   } finally {

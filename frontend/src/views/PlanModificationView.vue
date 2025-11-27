@@ -61,40 +61,47 @@ import DropdownField from '@/components/DropdownField.vue';
 import SkeletonFacetRow from '@/components/SkeletonFacetRow.vue';
 import Button from '@/components/Button.vue';
 import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
+import ColorLegend from '@/components/ColorLegend.vue';
+
 import { EncodingType } from '@/models/EncodingType';
 import { TimeStepType } from '@/models/TimeStepType';
+import type { TimelineStep } from '@/models/TimelineStep';
+import type { MultiSelectState } from '@/models/MultiSelectState';
+import type { Facet } from '@/models/Facet';
+
 import {
   activateBestPlan,
   runPlanPilot,
   refreshTimeline,
   refreshTimestep,
+  updatePlan,
 } from '@/services/apiService';
-import { usePlanStore } from '@/stores/planStore';
-import { bindWatch } from '@/utils/bindWatch';
 
-import { computed, ref, watch } from 'vue';
-import type { TimelineStep } from '@/models/TimelineStep';
-import type { MultiSelectState } from '@/models/MultiSelectState';
+import { computed, ref } from 'vue';
+import { usePlanModificationStore } from '@/stores/planModificationStore';
+import { bindWatch } from '@/utils/bindWatch';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
-import ColorLegend from '@/components/ColorLegend.vue';
-import type { Facet } from '@/models/Facet';
-import { updatePlan } from '@/services/apiService';
 import { updateOptionalFacet } from '@/utils/updateOptionalFacet';
 
 // Store
-const planStore = usePlanStore();
-const instanceFile = computed(() => planStore.instanceFile);
-const domainFile = computed(() => planStore.domainFile);
-const sasFile = computed(() => planStore.sasFile);
-const horizon = ref<number>(planStore.horizon);
+const store = usePlanModificationStore();
+
+// Files from startStore
+const instanceFile = computed(() => store.currentInstanceFile);
+const domainFile = computed(() => store.currentDomainFile);
+const sasFile = computed(() => store.currentSas);
+const planFile = computed(() => store.currentPlan);
+
+// Horizon: start with minHorizon, user can overwrite it
+const horizon = ref<number>(store.minHorizon);
 
 const selectedValues = ref<(MultiSelectState[] | null)[]>([]);
-const facetCount = ref<number | null>(planStore.facetCount);
+const facetCount = ref<number | null>(store.facetCount);
 const timeline = ref<TimelineStep[]>([]);
-const bestPlan = ref<Facet[] | null>(planStore.bestPlan);
+const bestPlan = ref<Facet[] | null>(store.bestPlan);
 
 // Planning configuration
-const minHorizon = ref(horizon.value);
+const minHorizon = ref<number>(store.minHorizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 
@@ -106,25 +113,24 @@ const lastUsedTimeStep = ref<TimeStepType | null>(null);
 // Loading states
 const loading = ref(false);
 const isFirstRun = ref(true);
-let isUpdating = ref(false);
 const sidebarEnabled = ref(false);
 
 // Sync with store
-bindWatch(horizon, planStore.setHorizon);
-bindWatch(minHorizon, planStore.setMinHorizon);
-bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
-bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
-bindWatch(timeline, planStore.setTimeline, { deep: true });
-bindWatch(selectedValues, planStore.setSelectedValues, { deep: true });
-bindWatch(facetCount, planStore.setFacetCount);
-bindWatch(bestPlan, planStore.setBestPlan);
+bindWatch(horizon, store.setHorizon);
+bindWatch(encoding, ([val]) => val && store.setEncoding(val));
+bindWatch(timeStep, ([val]) => val && store.setTimeStep(val));
+bindWatch(timeline, store.setTimeline, { deep: true });
+bindWatch(selectedValues, store.setSelectedValues, { deep: true });
+bindWatch(facetCount, store.setFacetCount);
+bindWatch(bestPlan, store.setBestPlan);
+bindWatch(sidebarEnabled, store.setSidebarEnabled);
 
 const handleDropdownFlowChanges = async (payload: {
   commands: string[];
   timestepNumber: number;
 }) => {
   loading.value = true;
-  const result = await updatePlan(payload.timestepNumber + 1, payload.commands);
+  const result = await updatePlan(store.pageId, payload.timestepNumber + 1, payload.commands);
 
   if (result?.timeline) {
     timeline.value = result.timeline;
@@ -144,7 +150,7 @@ const handleDropdownFlowChanges = async (payload: {
 const handleRefresh = async (timestepNumber: number) => {
   loading.value = true;
 
-  const result = await refreshTimestep(timestepNumber + 1);
+  const result = await refreshTimestep(store.pageId, timestepNumber + 1);
   loading.value = false;
   if (!result) return;
 
@@ -168,7 +174,8 @@ const start = async () => {
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged || timeStepChanged) {
       await runPlanPilot({
-        sasFile: sasFile.value,
+        pageId: store.pageId,
+        sasFile: sasFile.value ?? '',
         horizon: horizon.value,
         encoding: encoding.value[0],
         abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete,
@@ -178,7 +185,7 @@ const start = async () => {
       lastUsedEncoding.value = encoding.value[0];
       lastUsedTimeStep.value = timeStep.value[0];
     }
-    result = await activateBestPlan(planStore.planFile);
+    result = await activateBestPlan(store.pageId, planFile.value ?? '');
 
     sidebarEnabled.value = true;
 
@@ -204,7 +211,7 @@ const start = async () => {
 const refresh = async () => {
   loading.value = true;
   try {
-    const result = await refreshTimeline();
+    const result = await refreshTimeline(store.pageId);
 
     if (!result) return;
 
