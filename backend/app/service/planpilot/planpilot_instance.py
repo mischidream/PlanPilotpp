@@ -5,9 +5,9 @@ import threading
 import time
 from typing import Dict
 
-from backend.app.persistence.models import FastDownwardRequest
-from backend.app.utils.parsing import extract_plan_actions, parse_facet_output, parse_solution_output
-from backend.app.utils.plan_utils import *
+from ...persistence.models import FastDownwardRequest
+from ...utils.parsing import extract_plan_actions, parse_facet_output, parse_solution_output
+from ...utils.plan_utils import *
 
 
 class PlanPilotInstance:
