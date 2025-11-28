@@ -11,13 +11,21 @@ from ...utils.plan_utils import *
 
 
 class PlanPilotInstance:
-    def __init__(self, page_id: str, manager):
+    def __init__(
+        self,
+        page_id: str,
+        manager,
+        sas_file_path=None,
+        horizon=None,
+        encoding=None,
+        hash_value=None,
+        abstract_timestep=None,
+    ):
         self.page_id = page_id
+        self.manager = manager
 
         # Thread safety
         self.lock = threading.RLock()
-
-        self.manager = manager
 
         # Subprocess
         self.process: subprocess.Popen | None = None
@@ -36,11 +44,11 @@ class PlanPilotInstance:
         self.facet_count = None
         self.errors = None
         self.best_plan = None
-        self.horizon = None
-        self.encoding = None
-        self.sas_file_path = None
-        self.hash_value = None
-        self.abstract_timestep = None
+        self.horizon = horizon
+        self.encoding = encoding
+        self.sas_file_path = sas_file_path
+        self.hash_value = hash_value
+        self.abstract_timestep = abstract_timestep
 
     def start(self, sas_file=None, horizon=None, encoding=None, abstract_time_steps=None, from_existing=False):
         print("Run planpilot")

@@ -23,6 +23,7 @@ class PlanPilotManager:
         # Create new instance using main instance parameters
         bg_instance = PlanPilotInstance(
             page_id=bg_id,
+            manager=self,
             sas_file_path=main_instance.sas_file_path,
             horizon=main_instance.horizon,
             encoding=main_instance.encoding,
@@ -41,11 +42,11 @@ class PlanPilotManager:
             with bg_instance.refresh_lock:
                 bg_instance.refresh_in_progress = True
                 try:
-                    errors, facet_count = bg_instance.start_background_refresh_process(bg_instance)
+                    bg_instance.start_background_refresh_process()
                     bg_instance.refresh_result = {
                         "timeline": bg_instance.timeline,
-                        "errors": errors,
-                        "facetCount": facet_count,
+                        "errors": bg_instance.errors,
+                        "facetCount": bg_instance.facet_count,
                     }
                 finally:
                     bg_instance.refresh_in_progress = False
