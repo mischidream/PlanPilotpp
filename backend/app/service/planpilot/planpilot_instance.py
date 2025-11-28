@@ -15,7 +15,7 @@ class PlanPilotInstance:
         self.page_id = page_id
 
         # Thread safety
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
         self.manager = manager
 
@@ -29,7 +29,7 @@ class PlanPilotInstance:
 
         # Refresh status
         self.refresh_in_progress = False
-        self.refresh_lock = threading.Lock()
+        self.refresh_lock = threading.RLock()
 
         # Domain-specific data
         self.timeline = []
