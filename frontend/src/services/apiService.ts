@@ -45,10 +45,12 @@ export const runPlanPilot = async (input: PlanPilotInput): Promise<Facet[] | und
 };
 
 export const activateBestPlan = async (
+  pageId: string,
   planFile: string
 ): Promise<ActivatePlanResponse | undefined> => {
   try {
     const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/activate-plan`, {
+      pageId,
       planFile,
     });
 
@@ -65,11 +67,13 @@ export const activateBestPlan = async (
 };
 
 export const updatePlan = async (
+  pageId: string,
   changedTimestep: number,
   commands: string | string[]
 ): Promise<ActivatePlanResponse | undefined> => {
   try {
     const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/update-plan`, {
+      pageId,
       changedTimestep,
       commands,
     });
@@ -79,9 +83,13 @@ export const updatePlan = async (
   }
 };
 
-export const refreshTimeline = async (): Promise<ActivatePlanResponse | undefined> => {
+export const refreshTimeline = async (
+  pageId: string
+): Promise<ActivatePlanResponse | undefined> => {
   try {
-    const response = await axios.get<ActivatePlanResponse>(`${hostUrl}/refresh-timeline`);
+    const response = await axios.post<ActivatePlanResponse>(`${hostUrl}/refresh-timeline`, {
+       params: { pageId },
+    });
     return response.data;
   } catch (error) {
     handleError(error);
@@ -89,12 +97,13 @@ export const refreshTimeline = async (): Promise<ActivatePlanResponse | undefine
 };
 
 export const refreshTimestep = async (
+  pageId: string,
   timestepNumber: number
 ): Promise<RefreshOptionalFacetResponse | undefined> => {
   try {
     const response = await axios.get<RefreshOptionalFacetResponse>(
       `${hostUrl}/refresh-optional-facet`,
-      { params: { timestep: timestepNumber } } // send timestep as query param
+      { params: { pageId, timestep: timestepNumber } }
     );
 
     return response.data;
@@ -103,13 +112,28 @@ export const refreshTimestep = async (
   }
 };
 
+
+export const checkRefreshStatus = async (): Promise<{ status: string } | undefined> => {
+  try {
+    const { data } = await axios.get<{ status: string }>(
+      `${hostUrl}/check-refresh-status`
+    );
+    return data;
+  } catch (error) {
+    console.error("API checkRefreshStatus error:", error);
+    return undefined;
+  }
+};
+
 export const sendPlanPilotCommand = async (
+  pageId: string,
   command: string
 ): Promise<Facet[] | Solution[] | string | undefined> => {
   try {
     const response = await axios.post<{ output: Facet[] | Solution[] | string }>(
       `${hostUrl}/send-planpilot-command`,
       {
+        pageId,
         command,
       }
     );
@@ -145,6 +169,7 @@ export const sendPlanPilotCommand = async (
 };
 
 export const updateSelectionState = async (
+  pageId: string,
   input: SelectionUpdateInput
 ): Promise<Facet[] | undefined> => {
   const { facet, newState } = input;
@@ -167,7 +192,7 @@ export const updateSelectionState = async (
   }
   if (command) {
     try {
-      const output = await sendPlanPilotCommand(command);
+      const output = await sendPlanPilotCommand(pageId, command);
       if (Array.isArray(output)) {
         return output as Facet[];
       }

@@ -4,13 +4,13 @@ import time
 import subprocess
 import threading
 from typing import List, Dict
-from ..persistence.models import FastDownwardRequest
-from ..utils.parsing import (
+from ...persistence.models import FastDownwardRequest
+from ...utils.parsing import (
     parse_facet_output,
     parse_solution_output,
     extract_plan_actions,
 )
-from ..utils.plan_utils import *
+from ...utils.plan_utils import *
 
 
 class PlanpilotService:

@@ -570,10 +570,8 @@ def calculate_facet_count(self):
 
 def refresh_optionals_and_empties(self):
     try:
-        # Take snapshot of the current timeline (not mutated)
-        old_timeline = copy.deepcopy(self.timeline)
-
-        temp_process = self.restart_FASB()
+        # Take snapshot of the current timeline
+        old_timeline = self.timeline
 
         errors, new_timeline = rebuild_timeline_from_solver(self, old_timeline)
 
@@ -597,7 +595,6 @@ def refresh_optionals_and_empties(self):
 
 
 def rebuild_timeline_from_solver(self, old_timeline):
-    # TODO: does always add twice the facets, does not work correctly for implied at beginning, shows plan ones as selected
     new_timeline = [{"timestep": t, "facets": []} for t in range(1, self.horizon + 1)]
     global_implied_ids = set()
     activated_plan_ids = set()

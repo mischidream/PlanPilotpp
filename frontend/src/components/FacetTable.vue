@@ -61,7 +61,7 @@ import Divider from './Divider.vue';
 import { ref } from 'vue';
 import type { Solution } from '@/models/Solution';
 import { useRouter } from 'vue-router';
-import { usePlanStore } from '@/stores/planStore';
+import { usePlanSpaceNavigationStore } from '@/stores/planSpaceNavigationStore';
 
 const props = defineProps<{
   headers: string[];
@@ -72,7 +72,7 @@ const props = defineProps<{
   itemsPerPage?: number;
 }>();
 
-const planStore = usePlanStore();
+const planStore = usePlanSpaceNavigationStore();
 const router = useRouter();
 
 const emit = defineEmits<{

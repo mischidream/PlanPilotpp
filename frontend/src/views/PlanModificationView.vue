@@ -29,7 +29,19 @@
         <p>Number of facets to choose from: {{ facetCount }}</p>
         <div class="legend-refresh-container">
           <ColorLegend />
-          <Button label="Reload Timeline" @click="refresh"></Button>
+          <div class="tooltip-wrapper">
+            <Button
+              label="Reload Timeline"
+              @click="refresh"
+              :disabled="loading || refreshInProgress"
+            ></Button>
+            <span
+              class="tooltip-text"
+              v-if="refreshInProgress"
+            >
+              {{ tooltipText }}
+            </span>
+          </div>
         </div>
         <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
       </div>
@@ -61,40 +73,48 @@ import DropdownField from '@/components/DropdownField.vue';
 import SkeletonFacetRow from '@/components/SkeletonFacetRow.vue';
 import Button from '@/components/Button.vue';
 import LandmarkSidebar from '@/components/LandmarkSidebar.vue';
+import ColorLegend from '@/components/ColorLegend.vue';
+
 import { EncodingType } from '@/models/EncodingType';
 import { TimeStepType } from '@/models/TimeStepType';
+import type { TimelineStep } from '@/models/TimelineStep';
+import type { MultiSelectState } from '@/models/MultiSelectState';
+import type { Facet } from '@/models/Facet';
+
 import {
   activateBestPlan,
   runPlanPilot,
   refreshTimeline,
   refreshTimestep,
+  updatePlan,
+  checkRefreshStatus,
 } from '@/services/apiService';
-import { usePlanStore } from '@/stores/planStore';
-import { bindWatch } from '@/utils/bindWatch';
 
-import { computed, ref, watch } from 'vue';
-import type { TimelineStep } from '@/models/TimelineStep';
-import type { MultiSelectState } from '@/models/MultiSelectState';
+import { computed, onMounted, ref } from 'vue';
+import { usePlanModificationStore } from '@/stores/planModificationStore';
+import { bindWatch } from '@/utils/bindWatch';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
-import ColorLegend from '@/components/ColorLegend.vue';
-import type { Facet } from '@/models/Facet';
-import { updatePlan } from '@/services/apiService';
 import { updateOptionalFacet } from '@/utils/updateOptionalFacet';
 
 // Store
-const planStore = usePlanStore();
-const instanceFile = computed(() => planStore.instanceFile);
-const domainFile = computed(() => planStore.domainFile);
-const sasFile = computed(() => planStore.sasFile);
-const horizon = ref<number>(planStore.horizon);
+const store = usePlanModificationStore();
+
+// Files from startStore
+const instanceFile = computed(() => store.currentInstanceFile);
+const domainFile = computed(() => store.currentDomainFile);
+const sasFile = computed(() => store.currentSas);
+const planFile = computed(() => store.currentPlan);
+
+// Horizon: start with minHorizon, user can overwrite it
+const horizon = ref<number>(store.minHorizon);
 
 const selectedValues = ref<(MultiSelectState[] | null)[]>([]);
-const facetCount = ref<number | null>(planStore.facetCount);
+const facetCount = ref<number | null>(store.facetCount);
 const timeline = ref<TimelineStep[]>([]);
-const bestPlan = ref<Facet[] | null>(planStore.bestPlan);
+const bestPlan = ref<Facet[] | null>(store.bestPlan);
 
 // Planning configuration
-const minHorizon = ref(horizon.value);
+const minHorizon = ref<number>(store.minHorizon);
 const encoding = ref<EncodingType[]>([EncodingType.exact]);
 const timeStep = ref<TimeStepType[]>([TimeStepType.concrete]);
 
@@ -106,25 +126,26 @@ const lastUsedTimeStep = ref<TimeStepType | null>(null);
 // Loading states
 const loading = ref(false);
 const isFirstRun = ref(true);
-let isUpdating = ref(false);
 const sidebarEnabled = ref(false);
+const refreshInProgress = ref(false);
+const tooltipText = ref("");
 
 // Sync with store
-bindWatch(horizon, planStore.setHorizon);
-bindWatch(minHorizon, planStore.setMinHorizon);
-bindWatch(encoding, ([val]) => val && planStore.setEncoding(val));
-bindWatch(timeStep, ([val]) => val && planStore.setTimeStep(val));
-bindWatch(timeline, planStore.setTimeline, { deep: true });
-bindWatch(selectedValues, planStore.setSelectedValues, { deep: true });
-bindWatch(facetCount, planStore.setFacetCount);
-bindWatch(bestPlan, planStore.setBestPlan);
+bindWatch(horizon, store.setHorizon);
+bindWatch(encoding, ([val]) => val && store.setEncoding(val));
+bindWatch(timeStep, ([val]) => val && store.setTimeStep(val));
+bindWatch(timeline, store.setTimeline, { deep: true });
+bindWatch(selectedValues, store.setSelectedValues, { deep: true });
+bindWatch(facetCount, store.setFacetCount);
+bindWatch(bestPlan, store.setBestPlan);
+bindWatch(sidebarEnabled, store.setSidebarEnabled);
 
 const handleDropdownFlowChanges = async (payload: {
   commands: string[];
   timestepNumber: number;
 }) => {
   loading.value = true;
-  const result = await updatePlan(payload.timestepNumber + 1, payload.commands);
+  const result = await updatePlan(store.pageId, payload.timestepNumber + 1, payload.commands);
 
   if (result?.timeline) {
     timeline.value = result.timeline;
@@ -144,7 +165,7 @@ const handleDropdownFlowChanges = async (payload: {
 const handleRefresh = async (timestepNumber: number) => {
   loading.value = true;
 
-  const result = await refreshTimestep(timestepNumber + 1);
+  const result = await refreshTimestep(store.pageId, timestepNumber + 1);
   loading.value = false;
   if (!result) return;
 
@@ -168,7 +189,8 @@ const start = async () => {
     let result;
     if (isFirstRun.value || horizonChanged || encodingChanged || timeStepChanged) {
       await runPlanPilot({
-        sasFile: sasFile.value,
+        pageId: store.pageId,
+        sasFile: sasFile.value ?? '',
         horizon: horizon.value,
         encoding: encoding.value[0],
         abstractTimeStep: timeStep.value[0] !== TimeStepType.concrete,
@@ -178,7 +200,7 @@ const start = async () => {
       lastUsedEncoding.value = encoding.value[0];
       lastUsedTimeStep.value = timeStep.value[0];
     }
-    result = await activateBestPlan(planStore.planFile);
+    result = await activateBestPlan(store.pageId, planFile.value ?? '');
 
     sidebarEnabled.value = true;
 
@@ -204,7 +226,7 @@ const start = async () => {
 const refresh = async () => {
   loading.value = true;
   try {
-    const result = await refreshTimeline();
+    const result = await refreshTimeline(store.pageId);
 
     if (!result) return;
 
@@ -226,6 +248,37 @@ const refresh = async () => {
     loading.value = false;
   }
 };
+
+const pollRefreshStatus = async () => {
+  // Skip polling if the page is currently loading
+  if (loading.value) return;
+  
+  const res = await checkRefreshStatus();
+  if (!res) return;
+
+  switch (res.status) {
+    case "in_progress":
+      refreshInProgress.value = true;
+      tooltipText.value = "Background refresh still running…";
+      break;
+    case "non_existent":
+      refreshInProgress.value = true; // disable button
+      tooltipText.value = "No background task exists";
+      break;
+    case "done":
+      refreshInProgress.value = false;
+      tooltipText.value = "";
+      break;
+    default:
+      refreshInProgress.value = false;
+      tooltipText.value = "";
+  }
+};
+
+onMounted(() => {
+  pollRefreshStatus();
+  setInterval(pollRefreshStatus, 500);
+});
 </script>
 
 <style scoped>
@@ -266,4 +319,37 @@ const refresh = async () => {
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Tooltip wrapper for the button */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Reuse existing tooltip style */
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--black-mute);
+  color: var(--white);
+  text-align: center;
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  z-index: 200;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Make tooltip show */
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
 </style>
