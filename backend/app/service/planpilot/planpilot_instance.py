@@ -6,7 +6,7 @@ import time
 from typing import Dict
 
 from ...persistence.models import FastDownwardRequest
-from ...utils.parsing import extract_plan_actions, parse_facet_output, parse_solution_output
+from ...utils.parsing import *
 from ...utils.plan_utils import *
 
 
@@ -460,15 +460,19 @@ class PlanPilotInstance:
         if result.returncode != 0:
             raise RuntimeError(f"plasp failed:\n{result.stderr}")
         
-    def _validate_plan_with_val(domain_file: str, problem_file: str, plan_file: str):
+    def _validate_plan_with_val(domain_file: str, problem_file: str, plan_file: str, verbose: bool = True):
         current_directory = os.getcwd()
         val_binary = os.path.join(current_directory, "lib", "val", "validate")
 
         if not os.path.exists(val_binary):
             raise FileNotFoundError(f"VAL binary not found at: {val_binary}")
 
-        command = [val_binary, domain_file, problem_file, plan_file]
-
+        # Construct command
+        command = [val_binary]
+        if verbose:
+            command.append("-v")  # Add the verbose flag
+        command.extend([domain_file, problem_file, plan_file])
+        
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
@@ -476,7 +480,15 @@ class PlanPilotInstance:
             text=True
         )
 
-        if result.returncode != 0:
-            raise RuntimeError(f"VAL failed:\n{result.stderr}")
+        raw_output = result.stdout
 
-        return result.stdout
+        # If VAL fails to execute (non-zero return code), treat as failure
+        if result.returncode != 0:
+            return {
+                'success': 0,
+                'repair_advice': result.stderr.strip(),
+                'raw_output': raw_output
+            }
+
+        # Parse output using your parse_val_output function
+        return parse_val_output(raw_output)

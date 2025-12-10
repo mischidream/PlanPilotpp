@@ -120,3 +120,20 @@ def extract_plan_actions(plan_file_path: str) -> List[Dict]:
                     actions.append(formatted)
                     timestep += 1
     return parse_facet_output(" ".join(actions).strip(), "?")
+
+def parse_val_output(raw_output: str) -> dict:
+    # Check for success
+    if re.search(r"Plan executed successfully|Plan valid", raw_output):
+        return {
+            'success': 1,
+            'repair_advice': None,
+            'raw_output': raw_output
+        }
+    else:
+        advice_match = re.search(r"Plan Repair Advice:(.*?)(\n\n|$)", raw_output, re.DOTALL)
+        repair_advice = advice_match.group(1).strip() if advice_match else None
+        return {
+            'success': 0,
+            'repair_advice': repair_advice,
+            'raw_output': raw_output
+        }
