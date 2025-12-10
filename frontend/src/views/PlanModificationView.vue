@@ -29,7 +29,19 @@
         <p>Number of facets to choose from: {{ facetCount }}</p>
         <div class="legend-refresh-container">
           <ColorLegend />
-          <Button label="Reload Timeline" @click="refresh"></Button>
+          <div class="tooltip-wrapper">
+            <Button
+              label="Reload Timeline"
+              @click="refresh"
+              :disabled="loading || refreshInProgress"
+            ></Button>
+            <span
+              class="tooltip-text"
+              v-if="refreshInProgress"
+            >
+              {{ tooltipText }}
+            </span>
+          </div>
         </div>
         <p class="text-small">* Preselection is based on the plan we received from fastdownward</p>
       </div>
@@ -75,9 +87,10 @@ import {
   refreshTimeline,
   refreshTimestep,
   updatePlan,
+  checkRefreshStatus,
 } from '@/services/apiService';
 
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { usePlanModificationStore } from '@/stores/planModificationStore';
 import { bindWatch } from '@/utils/bindWatch';
 import { getSelectedValueFromTimeline } from '@/utils/getSelectedValueFromTimeline';
@@ -114,6 +127,8 @@ const lastUsedTimeStep = ref<TimeStepType | null>(null);
 const loading = ref(false);
 const isFirstRun = ref(true);
 const sidebarEnabled = ref(false);
+const refreshInProgress = ref(false);
+const tooltipText = ref("");
 
 // Sync with store
 bindWatch(horizon, store.setHorizon);
@@ -233,6 +248,37 @@ const refresh = async () => {
     loading.value = false;
   }
 };
+
+const pollRefreshStatus = async () => {
+  // Skip polling if the page is currently loading
+  if (loading.value) return;
+  
+  const res = await checkRefreshStatus();
+  if (!res) return;
+
+  switch (res.status) {
+    case "in_progress":
+      refreshInProgress.value = true;
+      tooltipText.value = "Background refresh still running…";
+      break;
+    case "non_existent":
+      refreshInProgress.value = true; // disable button
+      tooltipText.value = "No background task exists";
+      break;
+    case "done":
+      refreshInProgress.value = false;
+      tooltipText.value = "";
+      break;
+    default:
+      refreshInProgress.value = false;
+      tooltipText.value = "";
+  }
+};
+
+onMounted(() => {
+  pollRefreshStatus();
+  setInterval(pollRefreshStatus, 500);
+});
 </script>
 
 <style scoped>
@@ -273,4 +319,37 @@ const refresh = async () => {
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Tooltip wrapper for the button */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Reuse existing tooltip style */
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  background-color: var(--black-mute);
+  color: var(--white);
+  text-align: center;
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  z-index: 200;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Make tooltip show */
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
 </style>

@@ -34,13 +34,15 @@ class PlanPilotManager:
         # Give it a copy of the timeline
         bg_instance.timeline = copy.deepcopy(main_instance.timeline)
 
+        # Mark as in progress immediately
+        bg_instance.refresh_in_progress = True
+
         # Save in manager
         self.instances[bg_id] = bg_instance
 
         # Start refresh thread
         def background_task():
             with bg_instance.refresh_lock:
-                bg_instance.refresh_in_progress = True
                 try:
                     bg_instance.start_background_refresh_process()
                     bg_instance.refresh_result = {

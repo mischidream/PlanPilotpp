@@ -112,6 +112,19 @@ export const refreshTimestep = async (
   }
 };
 
+
+export const checkRefreshStatus = async (): Promise<{ status: string } | undefined> => {
+  try {
+    const { data } = await axios.get<{ status: string }>(
+      `${hostUrl}/check-refresh-status`
+    );
+    return data;
+  } catch (error) {
+    console.error("API checkRefreshStatus error:", error);
+    return undefined;
+  }
+};
+
 export const sendPlanPilotCommand = async (
   pageId: string,
   command: string

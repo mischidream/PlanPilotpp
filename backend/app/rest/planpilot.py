@@ -57,8 +57,6 @@ def update_plan():
     try:
         instance = planpilot_manager.get_or_create(page_id)
         result = instance.update_plan_from_timestep(changed_timestep, commands)
-        # Trigger background refresh
-        planpilot_manager.start_background_refresh(instance)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -82,16 +80,16 @@ def check_refresh_status():
     try:
         bg_instance = planpilot_manager.instances.get("background")
         if not bg_instance:
-            return jsonify({"status": "none"}), 404
+            return jsonify({"status": "non_existent"}), 200
 
         with bg_instance.refresh_lock:
             if bg_instance.refresh_in_progress:
-                return jsonify({"status": "in_progress"}), 202
+                return jsonify({"status": "in_progress"}), 200
             else:
                 return jsonify({"status": "done"}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @planpilot_bp.route("/refresh-optional-facet", methods=["GET"])
