@@ -459,3 +459,24 @@ class PlanPilotInstance:
 
         if result.returncode != 0:
             raise RuntimeError(f"plasp failed:\n{result.stderr}")
+        
+    def _validate_plan_with_val(domain_file: str, problem_file: str, plan_file: str):
+        current_directory = os.getcwd()
+        val_binary = os.path.join(current_directory, "lib", "val", "validate")
+
+        if not os.path.exists(val_binary):
+            raise FileNotFoundError(f"VAL binary not found at: {val_binary}")
+
+        command = [val_binary, domain_file, problem_file, plan_file]
+
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(f"VAL failed:\n{result.stderr}")
+
+        return result.stdout
