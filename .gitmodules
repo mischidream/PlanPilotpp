@@ -4,3 +4,6 @@
 [submodule "backend/lib/planpilot"]
 	path = backend/lib/planpilot
 	url = https://github.com/abcorrea/planpilot.git
+[submodule "backend/lib/val"]
+	path = backend/lib/val
+	url = https://github.com/KCL-Planning/VAL.git
