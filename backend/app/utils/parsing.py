@@ -122,18 +122,50 @@ def extract_plan_actions(plan_file_path: str) -> List[Dict]:
     return parse_facet_output(" ".join(actions).strip(), "?")
 
 def parse_val_output(raw_output: str) -> dict:
-    # Check for success
-    if re.search(r"Plan executed successfully|Plan valid", raw_output):
-        return {
-            'success': 1,
-            'repair_advice': None,
-            'raw_output': raw_output
-        }
-    else:
-        advice_match = re.search(r"Plan Repair Advice:(.*?)(\n\n|$)", raw_output, re.DOTALL)
-        repair_advice = advice_match.group(1).strip() if advice_match else None
-        return {
-            'success': 0,
-            'repair_advice': repair_advice,
-            'raw_output': raw_output
-        }
+    result = {
+        "status": None,           # VALID | GOAL_FAILED | EXEC_FAILED
+        "executed": False,
+        "goal_satisfied": False,
+        "failed_action": None,
+        "repair_advice": None,
+        "raw_output": raw_output
+    }
+
+    # --- Execution succeeded?
+    if re.search(r"Plan executed successfully", raw_output):
+        result["executed"] = True
+
+    # --- Goal satisfied?
+    if re.search(r"Goal satisfied", raw_output):
+        result["goal_satisfied"] = True
+        result["status"] = "VALID"
+        return result
+
+    # --- Goal failed after execution
+    if re.search(r"Goal not satisfied", raw_output):
+        result["status"] = "GOAL_FAILED"
+
+    # --- Execution failure
+    exec_fail = re.search(
+        r"Plan failed because of unsatisfied precondition in:\s*\((.*?)\)",
+        raw_output,
+        re.DOTALL
+    )
+    if exec_fail:
+        result["status"] = "EXEC_FAILED"
+        result["failed_action"] = exec_fail.group(1)
+
+    # --- Repair advice (grab EVERYTHING after the header)
+    advice_match = re.search(
+        r"Plan Repair Advice:\s*(.*?)(?:\n\s*Failed plans:|\Z)",
+        raw_output,
+        re.DOTALL
+    )
+    if advice_match:
+        result["repair_advice"] = advice_match.group(1).strip()
+
+    # --- Fallback status
+    if result["status"] is None:
+        result["status"] = "UNKNOWN"
+
+    return result
