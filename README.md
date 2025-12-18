@@ -38,7 +38,9 @@ cd PlanPilotpp
 git submodule update --init --recursive
 ```
 
-### Backend Setup
+### Local Setup
+
+#### Backend Setup
 ```bash
 cd backend
 python3 -m venv .venv
@@ -47,14 +49,35 @@ pip install -r requirements.txt
 python3 ./lib/downward/build.py
 ```
 
-### Frontend Setup
+#### Frontend Setup
 ```bash
 cd frontend
 npm install
 ```
 
-### Running the Application
+#### Running the Application
 ```bash
 flask run # (in backend)
 npm run dev # (in frontend)
+```
+
+### Setup with Docker
+
+#### Prerequisites
+- Docker + Docker Compose
+
+#### Build and start the application
+From the project root directory:
+
+```bash
+docker-compose up --build
+```
+
+#### Access the application
+- Backend API: http://localhost:5000
+- Frontend UI: http://localhost:5173
+
+#### Stop the application
+```bash
+docker-compose down
 ```
