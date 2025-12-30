@@ -4,15 +4,16 @@ WORKDIR /app
 
 ENV NODE_ENV=development
 
-# Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy source code
 COPY . .
 
-# Expose Vite dev server port
-EXPOSE 5173
+# Build Vue app
+RUN npm run build
 
-# Start Vite dev server with hot reload
+# Serve static files
+RUN npm install -g serve
+
+EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
