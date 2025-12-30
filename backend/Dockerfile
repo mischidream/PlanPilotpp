@@ -2,12 +2,22 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements and install
-COPY requirements.txt .
+# Install only required build dependencies
+RUN apt-get update && \
+    apt-get install -y cmake g++ make && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy backend files
+COPY . .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app files
-COPY . .
+# Clean any old build artifacts
+RUN rm -rf ./lib/downward/builds/release
+
+# Run downward build script
+RUN python3 ./lib/downward/build.py
 
 # Expose Flask port
 EXPOSE 5000
