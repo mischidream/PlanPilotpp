@@ -31,6 +31,12 @@ This project aims to provide an interactive web-based interface for visualizing 
 
 ## Setup Guide
 
+### Install System Dependencies
+```bash
+sudo apt update
+sudo apt install -y bison cmake flex g++ git make python3 python3-venv
+```
+
 ### Clone the repository
 ```bash
 git clone git@github.com:mischidream/PlanPilotpp.git
@@ -44,7 +50,15 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# Build Fastdownward
 python3 ./lib/downward/build.py
+
+# Build VAL
+cd lib/val
+make clean # Remove old binaries.
+sed -i 's/-Werror //g' Makefile # Ignore warnings.
+make
 ```
 
 ### Frontend Setup
