@@ -3,6 +3,7 @@ import os
 
 from .fastdownward import run_fastdownward_service
 from ..utils.plasp_utils import generate_lp_with_plasp
+from ..utils.clingo_utils import *
 
 planner_bp = Blueprint("planner", __name__)
 
@@ -50,13 +51,42 @@ def compute_concrete_from_abstract():
         abstract_time_steps=time_step
     )
 
+    # Solve abstract LP
+    abstract_atoms = solve_abstract_lp(output_a_lp)
+    print("abstract atoms: ", abstract_atoms)
+
+    # Create occurs_abs.lp
+    occurs_abs_lp_path = os.path.join(base_dir, "clingo", "occurs_abs.lp")
+    write_occurs_abs_lp(abstract_atoms, occurs_abs_lp_path)
+
+    # Create map.lp
+    map_lp_path = os.path.join(base_dir, "clingo", "map.lp")
+    concrete_hangars = ["hangar1", "hangar2"]
+    create_map_lp(
+        atoms=abstract_atoms,
+        output_path=map_lp_path,
+        concrete_hangars=concrete_hangars
+    )
+
+    # Solve concrete LP
+    plans = solve_concrete_lp_with_mapping(
+        output_c_lp=output_c_lp,
+        occurs_abs_lp=occurs_abs_lp_path,
+        map_lp=map_lp_path,
+        horizon=horizon
+    )
+    print("plans: ", plans)
+    plan_strs1 = ["; ".join(str(a) for a in plan) for plan in plans]
+    plan_strings = [
+        [str(atom) for atom in model]
+        for model in plans
+    ]
+
     try:
-        # For now, let's return a placeholder response
-        result = {
-            "sasFile": "concrete.sas",
-            "planFile": "concrete.plan",
-            "horizon": horizon
-        }
-        return jsonify(result)
+        return jsonify({
+            "horizon": horizon,
+            "numPlans": len(plan_strings),
+            "plans": plan_strings
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
