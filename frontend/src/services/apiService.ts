@@ -45,9 +45,15 @@ export interface ConcreteFromAbstractInput {
   timeStep: boolean;
 }
 
+export interface ConcreteFromAbstractResponse {
+  horizon: number;
+  numPlans: number;
+  plans: string[][];
+}
+
 export const getConcreteFromAbstractPlan = async (
   input: ConcreteFromAbstractInput
-): Promise<FastDownwardResponse | undefined> => {
+): Promise<ConcreteFromAbstractResponse | undefined> => {
   const formData = new FormData();
 
   // Abstract PDDL
@@ -64,8 +70,8 @@ export const getConcreteFromAbstractPlan = async (
   formData.append('timeStep', String(input.timeStep));
 
   try {
-    const response = await axios.post<FastDownwardResponse>(
-      hostUrl + '/fastdownward/concrete-from-abstract',
+    const response = await axios.post<ConcreteFromAbstractResponse>(
+      hostUrl + '/compute-concrete-from-abstract',
       formData,
       {
         headers: {
@@ -73,6 +79,8 @@ export const getConcreteFromAbstractPlan = async (
         },
       }
     );
+
+    console.log("Concrete-from-abstract response:", response.data);
 
     return response.data;
   } catch (error) {

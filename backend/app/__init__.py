@@ -4,6 +4,7 @@ from .persistence.db import db
 from .persistence import models
 from .rest.fastdownward import fastdownward_bp
 from .rest.planpilot import planpilot_bp
+from .rest.plannerTest import planner_bp
 
 
 def configure_extensions(app: Flask):
@@ -15,6 +16,7 @@ def configure_blueprints(app: Flask):
     """Register API blueprints."""
     app.register_blueprint(fastdownward_bp, url_prefix="/api")
     app.register_blueprint(planpilot_bp, url_prefix="/api")
+    app.register_blueprint(planner_bp, url_prefix="/api")
 
 
 def configure_database(app: Flask):
