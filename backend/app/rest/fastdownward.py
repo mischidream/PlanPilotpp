@@ -18,7 +18,7 @@ def run_fastdownward():
         return jsonify({"error": "Both domainFile and problemFile are required"}), 400
 
     try:
-        result = run_fastdownward_service(domain_file, problem_file)
+        result, _ = run_fastdownward_service(domain_file, problem_file)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -5,7 +5,8 @@ from ..persistence.models import FastDownwardRequest
 from ..utils.hashing import compute_hash_from_files
 
 
-def run_fastdownward_service(domain_file, problem_file):
+def run_fastdownward_service(domain_file, problem_file, abstract_domain_file=None,
+    abstract_problem_file=None):
     # Read file content
     domain_bytes = domain_file.read()
     problem_bytes = problem_file.read()
@@ -38,64 +39,135 @@ def run_fastdownward_service(domain_file, problem_file):
     ).first()
     if existing_request:
         horizon = calculate_horizon(existing_request.plan_file_path)
-        return {
+        concrete_result = {
             "horizon": horizon,
             "sasFile": existing_request.sas_file_path,
             "planFile": existing_request.plan_file_path,
             "cached": True,
         }
-
-    # Paths to necessary files and directories
-    fast_downward_script = os.path.join(
-        current_directory, "lib", "downward", "fast-downward.py"
-    )
-
-    # Command to execute fast-downward
-    command = [
-        "python3",
-        fast_downward_script,
-        "--plan-file",
-        plan_file_path,
-        "--sas-file",
-        sas_file_path,
-        "--keep-sas-file",
-        domain_file_path,
-        problem_file_path,
-        "--search",
-        "astar(lmcut())",
-    ]
-
-    # Execute the command
-    result = subprocess.run(command, capture_output=True, text=True)
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Fast Downward execution failed: {result.stderr}")
-
-    # Calculate horizon
-    horizon = calculate_horizon(plan_file_path)
-
-    # Save result to DB
-    try:
-        new_request = FastDownwardRequest(
-            hash_value=hash_value,
-            domain_file_path=domain_file_path,
-            problem_file_path=problem_file_path,
-            sas_file_path=sas_file_path,
-            plan_file_path=plan_file_path,
+    else:
+        # Paths to necessary files and directories
+        fast_downward_script = os.path.join(
+            current_directory, "lib", "downward", "fast-downward.py"
         )
-        db.session.add(new_request)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error saving to DB: {e}")
 
-    return {
-        "horizon": horizon,
-        "sasFile": sas_file_path,
-        "planFile": plan_file_path,
-        "cached": False,
-    }
+        # Command to execute fast-downward
+        command = [
+            "python3",
+            fast_downward_script,
+            "--plan-file",
+            plan_file_path,
+            "--sas-file",
+            sas_file_path,
+            "--keep-sas-file",
+            domain_file_path,
+            problem_file_path,
+            "--search",
+            "astar(lmcut())",
+        ]
 
+        # Execute the command
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Fast Downward execution failed: {result.stderr}")
+
+        # Calculate horizon
+        horizon = calculate_horizon(plan_file_path)
+
+        # Save result to DB
+        try:
+            new_request = FastDownwardRequest(
+                hash_value=hash_value,
+                domain_file_path=domain_file_path,
+                problem_file_path=problem_file_path,
+                sas_file_path=sas_file_path,
+                plan_file_path=plan_file_path,
+            )
+            db.session.add(new_request)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error saving to DB: {e}")
+
+        concrete_result =  {
+            "horizon": horizon,
+            "sasFile": sas_file_path,
+            "planFile": plan_file_path,
+            "cached": False,
+        }
+
+    # optional: save abstract files
+    abstract_result = None
+    if abstract_domain_file and abstract_problem_file:
+
+        # Separate hash for abstract files
+        abstract_bytes_domain = abstract_domain_file.read()
+        abstract_bytes_problem = abstract_problem_file.read()
+        abstract_hash = compute_hash_from_files(abstract_bytes_domain, abstract_bytes_problem)
+
+        abstract_dir = os.path.join(base_dir, "abstract")
+        os.makedirs(abstract_dir, exist_ok=True)
+
+        abstract_domain_path = os.path.join(abstract_dir, "domain.pddl")
+        abstract_problem_path = os.path.join(abstract_dir, "problem.pddl")
+        abstract_sas_file = os.path.join(abstract_dir, "output.sas")
+        abstract_plan_file = os.path.join(abstract_dir, "sas_plan")
+
+        with open(abstract_domain_path, "wb") as f:
+            f.write(abstract_bytes_domain)
+        with open(abstract_problem_path, "wb") as f:
+            f.write(abstract_bytes_problem)
+        
+        # Check DB for abstract
+        existing_abstract = FastDownwardRequest.query.filter_by(hash_value=abstract_hash).first()
+        if existing_abstract:
+            abstract_horizon = calculate_horizon(existing_abstract.plan_file_path)
+            abstract_result = {
+                "horizon": abstract_horizon,
+                "sasFile": existing_abstract.sas_file_path,
+                "planFile": existing_abstract.plan_file_path,
+                "cached": True
+            }
+        else:
+            # Run Fast Downward on abstract
+            cmd = [
+                "python3", fast_downward_script,
+                "--plan-file", abstract_plan_file,
+                "--sas-file", abstract_sas_file,
+                "--keep-sas-file",
+                abstract_domain_path,
+                abstract_problem_path,
+                "--search", "astar(lmcut())"
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(f"Fast Downward (abstract) failed: {result.stderr}")
+
+            abstract_horizon = calculate_horizon(abstract_plan_file)
+            abstract_result = {
+                "horizon": abstract_horizon,
+                "sasFile": abstract_sas_file,
+                "planFile": abstract_plan_file,
+                "cached": False
+            }
+
+            # Save abstract result to DB
+            try:
+                new_abstract_request = FastDownwardRequest(
+                    hash_value=abstract_hash,
+                    domain_file_path=abstract_domain_path,
+                    problem_file_path=abstract_problem_path,
+                    sas_file_path=abstract_sas_file,
+                    plan_file_path=abstract_plan_file,
+                )
+                db.session.add(new_abstract_request)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error saving abstract to DB: {e}")
+
+    return concrete_result, abstract_result
 
 def calculate_horizon(plan_file_path):
     with open(plan_file_path, "r") as f:
