@@ -35,6 +35,51 @@ export const getSasPlan = async (
   }
 };
 
+export interface ConcreteFromAbstractInput {
+  abstractDomainFile: File;
+  abstractProblemFile: File;
+  concreteDomainFile: File;
+  concreteProblemFile: File;
+  horizon: number;
+  encoding: string;
+  timeStep: boolean;
+}
+
+export const getConcreteFromAbstractPlan = async (
+  input: ConcreteFromAbstractInput
+): Promise<FastDownwardResponse | undefined> => {
+  const formData = new FormData();
+
+  // Abstract PDDL
+  formData.append('abstractDomain', input.abstractDomainFile);
+  formData.append('abstractProblem', input.abstractProblemFile);
+
+  // Concrete PDDL
+  formData.append('concreteDomain', input.concreteDomainFile);
+  formData.append('concreteProblem', input.concreteProblemFile);
+
+  // Metadata
+  formData.append('horizon', input.horizon.toString());
+  formData.append('encoding', input.encoding);
+  formData.append('timeStep', String(input.timeStep));
+
+  try {
+    const response = await axios.post<FastDownwardResponse>(
+      hostUrl + '/fastdownward/concrete-from-abstract',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 export const runPlanPilot = async (input: PlanPilotInput): Promise<Facet[] | undefined> => {
   try {
     const response = await axios.post<{ output: Facet[] }>(`${hostUrl}/run-planpilot`, input);

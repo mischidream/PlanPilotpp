@@ -8,6 +8,8 @@
         <RouterLink to="/plan-modification" class="nav-link">Plan Modification</RouterLink>
         <div class="divider"></div>
         <RouterLink to="/plan-space-navigation" class="nav-link">Plan-Space Navigation</RouterLink>
+        <div class="divider"></div>
+        <RouterLink to="/abstract-test-view" class="nav-link">Abstract Test View</RouterLink>
       </nav>
     </div>
     <main class="main-content">
