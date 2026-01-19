@@ -1,18 +1,43 @@
 import clingo
 
-def solve_abstract_lp(lp_path: str):
-    ctl = clingo.Control()
+def solve_abstract_lp(lp_path, horizon):
+    ctl = clingo.Control([
+        "-c", f"horizon={horizon}"
+    ])
+
     ctl.load(lp_path)
+
     ctl.ground([("base", [])])
-    
-    result_atoms = []
-    
+
+    atoms = []
+
     def on_model(model):
-        nonlocal result_atoms
-        result_atoms = model.symbols(shown=True)
-    
+        nonlocal atoms
+        atoms = model.symbols(shown=True)
+
+    result = ctl.solve(on_model=on_model)
+
+    return atoms
+
+import clingo
+
+def read_occurs_abs_lp(file_path):
+    ctl = clingo.Control()
+    ctl.load(file_path)
+
+    # Force showing occurs_abstract atoms
+    ctl.add("base", [], "#show occurs_abstract/2.")
+    ctl.ground([("base", [])])
+
+    atoms = []
+
+    def on_model(model):
+        nonlocal atoms
+        atoms = model.symbols(shown=True)
+
     ctl.solve(on_model=on_model)
-    return result_atoms
+    return atoms
+
 
 def write_occurs_abs_lp(atoms, output_path):
     lines = []
@@ -27,8 +52,6 @@ def write_occurs_abs_lp(atoms, output_path):
         elif atom.name == "occurs_abstract":
             # already abstract (just in case)
             lines.append(f"{atom}.")
-    
-    print("lines of occurs abs: ", lines)
 
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
@@ -69,8 +92,6 @@ def create_map_lp(atoms, output_path, concrete_hangars):
                 f"occurs({action_term},{time}) :- occurs_abstract({action_term},{time})."
             )
 
-    print("map lp: ", lines)
-
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
 
@@ -80,6 +101,7 @@ def solve_concrete_lp_with_mapping(output_c_lp, occurs_abs_lp, map_lp, horizon):
     ctl.load(output_c_lp)
     ctl.load(occurs_abs_lp)
     ctl.load(map_lp)
+
     ctl.ground([("base", [])])
 
     plans = []
@@ -87,7 +109,8 @@ def solve_concrete_lp_with_mapping(output_c_lp, occurs_abs_lp, map_lp, horizon):
     def on_model(model):
         plans.append(model.symbols(shown=True))
 
-    ctl.solve(on_model=on_model)
+    result = ctl.solve(on_model=on_model)
+    print("Concrete plan SAT:", result)
     return plans
 
 def _replace_arg(args, index, new_value):

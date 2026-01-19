@@ -33,6 +33,12 @@ def compute_concrete_from_abstract():
     output_c_lp = os.path.join(base_dir, "output_c.lp")
     output_a_lp = os.path.join(base_dir, "abstract", "output_a.lp")
 
+    clingo_dir = os.path.join(base_dir, "clingo")
+    os.makedirs(clingo_dir, exist_ok=True)
+
+    occurs_abs_lp_path = os.path.join(clingo_dir, "occurs_abs.lp")
+    map_lp_path = os.path.join(clingo_dir, "map.lp")
+
     # Concrete LP
     generate_lp_with_plasp(
         sas_or_pddl_path=concrete_result["sasFile"],
@@ -52,18 +58,18 @@ def compute_concrete_from_abstract():
     )
 
     # Solve abstract LP
-    abstract_atoms = solve_abstract_lp(output_a_lp)
-    print("abstract atoms: ", abstract_atoms)
+    abstract_atoms = solve_abstract_lp(output_a_lp, horizon)
 
     # Create occurs_abs.lp
-    occurs_abs_lp_path = os.path.join(base_dir, "clingo", "occurs_abs.lp")
     write_occurs_abs_lp(abstract_atoms, occurs_abs_lp_path)
 
+    # Read occurs_abs.lp back
+    abs_atoms_for_map = read_occurs_abs_lp(occurs_abs_lp_path)
+
     # Create map.lp
-    map_lp_path = os.path.join(base_dir, "clingo", "map.lp")
     concrete_hangars = ["hangar1", "hangar2"]
     create_map_lp(
-        atoms=abstract_atoms,
+        atoms=abs_atoms_for_map,
         output_path=map_lp_path,
         concrete_hangars=concrete_hangars
     )
@@ -75,9 +81,20 @@ def compute_concrete_from_abstract():
         map_lp=map_lp_path,
         horizon=horizon
     )
-    print("plans: ", plans)
+    for i, plan in enumerate(plans):
+        print(f"--- PLAN {i+1} ---")
+        for atom in sorted(plan, key=lambda a: a.arguments[-1].number):
+            print(atom)
+
+    
+    plan_strings = []
+    for plan in plans:
+        sorted_plan = sorted(plan, key=lambda a: a.arguments[1].number)
+        plan_strings.append([str(atom) for atom in sorted_plan])
+
+
     plan_strs1 = ["; ".join(str(a) for a in plan) for plan in plans]
-    plan_strings = [
+    plan_strings2 = [
         [str(atom) for atom in model]
         for model in plans
     ]
