@@ -51,6 +51,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
+# Build clingo
+cd backend/lib/clingo
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+  -DCLINGO_BUILD_WITH_PYTHON=OFF \
+  -DCLINGO_BUILD_SHARED=OFF
+cmake --build build -j
+
 # Build Fastdownward
 python3 ./lib/downward/build.py
 

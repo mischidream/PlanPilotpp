@@ -2,4 +2,3 @@ Flask
 SQLAlchemy
 Flask-SQLAlchemy
 Flask-Cors
-clingo
