@@ -7,3 +7,6 @@
 [submodule "backend/lib/val"]
 	path = backend/lib/val
 	url = https://github.com/KCL-Planning/VAL.git
+[submodule "backend/lib/clingo"]
+	path = backend/lib/clingo
+	url = https://github.com/potassco/clingo.git
