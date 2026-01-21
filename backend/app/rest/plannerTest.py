@@ -58,46 +58,28 @@ def compute_concrete_from_abstract():
     )
 
     # Solve abstract LP
-    abstract_atoms = solve_abstract_lp(output_a_lp, horizon)
+    abstract_models = run_clingo([output_a_lp], horizon)
+    # Take first model for simplicity
+    abstract_atoms = abstract_models[0] if abstract_models else []
 
     # Create occurs_abs.lp
     write_occurs_abs_lp(abstract_atoms, occurs_abs_lp_path)
 
-    # Read occurs_abs.lp back
-    abs_atoms_for_map = read_occurs_abs_lp(occurs_abs_lp_path)
-
     # Create map.lp
     concrete_hangars = ["hangar1", "hangar2"]
     create_map_lp(
-        atoms=abs_atoms_for_map,
+        occurs_abs_path=occurs_abs_lp_path,
         output_path=map_lp_path,
         concrete_hangars=concrete_hangars
     )
 
     # Solve concrete LP
-    plans = solve_concrete_lp_with_mapping(
-        output_c_lp=output_c_lp,
-        occurs_abs_lp=occurs_abs_lp_path,
-        map_lp=map_lp_path,
-        horizon=horizon
+    concrete_models = run_clingo(
+        [output_c_lp, occurs_abs_lp_path, map_lp_path], horizon
     )
-    for i, plan in enumerate(plans):
-        print(f"--- PLAN {i+1} ---")
-        for atom in sorted(plan, key=lambda a: a.arguments[-1].number):
-            print(atom)
-
     
-    plan_strings = []
-    for plan in plans:
-        sorted_plan = sorted(plan, key=lambda a: a.arguments[1].number)
-        plan_strings.append([str(atom) for atom in sorted_plan])
-
-
-    plan_strs1 = ["; ".join(str(a) for a in plan) for plan in plans]
-    plan_strings2 = [
-        [str(atom) for atom in model]
-        for model in plans
-    ]
+    # Format for JSON response
+    plan_strings = [[atom for atom in model] for model in concrete_models]
 
     try:
         return jsonify({

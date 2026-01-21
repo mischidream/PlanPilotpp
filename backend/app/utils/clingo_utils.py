@@ -1,127 +1,91 @@
-import clingo
+import subprocess
+import os
 
-def solve_abstract_lp(lp_path, horizon):
-    ctl = clingo.Control([
-        "-c", f"horizon={horizon}"
-    ])
+CURRENT_DIRECTORY = os.getcwd()
+CLINGO_BIN = os.path.join(CURRENT_DIRECTORY, "lib", "clingo", "build", "bin", "clingo")
 
-    ctl.load(lp_path)
+def run_clingo(lp_files, horizon):
+    cmd = [CLINGO_BIN] + lp_files + ["-c", f"horizon={horizon}"]
 
-    ctl.ground([("base", [])])
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True
+    )
 
-    atoms = []
+    output = result.stdout
 
-    def on_model(model):
-        nonlocal atoms
-        atoms = model.symbols(shown=True)
+    models = []
+    current_model = []
 
-    result = ctl.solve(on_model=on_model)
+    collecting = False
+    for line in output.splitlines():
+        line = line.strip()
 
-    return atoms
+        if line.startswith("Answer:"):
+            collecting = True
+            current_model = []
+            continue
 
-import clingo
+        if collecting:
+            if line == "" or line.startswith("SATISFIABLE") or line.startswith("UNSATISFIABLE"):
+                if current_model:
+                    models.append(current_model)
+                collecting = False
+                continue
+            # Add each atom
+            current_model.extend(line.split())
 
-def read_occurs_abs_lp(file_path):
-    ctl = clingo.Control()
-    ctl.load(file_path)
-
-    # Force showing occurs_abstract atoms
-    ctl.add("base", [], "#show occurs_abstract/2.")
-    ctl.ground([("base", [])])
-
-    atoms = []
-
-    def on_model(model):
-        nonlocal atoms
-        atoms = model.symbols(shown=True)
-
-    ctl.solve(on_model=on_model)
-    return atoms
-
+    return models
 
 def write_occurs_abs_lp(atoms, output_path):
     lines = []
 
     for atom in atoms:
-        if atom.name == "occurs":
-            # occurs(action(...),T) → occurs_abstract(action(...),T)
-            action = atom.arguments[0]
-            time = atom.arguments[1]
-            lines.append(f"occurs_abstract({action},{time}).")
+        atom = atom.strip()
 
-        elif atom.name == "occurs_abstract":
-            # already abstract (just in case)
-            lines.append(f"{atom}.")
+        if atom.startswith("occurs("):
+            # occurs(action(...),T) → occurs_abstract(action(...),T)
+            lines.append("occurs_abstract" + atom[len("occurs"): ] + ".")
+
+        elif atom.startswith("occurs_abstract("):
+            # already abstract (defensive)
+            lines.append(atom + ".")
 
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
 
 
-def create_map_lp(atoms, output_path, concrete_hangars):
+def create_map_lp(occurs_abs_path, output_path, concrete_hangars):
     # concrete_hangars = ["hangar1", "hangar2"]
-    lines = []
+    with open(occurs_abs_path, "r") as f:
+        lines_in = [line.strip() for line in f if line.strip()]
 
-    for atom in atoms:
-        if atom.name != "occurs_abstract":
+    lines_out = []
+    for line in lines_in:
+        if not line.startswith("occurs_abstract("):
             continue
 
-        action_term = atom.arguments[0]
-        time = atom.arguments[1]
+        # Extract the inner part: occurs_abstract(inner)
+        inner = line[len("occurs_abstract("):].rstrip(").")
+        # Split into action_term and time by the last comma
+        if ',' not in inner:
+            continue
+        action_str, time_str = inner.rsplit(",", 1)
+        action_str = action_str.strip()
+        time_str = time_str.strip()
 
-        tuple_term = action_term.arguments[0]
-        hangar_index = _find_hangarabs_index(action_term)
-
-        # CASE 1: action uses hangarabs → choice rule
-        if hangar_index is not None:
+        # Find if 'hangarabs' is in the action term (case 1: choice rule)
+        if "hangarabs" in action_str:
             choices = []
-
             for hangar in concrete_hangars:
-                new_args = _replace_arg(tuple_term.arguments, hangar_index, hangar)
-                new_tuple = clingo.Function("", new_args)
-                new_action = clingo.Function("action", [new_tuple])
-                choices.append(f"occurs({new_action},{time})")
-
-            choice_body = "; ".join(choices)
-            lines.append(
-                f"1 {{ {choice_body} }} 1 :- occurs_abstract({action_term},{time})."
-            )
-
-        # CASE 2: no hangarabs → direct rewrite
+                new_action = action_str.replace("hangarabs", hangar)
+                choices.append(f"occurs({new_action},{time_str})")
+            lines_out.append(f"1 {{ {'; '.join(choices)} }} 1 :- occurs_abstract({action_str},{time_str}).")
         else:
-            lines.append(
-                f"occurs({action_term},{time}) :- occurs_abstract({action_term},{time})."
-            )
+            # case 2: direct rewrite
+            lines_out.append(f"occurs({action_str},{time_str}) :- occurs_abstract({action_str},{time_str}).")
 
+    # Write the map.lp
     with open(output_path, "w") as f:
-        f.write("\n".join(lines))
-
-
-def solve_concrete_lp_with_mapping(output_c_lp, occurs_abs_lp, map_lp, horizon):
-    ctl = clingo.Control(["-c", f"horizon={horizon}"])
-    ctl.load(output_c_lp)
-    ctl.load(occurs_abs_lp)
-    ctl.load(map_lp)
-
-    ctl.ground([("base", [])])
-
-    plans = []
-
-    def on_model(model):
-        plans.append(model.symbols(shown=True))
-
-    result = ctl.solve(on_model=on_model)
-    print("Concrete plan SAT:", result)
-    return plans
-
-def _replace_arg(args, index, new_value):
-    new_args = list(args)
-    new_args[index] = clingo.String(new_value)
-    return new_args
-
-def _find_hangarabs_index(action_term):
-    # TODO: maybe not only for the first action in the timestep
-    tuple_term = action_term.arguments[0]
-    for i, arg in enumerate(tuple_term.arguments):
-        if arg.type == clingo.SymbolType.String and arg.string == "hangarabs":
-            return i
-    return None
+        f.write("\n".join(lines_out))
