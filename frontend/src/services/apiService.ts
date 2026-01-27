@@ -9,7 +9,7 @@ import type { SelectionUpdateInput } from '@/models/SelectionUpdateInput';
 import type { ActivatePlanResponse } from '@/models/ActivePlanResponse';
 import type { RefreshOptionalFacetResponse } from '@/models/RefreshOptionalFacetResponse';
 
-let hostUrl = 'http://localhost:5000/api';
+const hostUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const getSasPlan = async (
   input: SasPlanInput

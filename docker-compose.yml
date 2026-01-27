@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_RUN_HOST: 0.0.0.0
+      FLASK_RUN_PORT: 5000
+      FLASK_DEBUG: "True"
+    # Did not work with volumes because fastdownward was wrong builded so docker cannot be used for development right now
+    # volumes:
+    #   - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    # volumes:
+    #   - ./frontend:/app
+    #   - /app/node_modules
