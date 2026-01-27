@@ -18,6 +18,10 @@ COPY . .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Clean any old build artifacts
+RUN rm -rf ./lib/downward/builds/release
+RUN rm -rf ./lib/clingo/build
+
 # Build clingo
 RUN cd lib/clingo && \
     cmake -S . -B build \
@@ -25,9 +29,6 @@ RUN cd lib/clingo && \
         -DCLINGO_BUILD_WITH_PYTHON=OFF \
         -DCLINGO_BUILD_SHARED=OFF && \
     cmake --build build -j
-
-# Clean any old build artifacts
-RUN rm -rf ./lib/downward/builds/release
 
 # Run downward build script
 RUN python3 ./lib/downward/build.py

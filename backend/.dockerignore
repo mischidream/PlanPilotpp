@@ -1,2 +1,3 @@
 lib/downward/builds
+lib/clingo/build
 .venv
