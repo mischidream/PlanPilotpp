@@ -56,7 +56,7 @@ def write_occurs_abs_lp(atoms, output_path):
         f.write("\n".join(lines))
 
 
-def create_map_lp(occurs_abs_path, output_path, concrete_hangars):
+def create_map_lp(occurs_abs_path, output_path, abstract_symbol, concrete_objects):
     # concrete_hangars = ["hangar1", "hangar2"]
     with open(occurs_abs_path, "r") as f:
         lines_in = [line.strip() for line in f if line.strip()]
@@ -75,15 +75,16 @@ def create_map_lp(occurs_abs_path, output_path, concrete_hangars):
         action_str = action_str.strip()
         time_str = time_str.strip()
 
-        # Find if 'hangarabs' is in the action term (case 1: choice rule)
-        if "hangarabs" in action_str:
+        # Case 1: this action uses the abstract symbol -> choice rule
+        if abstract_symbol in action_str:
             choices = []
-            for hangar in concrete_hangars:
-                new_action = action_str.replace("hangarabs", hangar)
-                choices.append(f"occurs({new_action},{time_str})")
+            for obj in concrete_objects:
+                new_action = action_str.replace(abstract_symbol, obj)
+                choices.append(f"occurs({new_action}, {time_str})")
+            
             lines_out.append(f"1 {{ {'; '.join(choices)} }} 1 :- occurs_abstract({action_str},{time_str}).")
         else:
-            # case 2: direct rewrite
+            # case 2: no abstraction -> direct mapping
             lines_out.append(f"occurs({action_str},{time_str}) :- occurs_abstract({action_str},{time_str}).")
 
     # Write the map.lp

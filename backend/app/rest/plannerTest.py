@@ -66,11 +66,21 @@ def compute_concrete_from_abstract():
     write_occurs_abs_lp(abstract_atoms, occurs_abs_lp_path)
 
     # Create map.lp
-    concrete_hangars = ["hangar1", "hangar2"]
+    ABSTRACTION_MODE = "trailer"   # "hangar" or "trailer"
+
+    if ABSTRACTION_MODE == "hangar":
+        abstract_symbol = "hangarabs"
+        concrete_objects = ["hangar1", "hangar2"]
+
+    elif ABSTRACTION_MODE == "trailer":
+        abstract_symbol = "beluga_abs_trailer"
+        concrete_objects = ["beluga_trailer_1", "beluga_trailer_2"]
+
     create_map_lp(
         occurs_abs_path=occurs_abs_lp_path,
         output_path=map_lp_path,
-        concrete_hangars=concrete_hangars
+        abstract_symbol=abstract_symbol,
+        concrete_objects=concrete_objects
     )
 
     # Solve concrete LP
